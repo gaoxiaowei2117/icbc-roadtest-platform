@@ -1,0 +1,24 @@
+[Unit]
+Description=ICBC Road Test Platform API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=icbc
+Group=icbc
+WorkingDirectory=/opt/icbc-platform/backend
+EnvironmentFile=/opt/icbc-platform/.env
+ExecStart=/opt/icbc-platform/backend/.venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 --port 8000 --workers 1 --no-access-log
+Restart=on-failure
+RestartSec=5s
+StandardOutput=append:/var/log/icbc-api.log
+StandardError=append:/var/log/icbc-api.log
+
+# 内存保护（1.9G VPS）
+MemoryMax=400M
+MemoryHigh=350M
+
+[Install]
+WantedBy=multi-user.target
