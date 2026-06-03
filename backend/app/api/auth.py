@@ -6,7 +6,6 @@ from app.core.database import get_db
 from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.crud import user as user_crud
 from app.schemas.auth import AccessTokenOut, LoginIn, RefreshIn, RegisterIn, TokenOut
-from app.schemas.user import UserPublic
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

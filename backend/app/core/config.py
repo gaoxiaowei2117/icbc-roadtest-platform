@@ -1,5 +1,6 @@
 """应用配置，通过环境变量加载。"""
 from functools import lru_cache
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,6 +10,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        populate_by_name=True,
     )
 
     postgres_host: str = "127.0.0.1"
@@ -38,8 +40,12 @@ class Settings(BaseSettings):
             return []
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
+    database_url_override: str = Field(default="", alias="DATABASE_URL")
+
     @property
     def database_url(self) -> str:
+        if self.database_url_override:
+            return self.database_url_override
         return (
             f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"

@@ -3,12 +3,15 @@
 Revision ID: 0001_initial
 Revises:
 Create Date: 2026-06-02
+
+说明：用 sa.JSON() 替代 postgresql.ARRAY/JSONB，使 schema 可在 sqlite 上本地
+开发；JSON 列在 postgres 上映射为 JSON（非 JSONB）以保证可移植性。应用层负责
+数组/字典的序列化（SQLAlchemy 2.0 的 Mapped[list|dict] 自动处理）。
 """
 from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
 
 revision: str = "0001_initial"
 down_revision: Union[str, None] = None
@@ -26,8 +29,8 @@ def upgrade() -> None:
         sa.Column("is_admin", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("icbc_license_no", sa.String(50)),
         sa.Column("icbc_last_name", sa.String(100)),
-        sa.Column("preferred_pos", postgresql.ARRAY(sa.String())),
-        sa.Column("time_windows", postgresql.JSONB()),
+        sa.Column("preferred_pos", sa.JSON()),
+        sa.Column("time_windows", sa.JSON()),
         sa.Column("max_wait_days", sa.Integer(), nullable=False, server_default="60"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column(
@@ -76,11 +79,11 @@ def upgrade() -> None:
             server_default="pending",
         ),
         sa.Column("target_date", sa.Date()),
-        sa.Column("time_window", postgresql.JSONB()),
+        sa.Column("time_window", sa.JSON()),
         sa.Column("pos_code", sa.String(50)),
         sa.Column("attempt_count", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("last_error", sa.Text()),
-        sa.Column("result", postgresql.JSONB()),
+        sa.Column("result", sa.JSON()),
         sa.Column("started_at", sa.DateTime(timezone=True)),
         sa.Column("finished_at", sa.DateTime(timezone=True)),
         sa.Column(
