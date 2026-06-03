@@ -17,3 +17,4 @@ build/
 .coverage
 htmlcov/
 *.egg-info/
+.codex-mcp/
