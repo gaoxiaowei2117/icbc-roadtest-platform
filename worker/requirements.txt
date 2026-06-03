@@ -1,5 +1,5 @@
 httpx==0.27.0
-playwright==1.42.0
+# playwright==1.42.0  # 暂未使用：booking_engine.py 仍是 stub，接入真实逻辑前无需安装
 pydantic==2.6.1
 pydantic-settings==2.2.1
 python-dateutil==2.8.2

@@ -26,8 +26,12 @@ Nginx (9443)
                   booking_engine.run(task)
                        │
                        ▼
-                  Playwright → ICBC 网站
+                  Playwright → ICBC 网站   ← 设计意图，未实现
 ```
+
+> ⚠️ `booking_engine.run()` 目前仍是 stub（见 known-issues T1），尚未接入真实抢约逻辑。
+> 图中 "Playwright" 只是最初的设计假设；实际采用的自动化方式（浏览器自动化 or HTTP API 直连）
+> 待接入时确定，当前工程未依赖 Playwright（`worker/requirements.txt` 中已注释）。
 
 ## 数据模型
 
