@@ -13,7 +13,7 @@ cd /home/xgao/workspace/icbc-roadtest-platform
 git init
 git add .
 git commit -m "initial scaffold"
-git remote add origin git@github.com:你的用户名/icbc-roadtest-platform.git
+git remote add origin git@github.com:gaoxiaowei2117/icbc-roadtest-platform.git
 git push -u origin main
 ```
 
@@ -24,7 +24,7 @@ ssh tencent_117   # 你起的别名
 sudo mkdir -p /opt/icbc-platform
 sudo chown $USER:$USER /opt/icbc-platform
 cd /opt/icbc-platform
-git clone git@github.com:你的用户名/icbc-roadtest-platform.git .
+git clone git@github.com:gaoxiaowei2117/icbc-roadtest-platform.git .
 ```
 
 ## 3. 生成密钥
