@@ -1,17 +1,21 @@
 """/api/auth/* 注册 / 登录 / 刷新 / 当前用户信息。"""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.database import get_db
+from app.core.ratelimit import limiter
 from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.crud import user as user_crud
 from app.schemas.auth import AccessTokenOut, LoginIn, RefreshIn, RegisterIn, TokenOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+_auth_limit = get_settings().auth_rate_limit
 
 
 @router.post("/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterIn, db: Session = Depends(get_db)) -> TokenOut:
+@limiter.limit(_auth_limit)
+def register(request: Request, payload: RegisterIn, db: Session = Depends(get_db)) -> TokenOut:
     if user_crud.get_by_email(db, payload.email):
         raise HTTPException(status.HTTP_409_CONFLICT, "邮箱已注册")
     user = user_crud.create(db, payload.email, payload.password, is_admin=False)
@@ -22,7 +26,8 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)) -> TokenOut:
 
 
 @router.post("/login", response_model=TokenOut)
-def login(payload: LoginIn, db: Session = Depends(get_db)) -> TokenOut:
+@limiter.limit(_auth_limit)
+def login(request: Request, payload: LoginIn, db: Session = Depends(get_db)) -> TokenOut:
     user = user_crud.authenticate(db, payload.email, payload.password)
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "邮箱或密码错误")

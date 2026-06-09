@@ -1,5 +1,5 @@
 """抢约任务数据库操作。"""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Sequence
 
 from sqlalchemy import select
@@ -91,3 +91,26 @@ def requeue(db: Session, booking: Booking, last_error: str | None) -> Booking:
     db.commit()
     db.refresh(booking)
     return booking
+
+
+def reset_stale_running(db: Session, timeout_minutes: int) -> int:
+    """把卡死的 running 任务重置回 pending（T2 reaper）。
+
+    worker 崩溃 / 网络中断后，任务会一直停在 running 没人收尾。
+    凡 started_at 早于 (now - timeout) 的 running 任务，视为卡死，重排重试。
+    返回被重置的任务数。
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=timeout_minutes)
+    stmt = select(Booking).where(
+        Booking.status == BookingStatus.running,
+        Booking.started_at.is_not(None),
+        Booking.started_at < cutoff,
+    )
+    stale = db.scalars(stmt).all()
+    for booking in stale:
+        booking.status = BookingStatus.pending
+        booking.started_at = None
+        booking.last_error = f"worker 超时（>{timeout_minutes} 分钟）未完成，自动重置重排"
+    if stale:
+        db.commit()
+    return len(stale)

@@ -23,21 +23,21 @@
 | F4 | 高 | `crud/secret.py` 先 `.encode()` 成 bytes 再传给 `encrypt_secret(plaintext: str)`，后者又 `.encode()` → `AttributeError`，**保存 ICBC 凭据必 500**（连带堵死建任务主链路）。改为传 str。 | ✅ 已修 |
 | F5 | 高 | `api/worker.py` 用了 `BookingStatus` 但漏 import；claim 无待办任务时侥幸不触发，但 worker 回报结果路径必 `NameError` 500（抢约成功也写不回库）。补 import。 | ✅ 已修 |
 | S1 | 高 | **A1 安全承诺与实现相反**：原用对称 Fernet，密钥（`ENCRYPTION_KEY`）在云端 `.env`，云端能解密、claim 响应里下发明文 → VPS 沦陷即凭据全失。改为非对称 **SealedBox**：云端只持公钥（只加密），私钥仅在本地 worker，密文下发、worker 端解密。A1 现已名副其实。 | ✅ 已修 |
+| T2 | 中 | 任务卡死无清理：worker 崩溃后任务永停 `running`。加后台 reaper 守护线程：`started_at` 超 `RUNNING_TIMEOUT_MINUTES`（默认 15）→ 重置为 `pending`。 | ✅ 已修 |
+| T10 | 中 | `/api/auth/login` `/register` 无速率限制，可被暴力枚举。用 slowapi 加 `AUTH_RATE_LIMIT`（默认 5/分钟），超限 429。 | ✅ 已修 |
+| T3 | 中 | 零测试（F4/F5 正是缺测试漏掉的）。建 `backend/tests/` pytest 套件，33 个用例覆盖 auth flow、SealedBox 加密 + 私钥解密往返、claim 返回密文 + 原子认领、worker 回报、admin 鉴权、reaper、限速。 | ✅ 已修 |
 
 ## 待办（暂不修，scope 外）
 
 | ID | 描述 | 建议 |
 |---|---|---|
 | T1 | `worker/booking_engine.py` 是 stub，真正的抢约逻辑（来自原 `road.py`）还没接进来 | 单独一个 PR 接真实逻辑；接口已稳定 |
-| T2 | 没有"任务卡死"清理机制：worker 崩溃后任务会一直停在 `running` | 短期可加后台 reaper（`started_at` 超过 N 分钟 → 重置为 `pending`）；或 worker 启动时检查并重新认领 |
-| T3 | 无单元测试 / 集成测试（F4/F5 正是缺测试漏掉的） | 加 `pytest` 套件覆盖：JWT 签发、SealedBox 加密 + worker 解密往返、auth flow、claim 原子性 + 返回密文、worker 回报、admin 鉴权 |
 | T4 | 凭据密钥对无轮换机制：换 `SECRET_PUBLIC/PRIVATE_KEY` 后所有存量 `secret.ciphertext` 失效 | 短期：文档化警告 + 让用户重提交凭据；长期：多密钥过渡（`key_id` + 按 id 选 SealedBox） |
 | T5 | `bookings.time_window` 和 `user.time_windows` 的 schema 重复：都是 `{morning, afternoon, evening}` 但分两个字段 | 考虑归一或重新设计；现在能工作，先不动 |
 | T6 | 前端无 404 fallback，未知 URL 显示空 RouterView | 加一个 catch-all 路由展示 "页面不存在" |
-| T7 | 无 CI（lint / typecheck / test / build） | 加 GitHub Actions；至少跑 `vue-tsc` + `ruff check backend` + `pytest`（如果 T3 做了） |
+| T7 | 无 CI（lint / typecheck / test / build） | 加 GitHub Actions；跑 `vue-tsc` + `ruff check backend` + `pytest`（T3 已就绪，可直接接） |
 | T8 | 无日志聚合：backend 写到 stdout（systemd 重定向到 `/var/log/icbc-api.log`），worker 写到 `worker.log` | 上规模后接 Loki/CloudWatch；当前体量不需要 |
 | T9 | `vue-tsc` 在 `npm run build` 里跑，但 `npm run dev` 不做类型检查 | IDE 编译时检查就够；不强求 |
-| T10 | 无速率限制：`/api/auth/login` 会被暴力枚举 | 加 `slowapi` 或 nginx `limit_req` |
 
 ## 设计决策（写下来免得以后被"修正"）
 

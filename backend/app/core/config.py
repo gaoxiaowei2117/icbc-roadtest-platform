@@ -35,6 +35,14 @@ class Settings(BaseSettings):
     bootstrap_admin_email: str = ""
     bootstrap_admin_password: str = ""
 
+    # 任务卡死 reaper（T2）：扫描间隔 + running 超时阈值
+    reaper_interval_seconds: int = 60
+    running_timeout_minutes: int = 15
+
+    # 速率限制（T10）：登录/注册防暴力枚举
+    rate_limit_enabled: bool = True
+    auth_rate_limit: str = "5/minute"
+
     @property
     def cors_origin_list(self) -> list[str]:
         if not self.cors_origins:

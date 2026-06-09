@@ -1,5 +1,6 @@
 """FastAPI 入口。"""
 import logging
+import threading
 import warnings
 from contextlib import asynccontextmanager
 
@@ -9,10 +10,14 @@ warnings.filterwarnings("ignore", module="passlib", message=".*crypt.*")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api import admin, auth, bookings, users, worker
 from app.core.config import get_settings
 from app.core.database import SessionLocal
+from app.core.ratelimit import limiter
+from app.crud import booking as booking_crud
 from app.crud import user as user_crud
 
 logger = logging.getLogger("icbc")
@@ -40,14 +45,37 @@ def _bootstrap_admin() -> None:
         logger.warning("已创建 bootstrap admin 账号：%s（id=%d）", user.email, user.id)
 
 
+_reaper_stop = threading.Event()
+
+
+def _reaper_loop() -> None:
+    """后台守护线程：定期重置卡死的 running 任务（T2）。"""
+    settings = get_settings()
+    # Event.wait 返回 True 表示被 set（要退出）；False 表示超时（继续下一轮）
+    while not _reaper_stop.wait(settings.reaper_interval_seconds):
+        try:
+            with SessionLocal() as db:
+                n = booking_crud.reset_stale_running(db, settings.running_timeout_minutes)
+            if n:
+                logger.warning("reaper 重置了 %d 个卡死任务", n)
+        except Exception:  # noqa: BLE001 — 守护线程绝不能因单次异常退出
+            logger.exception("reaper 循环异常，跳过本轮")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _bootstrap_admin()
+    _reaper_stop.clear()
+    reaper = threading.Thread(target=_reaper_loop, name="reaper", daemon=True)
+    reaper.start()
     yield
+    _reaper_stop.set()
 
 
 settings = get_settings()
 app = FastAPI(title="ICBC Road Test Platform", version="0.1.0", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
