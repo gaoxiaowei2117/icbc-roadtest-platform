@@ -1,11 +1,13 @@
 """/api/worker/* 仅 worker 共享密钥可访问。"""
+import base64
+
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_worker_key
 from app.core.database import get_db
 from app.crud import booking as booking_crud
-from app.crud import secret as secret_crud
+from app.models.booking import BookingStatus
 from app.schemas.booking import WorkerClaimOut, WorkerResultIn
 
 router = APIRouter(prefix="/worker", tags=["worker"])
@@ -26,19 +28,14 @@ def claim_task(
             db, booking, BookingStatus.failed, last_error="用户未配置 ICBC 凭据"
         )
         return None
-    try:
-        icbc_username, icbc_password = secret_crud.decrypt_payload(user.secret)
-    except ValueError as e:
-        booking_crud.complete(db, booking, BookingStatus.failed, last_error=str(e))
-        return None
+    # 密文原样下发；后端无私钥，解密在 worker 端完成。
     return WorkerClaimOut(
         booking_id=booking.id,
         user_id=user.id,
         target_date=booking.target_date,
         time_window=booking.time_window,
         pos_code=booking.pos_code,
-        icbc_username=icbc_username,
-        icbc_password=icbc_password,
+        secret_ciphertext=base64.b64encode(user.secret.ciphertext).decode(),
         max_wait_days=user.max_wait_days,
     )
 

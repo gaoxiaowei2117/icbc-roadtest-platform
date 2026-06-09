@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from api_client import APIClient
 from booking_engine import BookingEngineError, Result, Task, run
 from config import settings
+from crypto import decrypt_secret
 
 logger = logging.getLogger("worker")
 
@@ -27,14 +28,20 @@ def _setup_logging() -> None:
 def _execute_task(client: APIClient, raw: dict) -> None:
     booking_id = raw["booking_id"]
     logger.info("拿到任务 #%s（user=%s）", booking_id, raw["user_id"])
+    try:
+        icbc_username, icbc_password = decrypt_secret(raw["secret_ciphertext"])
+    except Exception as e:  # noqa: BLE001 — 解密失败即任务失败，回报后跳过
+        logger.error("任务 #%s 凭据解密失败：%s", booking_id, e)
+        client.report(booking_id, "failed", f"凭据解密失败：{e}", None)
+        return
     task = Task(
         booking_id=booking_id,
         user_id=raw["user_id"],
         target_date=raw.get("target_date"),
         time_window=raw.get("time_window"),
         pos_code=raw.get("pos_code"),
-        icbc_username=raw["icbc_username"],
-        icbc_password=raw["icbc_password"],
+        icbc_username=icbc_username,
+        icbc_password=icbc_password,
         max_wait_days=raw.get("max_wait_days", 60),
     )
     try:

@@ -54,7 +54,7 @@ Nginx (9443)
 |---|---|---|
 | id | int | 主键 |
 | user_id | int | 唯一外键 → user |
-| ciphertext | bytea | Fernet(AES-128) 加密的 "username\npassword" |
+| ciphertext | bytea | SealedBox(X25519+XSalsa20-Poly1305) 加密的 "username\npassword"；只有 worker 私钥可解 |
 
 ### booking
 | 字段 | 类型 | 说明 |
@@ -72,7 +72,10 @@ Nginx (9443)
 | finished_at | timestamp | 进入终态 |
 
 ## 安全要点
-1. **凭据加密**：ICBC 密码以 Fernet（AES-128-CBC + HMAC）加密存 DB，主密钥（`ENCRYPTION_KEY`）只放本地 worker 的 `.env`，云端无法解密
+1. **凭据加密（非对称封装）**：ICBC 凭据用 libsodium **SealedBox**（X25519 + XSalsa20-Poly1305）加密存 DB。
+   - 云端只持**公钥**（`SECRET_PUBLIC_KEY`），**只能加密、无法解密**。
+   - **私钥**（`SECRET_PRIVATE_KEY`）只放本地 worker 的 `.env`，是全系统唯一能还原明文的地方。
+   - claim 时密文原样下发，明文凭据**不经过云端**，由 worker 本地解密 → 即便 VPS 整机沦陷，攻击者拿到的也只是无法解密的密文。
 2. **JWT**：access 30 分钟 + refresh 7 天；refresh 存 localStorage，自动续期
 3. **Worker 鉴权**：worker 调 `POST /api/worker/claim` 必须带 `X-Worker-Key: $WORKER_API_KEY` 头
 4. **admin 鉴权**：用 `Depends(get_admin_user)` 限制 `/api/admin/*`

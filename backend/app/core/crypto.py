@@ -1,36 +1,39 @@
-"""AES（Fernet 封装）加密 ICBC 凭据，主密钥来自 ENCRYPTION_KEY。
+"""ICBC 凭据的非对称封装加密（libsodium SealedBox：X25519 + XSalsa20-Poly1305）。
 
-Fernet 实例 lazy 构造：只有真正调用 encrypt/decrypt 时才校验密钥，
-并把可能的配置错误用清晰的中文报错呈现，避免 import 期神秘崩溃。
+设计（兑现 architecture.md A1）：
+  - 后端只持【公钥】SECRET_PUBLIC_KEY，只能加密、**无法解密**。
+  - 密文存库；解密只发生在本地 worker（持私钥 SECRET_PRIVATE_KEY）。
+  - 即便 VPS 整机沦陷，攻击者拿到的也只是无法解密的密文。
+
+SealedBox 是匿名加密：发送方无需自己的密钥，用接收方公钥加密，
+只有持对应私钥者能解。这正好契合"云端加密、本地解密"的信任边界。
 """
-from cryptography.fernet import Fernet, InvalidToken
+from nacl.encoding import Base64Encoder
+from nacl.public import PublicKey, SealedBox
 
 from app.core.config import get_settings
 
 settings = get_settings()
 
+_GEN_HINT = (
+    "生成密钥对：python -c \""
+    "from nacl.public import PrivateKey; from nacl.encoding import Base64Encoder; "
+    "sk=PrivateKey.generate(); "
+    "print('SECRET_PRIVATE_KEY=', sk.encode(Base64Encoder).decode()); "
+    "print('SECRET_PUBLIC_KEY=', sk.public_key.encode(Base64Encoder).decode())\""
+)
 
-def _build_fernet() -> Fernet:
-    if not settings.encryption_key:
-        raise ValueError(
-            "ENCRYPTION_KEY 未配置：请在 .env 里设置 Fernet 密钥。"
-            "生成方式：python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
-        )
+
+def _build_box() -> SealedBox:
+    if not settings.secret_public_key:
+        raise ValueError(f"SECRET_PUBLIC_KEY 未配置：请在 .env 里设置 base64 公钥。{_GEN_HINT}")
     try:
-        return Fernet(settings.encryption_key.encode())
-    except (ValueError, TypeError) as e:
-        raise ValueError(
-            f"ENCRYPTION_KEY 格式错误：{e}。"
-            "请确认是用 `Fernet.generate_key()` 生成的 32 字节 urlsafe-base64 字符串。"
-        ) from e
+        pk = PublicKey(settings.secret_public_key.encode(), encoder=Base64Encoder)
+    except Exception as e:  # noqa: BLE001 — 任何解析失败都归一为配置错误
+        raise ValueError(f"SECRET_PUBLIC_KEY 格式错误：{e}。{_GEN_HINT}") from e
+    return SealedBox(pk)
 
 
 def encrypt_secret(plaintext: str) -> bytes:
-    return _build_fernet().encrypt(plaintext.encode())
-
-
-def decrypt_secret(ciphertext: bytes) -> str:
-    try:
-        return _build_fernet().decrypt(ciphertext).decode()
-    except InvalidToken as e:
-        raise ValueError("凭据解密失败（密钥可能已更换）") from e
+    """用公钥加密，返回密文 bytes（存入 secret.ciphertext）。后端无解密能力。"""
+    return _build_box().encrypt(plaintext.encode())

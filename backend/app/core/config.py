@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     postgres_password: str = ""
 
     jwt_secret: str = ""
-    encryption_key: str = ""
+    # 非对称封装加密：后端只持公钥（只能加密）；私钥仅在本地 worker。
+    secret_public_key: str = ""
     worker_api_key: str = ""
 
     jwt_algorithm: str = "HS256"
