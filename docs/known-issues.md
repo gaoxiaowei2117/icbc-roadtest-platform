@@ -26,12 +26,15 @@
 | T2 | 中 | 任务卡死无清理：worker 崩溃后任务永停 `running`。加后台 reaper 守护线程：`started_at` 超 `RUNNING_TIMEOUT_MINUTES`（默认 15）→ 重置为 `pending`。 | ✅ 已修 |
 | T10 | 中 | `/api/auth/login` `/register` 无速率限制，可被暴力枚举。用 slowapi 加 `AUTH_RATE_LIMIT`（默认 5/分钟），超限 429。 | ✅ 已修 |
 | T3 | 中 | 零测试（F4/F5 正是缺测试漏掉的）。建 `backend/tests/` pytest 套件，33 个用例覆盖 auth flow、SealedBox 加密 + 私钥解密往返、claim 返回密文 + 原子认领、worker 回报、admin 鉴权、reaper、限速。 | ✅ 已修 |
+| T1 | 中 | `worker/booking_engine.py` 接入真实抢号：薄封装 vendor road.py，road_adapter 限时循环调 job()。**单用户阶段**完成；多用户化（每用户 keyword/Gmail/偏好 + 多用户 OTP）见后续 spec。 | ✅ 本阶段完成 |
+
+> road.py 接入设计见 docs/superpowers/specs/2026-06-09-road-py-booking-engine-integration-design.md，实现计划见 docs/superpowers/plans/2026-06-09-road-py-booking-engine-integration.md。
+> 后续遗留：多用户化、road.py 失败路径原生不 restore 邮箱（适配器 finally 兜底）、vendor 与上游手动同步。
 
 ## 待办（暂不修，scope 外）
 
 | ID | 描述 | 建议 |
 |---|---|---|
-| T1 | `worker/booking_engine.py` 是 stub，真正的抢约逻辑（来自原 `road.py`）还没接进来 | 单独一个 PR 接真实逻辑；接口已稳定 |
 | T4 | 凭据密钥对无轮换机制：换 `SECRET_PUBLIC/PRIVATE_KEY` 后所有存量 `secret.ciphertext` 失效 | 短期：文档化警告 + 让用户重提交凭据；长期：多密钥过渡（`key_id` + 按 id 选 SealedBox） |
 | T5 | `bookings.time_window` 和 `user.time_windows` 的 schema 重复：都是 `{morning, afternoon, evening}` 但分两个字段 | 考虑归一或重新设计；现在能工作，先不动 |
 | T6 | 前端无 404 fallback，未知 URL 显示空 RouterView | 加一个 catch-all 路由展示 "页面不存在" |
