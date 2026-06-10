@@ -32,3 +32,25 @@ def test_already_booked_is_success():
         result = road_adapter.run(TASK)
     assert result.success is True
     assert result.booked_at is None
+
+
+def test_timeout_returns_failure(monkeypatch):
+    monkeypatch.setattr(road_adapter.settings, "booking_timeout_seconds", 0.2)
+    monkeypatch.setattr(road_adapter.settings, "booking_poll_seconds", 0.05)
+    with patch.object(road_adapter.road, "load_config", return_value=_cfg()), \
+         patch.object(road_adapter.road, "job", return_value="no_appointments"):
+        result = road_adapter.run(TASK)
+    assert result.success is False
+    assert "时限" in result.error
+
+
+def test_loops_until_success(monkeypatch):
+    monkeypatch.setattr(road_adapter.settings, "booking_timeout_seconds", 5)
+    monkeypatch.setattr(road_adapter.settings, "booking_poll_seconds", 0.01)
+    seq = ["no_appointments", "token_failed", "booking_success"]
+    with patch.object(road_adapter.road, "load_config", return_value=_cfg()), \
+         patch.object(road_adapter.road, "job", side_effect=seq) as job_mock, \
+         patch.object(road_adapter.road, "load_booking_status", return_value=None):
+        result = road_adapter.run(TASK)
+    assert result.success is True
+    assert job_mock.call_count == 3
