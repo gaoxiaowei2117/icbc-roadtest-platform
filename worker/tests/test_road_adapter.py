@@ -54,3 +54,29 @@ def test_loops_until_success(monkeypatch):
         result = road_adapter.run(TASK)
     assert result.success is True
     assert job_mock.call_count == 3
+
+
+class _Resp:
+    headers = {"Authorization": "tok"}
+    def json(self):
+        return {"email": "replaced@gmail.com"}
+
+
+def test_finally_restores_email_when_enabled():
+    cfg = {"emailReplace": {"enable": True}}
+    with patch.object(road_adapter.road, "load_config", return_value=cfg), \
+         patch.object(road_adapter.road, "job", return_value="booking_success"), \
+         patch.object(road_adapter.road, "load_booking_status", return_value=None), \
+         patch.object(road_adapter.road, "get_weblogin", return_value=_Resp()), \
+         patch.object(road_adapter.road, "restore_original_email") as restore_mock:
+        road_adapter.run(TASK)
+    restore_mock.assert_called_once()
+
+
+def test_no_restore_when_disabled():
+    with patch.object(road_adapter.road, "load_config", return_value=_cfg()), \
+         patch.object(road_adapter.road, "job", return_value="booking_success"), \
+         patch.object(road_adapter.road, "load_booking_status", return_value=None), \
+         patch.object(road_adapter.road, "restore_original_email") as restore_mock:
+        road_adapter.run(TASK)
+    restore_mock.assert_not_called()
