@@ -18,3 +18,4 @@ build/
 htmlcov/
 *.egg-info/
 .codex-mcp/
+worker/config.yml
