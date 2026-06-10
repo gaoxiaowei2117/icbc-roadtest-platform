@@ -82,4 +82,4 @@ data_directory: "./log"  # Directory to store all application data files
 # 5. Run: python road.py config.yml
 
 emailReplace:
-  enable: true
+  enable: false  # 干跑(autoBooking.enable=false)时保持 false，避免改动 ICBC 账户邮箱；真实抢号前再开启

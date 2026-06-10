@@ -1,6 +1,8 @@
 """road_adapter 单测：全部 mock vendor.road，不触真实 ICBC。"""
 from unittest.mock import patch
 
+import pytest
+
 import road_adapter
 from booking_engine import Task
 
@@ -80,3 +82,24 @@ def test_no_restore_when_disabled():
          patch.object(road_adapter.road, "restore_original_email") as restore_mock:
         road_adapter.run(TASK)
     restore_mock.assert_not_called()
+
+
+def test_config_load_failure_propagates():
+    """config 加载失败时清晰报错（异常上传给 worker 上报 failed）。"""
+    with patch.object(road_adapter.road, "load_config",
+                      side_effect=FileNotFoundError("config.yml 不存在")):
+        with pytest.raises(FileNotFoundError):
+            road_adapter.run(TASK)
+
+
+def test_job_exception_is_retried(monkeypatch):
+    """单轮 job() 抛异常不应中断循环，下一轮成功仍能成交。"""
+    monkeypatch.setattr(road_adapter.settings, "booking_timeout_seconds", 5)
+    monkeypatch.setattr(road_adapter.settings, "booking_poll_seconds", 0.01)
+    seq = [ConnectionError("boom"), "booking_success"]
+    with patch.object(road_adapter.road, "load_config", return_value=_cfg()), \
+         patch.object(road_adapter.road, "job", side_effect=seq) as job_mock, \
+         patch.object(road_adapter.road, "load_booking_status", return_value=None):
+        result = road_adapter.run(TASK)
+    assert result.success is True
+    assert job_mock.call_count == 2

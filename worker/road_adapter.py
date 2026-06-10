@@ -23,7 +23,11 @@ def run(task):
     try:
         while time.monotonic() < deadline:
             rounds += 1
-            status = road.job(config)
+            try:
+                status = road.job(config)
+            except Exception:  # noqa: BLE001 — 单轮异常不应中断整个限时循环
+                logger.exception("booking #%s 第 %d 轮 job() 异常，继续重试", task.booking_id, rounds)
+                status = None
             logger.info("booking #%s 第 %d 轮：job 返回 %s", task.booking_id, rounds, status)
             if status in _SUCCESS_STATES:
                 return _success_result(config, status)
