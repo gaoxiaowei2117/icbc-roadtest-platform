@@ -39,16 +39,6 @@ class Result:
 
 
 def run(task: Task) -> Result:
-    """执行一次抢约。
-
-    TODO: 把原 road.py 的核心逻辑搬进来。
-    建议的拆分方式：
-      1. 登录 ICBC（用 task.icbc_username/password）
-      2. 查询可预约时段（按 task.target_date / time_window / pos_code 过滤）
-      3. 命中目标就调预约接口
-      4. 任何步骤失败抛 BookingEngineError
-    """
-    logger.warning(
-        "booking_engine.run() 还没接入真实逻辑——booking_id=%s", task.booking_id
-    )
-    raise BookingEngineError("booking_engine 尚未接入 road.py 真实逻辑")
+    """执行一次抢号（限时循环），委托给 road_adapter。"""
+    import road_adapter  # 延迟 import：避免 import 期拉起 vendor.road 依赖链
+    return road_adapter.run(task)
