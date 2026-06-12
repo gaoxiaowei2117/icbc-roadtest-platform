@@ -8,16 +8,20 @@ def test_claim_requires_worker_key(client):
 
 
 def test_claim_returns_ciphertext_no_plaintext(client, ready_user, decrypt_secret):
-    """S1：claim 响应只含密文，不含明文凭据；私钥解密往返一致。"""
+    """S1：claim 响应含完整档案 + keyword 密文，不含明文凭据；私钥解密往返一致。"""
     h, icbc_user, icbc_pass = ready_user()
-    client.post("/api/bookings", headers=h, json={"target_date": "2026-07-01"})
+    client.post("/api/bookings", headers=h, json={})  # 建任务（无参数）
 
     r = client.post("/api/worker/claim", headers=WORKER_HEADERS)
     assert r.status_code == 200
     body = r.json()
-    assert "secret_ciphertext" in body
-    assert "icbc_username" not in body and "icbc_password" not in body
-    assert decrypt_secret(body["secret_ciphertext"]) == (icbc_user, icbc_pass)
+    # 含完整档案 + keyword 密文，不含明文
+    assert body["exam_class"] == "5"
+    assert body["pos_ids"] == [1, 274]
+    assert body["expect_time_range"] == "10:00-17:00"
+    assert "keyword_ciphertext" in body
+    assert "keyword" not in body  # 明文 keyword 不下发
+    assert decrypt_secret(body["keyword_ciphertext"]) == f"{icbc_user}\n{icbc_pass}"
 
 
 def test_claim_empty_when_no_pending(client):
@@ -28,7 +32,7 @@ def test_claim_empty_when_no_pending(client):
 
 def test_claim_marks_running(client, ready_user, db):
     h, *_ = ready_user()
-    bid = client.post("/api/bookings", headers=h, json={"target_date": "2026-07-01"}).json()["id"]
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
     client.post("/api/worker/claim", headers=WORKER_HEADERS)
     assert db.get(Booking, bid).status == BookingStatus.running
 
@@ -36,7 +40,7 @@ def test_claim_marks_running(client, ready_user, db):
 def test_worker_report_completes_booking(client, ready_user, db):
     """F5 回归：回报结果不再 NameError，任务进入终态。"""
     h, *_ = ready_user()
-    bid = client.post("/api/bookings", headers=h, json={"target_date": "2026-07-01"}).json()["id"]
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
     client.post("/api/worker/claim", headers=WORKER_HEADERS)
 
     r = client.post(f"/api/worker/bookings/{bid}/result", headers=WORKER_HEADERS,
@@ -51,7 +55,7 @@ def test_worker_report_completes_booking(client, ready_user, db):
 
 def test_worker_report_requires_key(client, ready_user):
     h, *_ = ready_user()
-    bid = client.post("/api/bookings", headers=h, json={"target_date": "2026-07-01"}).json()["id"]
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
     r = client.post(f"/api/worker/bookings/{bid}/result", headers={"X-Worker-Key": "wrong"},
                     json={"status": "done"})
     assert r.status_code == 401

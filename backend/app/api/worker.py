@@ -25,18 +25,22 @@ def claim_task(
     user = booking.user
     if user.secret is None:
         booking_crud.complete(
-            db, booking, BookingStatus.failed, last_error="用户未配置 ICBC 凭据"
+            db, booking, BookingStatus.failed, last_error="用户未配置 ICBC keyword"
         )
         return None
-    # 密文原样下发；后端无私钥，解密在 worker 端完成。
     return WorkerClaimOut(
         booking_id=booking.id,
         user_id=user.id,
-        target_date=booking.target_date,
-        time_window=booking.time_window,
-        pos_code=booking.pos_code,
-        secret_ciphertext=base64.b64encode(user.secret.ciphertext).decode(),
-        max_wait_days=user.max_wait_days,
+        drvr_last_name=user.icbc_last_name or "",
+        licence_number=user.icbc_license_no or "",
+        keyword_ciphertext=base64.b64encode(user.secret.ciphertext).decode(),
+        exam_class=user.exam_class or "",
+        pos_ids=user.pos_ids or [],
+        expect_after_date=user.expect_after_date,
+        expect_before_date=user.expect_before_date,
+        expect_time_range=user.expect_time_range or "",
+        pref_days_of_week=user.pref_days_of_week or [],
+        pref_parts_of_day=user.pref_parts_of_day or [],
     )
 
 
