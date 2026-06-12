@@ -1,6 +1,6 @@
 """用户模型。表名 user（Postgres 保留字，使用原生引号）。"""
-from datetime import datetime
-from sqlalchemy import Boolean, DateTime, Integer, String, func
+from datetime import date, datetime
+from sqlalchemy import Boolean, Date, DateTime, Integer, String, func
 from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,9 +18,13 @@ class User(Base):
 
     icbc_license_no: Mapped[str | None] = mapped_column(String(50))
     icbc_last_name: Mapped[str | None] = mapped_column(String(100))
-    preferred_pos: Mapped[list[str] | None] = mapped_column(JSON)
-    time_windows: Mapped[dict | None] = mapped_column(JSON)
-    max_wait_days: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
+    exam_class: Mapped[str | None] = mapped_column(String(10))
+    pos_ids: Mapped[list[int] | None] = mapped_column(JSON)
+    expect_after_date: Mapped[date | None] = mapped_column(Date)
+    expect_before_date: Mapped[date | None] = mapped_column(Date)
+    expect_time_range: Mapped[str | None] = mapped_column(String(20))
+    pref_days_of_week: Mapped[list[int] | None] = mapped_column(JSON)
+    pref_parts_of_day: Mapped[list[int] | None] = mapped_column(JSON)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

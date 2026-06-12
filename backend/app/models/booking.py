@@ -1,7 +1,7 @@
 """抢约任务。"""
 import enum
-from datetime import date, datetime
-from sqlalchemy import JSON, Date, DateTime, Enum as SAEnum, ForeignKey, Integer, String, Text
+from datetime import datetime
+from sqlalchemy import JSON, DateTime, Enum as SAEnum, ForeignKey, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -30,9 +30,6 @@ class Booking(Base):
         index=True,
     )
 
-    target_date: Mapped[date | None] = mapped_column(Date)
-    time_window: Mapped[dict | None] = mapped_column(JSON)
-    pos_code: Mapped[str | None] = mapped_column(String(50))
     attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     last_error: Mapped[str | None] = mapped_column(Text)
     result: Mapped[dict | None] = mapped_column(JSON)
