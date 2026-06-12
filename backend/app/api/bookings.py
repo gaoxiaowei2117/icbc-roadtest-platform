@@ -24,17 +24,22 @@ def create_booking(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    missing = []
     if not user.icbc_license_no or not user.icbc_last_name:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST, "请先在资料页填写驾照号和姓氏"
-        )
+        missing.append("驾照号/姓氏")
     if user.secret is None:
+        missing.append("ICBC keyword")
+    if not user.exam_class:
+        missing.append("考试类型")
+    if not user.pos_ids:
+        missing.append("考点")
+    if not user.expect_after_date or not user.expect_before_date:
+        missing.append("日期区间")
+    if missing:
         raise HTTPException(
-            status.HTTP_400_BAD_REQUEST, "请先在资料页填写 ICBC 登录凭据"
+            status.HTTP_400_BAD_REQUEST, f"请先在设置页补全：{'、'.join(missing)}"
         )
-    return booking_crud.create(
-        db, user_id=user.id, **payload.model_dump(exclude_unset=True)
-    )
+    return booking_crud.create(db, user.id)
 
 
 @router.get("/{booking_id}", response_model=BookingOut)
