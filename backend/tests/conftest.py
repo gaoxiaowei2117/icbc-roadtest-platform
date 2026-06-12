@@ -80,7 +80,7 @@ def ready_user(client, auth_headers):
         client.patch("/api/users/me", headers=h,
                      json={"icbc_license_no": "1234567", "icbc_last_name": "GAO"})
         client.put("/api/users/me/secret", headers=h,
-                   json={"icbc_username": icbc_user, "icbc_password": icbc_pass})
+                   json={"keyword": f"{icbc_user}\n{icbc_pass}"})
         return h, icbc_user, icbc_pass
     return _make
 
@@ -88,9 +88,7 @@ def ready_user(client, auth_headers):
 @pytest.fixture
 def decrypt_secret():
     """用测试私钥解密 claim 下发的密文（复现 worker 端解密）。"""
-    def _decrypt(ciphertext_b64: str) -> tuple[str, str]:
+    def _decrypt(ciphertext_b64: str) -> str:
         box = SealedBox(PrivateKey(TEST_PRIVATE_KEY.encode(), encoder=Base64Encoder))
-        plain = box.decrypt(base64.b64decode(ciphertext_b64)).decode()
-        user, pw = plain.split("\n", 1)
-        return user, pw
+        return box.decrypt(base64.b64decode(ciphertext_b64)).decode()
     return _decrypt

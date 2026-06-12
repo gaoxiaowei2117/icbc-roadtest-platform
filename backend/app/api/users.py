@@ -32,7 +32,7 @@ def set_secret(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> SecretStatus:
-    secret = secret_crud.upsert(db, user, payload.icbc_username, payload.icbc_password)
+    secret = secret_crud.upsert(db, user, payload.keyword)
     return SecretStatus(has_secret=True, updated_at=secret.updated_at)
 
 

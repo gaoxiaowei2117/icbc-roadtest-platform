@@ -6,9 +6,8 @@ from app.models.secret import Secret
 from app.models.user import User
 
 
-def upsert(db: Session, user: User, icbc_username: str, icbc_password: str) -> Secret:
-    payload = f"{icbc_username}\n{icbc_password}"
-    ciphertext = encrypt_secret(payload)
+def upsert(db: Session, user: User, keyword: str) -> Secret:
+    ciphertext = encrypt_secret(keyword)
     if user.secret is None:
         secret = Secret(user_id=user.id, ciphertext=ciphertext)
         db.add(secret)
