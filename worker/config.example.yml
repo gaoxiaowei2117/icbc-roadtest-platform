@@ -1,3 +1,9 @@
+# ⚠️ 多用户阶段：本文件作为 worker 的【系统级 base config】。
+# icbc 段会被每个用户的网页档案在运行时覆盖（这里的 icbc 占位值仅占位、不生效）。
+# gmail 的 email/password 由 worker/.env 的 GMAIL_EMAIL/GMAIL_APP_PASSWORD 覆盖。
+# autoBooking.enable 与 emailReplace.enable 运行时强制为 true。
+# 真正需要运维维护的是：通知开关、data_directory、autoBooking 的重试/超时策略、gmail 的 imap 设置。
+
 icbc:
   drvrLastName: "YOUR_LAST_NAME"
   licenceNumber: "YOUR_LICENCE_NUMBER"
