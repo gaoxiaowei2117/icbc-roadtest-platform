@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     booking_timeout_seconds: int = 600   # run() 限时循环上限，须 < backend RUNNING_TIMEOUT_MINUTES(15min)
     booking_poll_seconds: int = 30       # 没号时两轮 job() 之间的间隔
 
+    # 系统级 Gmail（收 OTP），由运维配在 worker .env，不每用户存
+    gmail_email: str = ""
+    gmail_app_password: str = ""
+
     poll_interval_seconds: int = 5
     max_concurrent: int = 3
     headless: bool = True
