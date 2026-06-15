@@ -11,14 +11,10 @@ from nacl.public import PrivateKey, SealedBox
 from config import settings
 
 
-def decrypt_secret(secret_ciphertext_b64: str) -> tuple[str, str]:
-    """解密 claim 下发的密文，返回 (icbc_username, icbc_password)。"""
+def decrypt_secret(keyword_ciphertext_b64: str) -> str:
+    """解密 claim 下发的 keyword 密文，返回明文 keyword。"""
     if not settings.secret_private_key:
         raise ValueError("SECRET_PRIVATE_KEY 未配置：worker 无法解密凭据")
     sk = PrivateKey(settings.secret_private_key.encode(), encoder=Base64Encoder)
     box = SealedBox(sk)
-    plaintext = box.decrypt(base64.b64decode(secret_ciphertext_b64)).decode()
-    parts = plaintext.split("\n", 1)
-    if len(parts) != 2:
-        raise ValueError("凭据格式异常")
-    return parts[0], parts[1]
+    return box.decrypt(base64.b64decode(keyword_ciphertext_b64)).decode()

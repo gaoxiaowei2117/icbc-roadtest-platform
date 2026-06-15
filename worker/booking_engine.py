@@ -21,12 +21,16 @@ class BookingEngineError(Exception):
 class Task:
     booking_id: int
     user_id: int
-    target_date: str | None
-    time_window: dict | None
-    pos_code: str | None
-    icbc_username: str
-    icbc_password: str
-    max_wait_days: int
+    drvr_last_name: str
+    licence_number: str
+    keyword: str
+    exam_class: str
+    pos_ids: list[int]
+    expect_after_date: str
+    expect_before_date: str
+    expect_time_range: str
+    pref_days_of_week: list[int]
+    pref_parts_of_day: list[int]
 
 
 @dataclass

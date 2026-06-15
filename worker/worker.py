@@ -25,25 +25,33 @@ def _setup_logging() -> None:
     )
 
 
+def build_task(raw: dict, keyword: str) -> Task:
+    return Task(
+        booking_id=raw["booking_id"],
+        user_id=raw["user_id"],
+        drvr_last_name=raw["drvr_last_name"],
+        licence_number=raw["licence_number"],
+        keyword=keyword,
+        exam_class=raw["exam_class"],
+        pos_ids=raw["pos_ids"],
+        expect_after_date=raw["expect_after_date"],
+        expect_before_date=raw["expect_before_date"],
+        expect_time_range=raw["expect_time_range"],
+        pref_days_of_week=raw["pref_days_of_week"],
+        pref_parts_of_day=raw["pref_parts_of_day"],
+    )
+
+
 def _execute_task(client: APIClient, raw: dict) -> None:
     booking_id = raw["booking_id"]
     logger.info("拿到任务 #%s（user=%s）", booking_id, raw["user_id"])
     try:
-        icbc_username, icbc_password = decrypt_secret(raw["secret_ciphertext"])
+        keyword = decrypt_secret(raw["keyword_ciphertext"])
     except Exception as e:  # noqa: BLE001 — 解密失败即任务失败，回报后跳过
         logger.error("任务 #%s 凭据解密失败：%s", booking_id, e)
         client.report(booking_id, "failed", f"凭据解密失败：{e}", None)
         return
-    task = Task(
-        booking_id=booking_id,
-        user_id=raw["user_id"],
-        target_date=raw.get("target_date"),
-        time_window=raw.get("time_window"),
-        pos_code=raw.get("pos_code"),
-        icbc_username=icbc_username,
-        icbc_password=icbc_password,
-        max_wait_days=raw.get("max_wait_days", 60),
-    )
+    task = build_task(raw, keyword)
     try:
         result: Result = run(task)
         if result.success:
