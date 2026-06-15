@@ -8,9 +8,13 @@ export interface User {
   is_admin: boolean
   icbc_license_no: string | null
   icbc_last_name: string | null
-  preferred_pos: string[] | null
-  time_windows: Record<string, boolean> | null
-  max_wait_days: number
+  exam_class: string | null
+  pos_ids: number[] | null
+  expect_after_date: string | null
+  expect_before_date: string | null
+  expect_time_range: string | null
+  pref_days_of_week: number[] | null
+  pref_parts_of_day: number[] | null
   created_at: string
 }
 

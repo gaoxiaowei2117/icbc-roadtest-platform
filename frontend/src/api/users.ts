@@ -13,7 +13,7 @@ export async function getSecretStatus(): Promise<{ has_secret: boolean; updated_
   return (await api.get('/api/users/me/secret')).data
 }
 
-export async function setSecret(payload: { icbc_username: string; icbc_password: string }) {
+export async function setSecret(payload: { keyword: string }) {
   return (await api.put('/api/users/me/secret', payload)).data
 }
 
