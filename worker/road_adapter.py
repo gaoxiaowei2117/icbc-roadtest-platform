@@ -1,7 +1,8 @@
 """把 vendor 的 road.py 封装成 booking_engine 能调用的限时循环。
 
-单用户阶段：凭据/偏好全来自 config.yml（settings.road_config_path）。
-task 仅用于日志关联 booking_id。
+多用户阶段：config 的 icbc 段来自 Task（网页档案）、gmail 凭据来自系统级 settings；
+其余结构（通知禁用/autoBooking 策略/data_directory/gmail imap）来自系统级 base config
+（settings.road_config_path 指向的 yaml）。对 Task 的每个 posID 逐个轮询抢号。
 """
 import logging
 import time
@@ -12,25 +13,54 @@ from vendor import road
 
 logger = logging.getLogger("worker.road_adapter")
 
-# job() 返回这些状态视为"已成交"
 _SUCCESS_STATES = {"booking_success", "already_booked"}
 
 
-def run(task):
+def _icbc_from_task(task, pos_id: int) -> dict:
+    """从 Task 构造 road.py 的 config['icbc'] 段（单个 posID）。"""
+    return {
+        "drvrLastName": task.drvr_last_name,
+        "licenceNumber": task.licence_number,
+        "keyword": task.keyword,
+        "examClass": task.exam_class,
+        "posID": pos_id,
+        "prfDaysOfWeek": str(task.pref_days_of_week).replace(" ", ""),
+        "prfPartsOfDay": str(task.pref_parts_of_day).replace(" ", ""),
+        "expactAfterDate": task.expect_after_date,
+        "expactBeforeDate": task.expect_before_date,
+        "expactTimeRange": task.expect_time_range,
+    }
+
+
+def _build_config(task) -> dict:
+    """系统级 base + 注入 gmail 凭据 + 强制真实下单/收码。icbc 段在轮询时逐 posID 覆盖。"""
     config = road.load_config(settings.road_config_path)
+    config.setdefault("gmail", {})
+    config["gmail"]["email"] = settings.gmail_email
+    config["gmail"]["password"] = settings.gmail_app_password
+    config.setdefault("autoBooking", {})["enable"] = True
+    config.setdefault("emailReplace", {})["enable"] = True
+    return config
+
+
+def run(task):
+    config = _build_config(task)
+    pos_ids = task.pos_ids or []
     deadline = time.monotonic() + settings.booking_timeout_seconds
     rounds = 0
     try:
         while time.monotonic() < deadline:
             rounds += 1
-            try:
-                status = road.job(config)
-            except Exception:  # noqa: BLE001 — 单轮异常不应中断整个限时循环
-                logger.exception("booking #%s 第 %d 轮 job() 异常，继续重试", task.booking_id, rounds)
-                status = None
-            logger.info("booking #%s 第 %d 轮：job 返回 %s", task.booking_id, rounds, status)
-            if status in _SUCCESS_STATES:
-                return _success_result(config, status)
+            for pos_id in pos_ids:
+                config["icbc"] = _icbc_from_task(task, pos_id)
+                try:
+                    status = road.job(config)
+                except Exception:  # noqa: BLE001 — 单轮异常不中断循环
+                    logger.exception("booking #%s 第 %d 轮 posID=%s job 异常", task.booking_id, rounds, pos_id)
+                    status = None
+                logger.info("booking #%s 第 %d 轮 posID=%s：job 返回 %s", task.booking_id, rounds, pos_id, status)
+                if status in _SUCCESS_STATES:
+                    return _success_result(config, status)
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
@@ -50,7 +80,7 @@ def _success_result(config, status):
     return Result(
         success=True,
         booked_at=booked_at,
-        confirmation_no=appt.get("date"),  # ICBC 无独立确认号，用日期标识
+        confirmation_no=appt.get("date"),
         details={"job_status": status, **appt},
     )
 
