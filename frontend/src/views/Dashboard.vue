@@ -42,13 +42,20 @@ onMounted(async () => {
         <dd>{{ auth.user?.icbc_license_no || '— 未填写' }}</dd>
         <dt class="text-slate-500">姓氏</dt>
         <dd>{{ auth.user?.icbc_last_name || '— 未填写' }}</dd>
-        <dt class="text-slate-500">首选考点</dt>
+        <dt class="text-slate-500">考场类别</dt>
+        <dd>{{ auth.user?.exam_class || '— 未填写' }}</dd>
+        <dt class="text-slate-500">预选考点</dt>
         <dd>
-          <span v-if="auth.user?.preferred_pos?.length">{{ auth.user.preferred_pos.join('、') }}</span>
+          <span v-if="auth.user?.pos_ids?.length">已配置 {{ auth.user.pos_ids.length }} 个考点</span>
           <span v-else>— 未设置</span>
         </dd>
-        <dt class="text-slate-500">可接受等待天数</dt>
-        <dd>{{ auth.user?.max_wait_days }} 天</dd>
+        <dt class="text-slate-500">预约日期范围</dt>
+        <dd>
+          <span v-if="auth.user?.expect_after_date || auth.user?.expect_before_date">
+            {{ auth.user.expect_after_date || '不限' }} ~ {{ auth.user.expect_before_date || '不限' }}
+          </span>
+          <span v-else>— 未设置</span>
+        </dd>
       </dl>
       <RouterLink to="/settings" class="btn-primary inline-block mt-4">编辑资料 / 修改凭据</RouterLink>
     </div>

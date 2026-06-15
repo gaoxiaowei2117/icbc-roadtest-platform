@@ -44,8 +44,6 @@ onMounted(refresh)
             <th class="py-2">#</th>
             <th>user</th>
             <th>状态</th>
-            <th>目标日期</th>
-            <th>考点</th>
             <th>尝试</th>
             <th>最后错误</th>
             <th>创建</th>
@@ -56,8 +54,6 @@ onMounted(refresh)
             <td class="py-2">{{ b.id }}</td>
             <td>{{ b.user_id }}</td>
             <td>{{ b.status }}</td>
-            <td>{{ b.target_date || '—' }}</td>
-            <td>{{ b.pos_code || '—' }}</td>
             <td>{{ b.attempt_count }}</td>
             <td class="text-red-600 text-xs truncate max-w-xs">{{ b.last_error || '—' }}</td>
             <td>{{ new Date(b.created_at).toLocaleString() }}</td>
