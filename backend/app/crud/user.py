@@ -42,3 +42,16 @@ def update_profile(db: Session, user: User, **fields) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+def set_verify_code(db: Session, user: User, code: str, expires) -> None:
+    user.verify_code = code
+    user.verify_code_expires = expires
+    db.commit()
+
+
+def mark_verified(db: Session, user: User) -> None:
+    user.email_verified = True
+    user.verify_code = None
+    user.verify_code_expires = None
+    db.commit()
