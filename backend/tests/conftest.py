@@ -59,11 +59,21 @@ def db():
         yield session
 
 
+@pytest.fixture(autouse=True)
+def _no_smtp(monkeypatch):
+    monkeypatch.setattr("app.api.auth.send_verification_code", lambda *a, **k: None)
+
+
 @pytest.fixture
 def auth_headers(client):
     """注册并登录一个用户，返回带 Bearer token 的请求头。"""
     def _make(email: str = "user@gmail.com", password: str = "secret123") -> dict:
         client.post("/api/auth/register", json={"email": email, "password": password})
+        with SessionLocal() as s:
+            from app.models.user import User
+            u = s.query(User).filter_by(email=email).first()
+            u.email_verified = True
+            s.commit()
         r = client.post("/api/auth/login", json={"email": email, "password": password})
         return {"Authorization": f"Bearer {r.json()['access_token']}"}
     return _make
