@@ -18,7 +18,7 @@ const profile = reactive({
   icbc_license_no: '',
   icbc_last_name: '',
   exam_class: '5',
-  pos_ids: [] as number[],
+  pos_id: null as number | null,
   expect_after_date: '',
   expect_before_date: '',
   expect_time_range: '09:00-17:00',
@@ -35,7 +35,7 @@ onMounted(async () => {
     profile.icbc_license_no = auth.user.icbc_license_no || ''
     profile.icbc_last_name = auth.user.icbc_last_name || ''
     profile.exam_class = auth.user.exam_class || '5'
-    profile.pos_ids = auth.user.pos_ids || []
+    profile.pos_id = (auth.user.pos_ids || [])[0] ?? null
     profile.expect_after_date = auth.user.expect_after_date || ''
     profile.expect_before_date = auth.user.expect_before_date || ''
     profile.expect_time_range = auth.user.expect_time_range || '09:00-17:00'
@@ -54,7 +54,7 @@ async function saveProfile() {
       icbc_license_no: profile.icbc_license_no || null,
       icbc_last_name: profile.icbc_last_name || null,
       exam_class: profile.exam_class || null,
-      pos_ids: profile.pos_ids.length ? profile.pos_ids : null,
+      pos_ids: profile.pos_id != null ? [profile.pos_id] : null,
       expect_after_date: profile.expect_after_date || null,
       expect_before_date: profile.expect_before_date || null,
       expect_time_range: profile.expect_time_range || null,
@@ -121,9 +121,10 @@ async function removeSecret() {
           <input v-model="profile.expect_before_date" type="date" class="input" />
         </div>
         <div class="col-span-2">
-          <label class="label">考点（可多选）</label>
-          <select v-model="profile.pos_ids" multiple class="input h-40">
-            <option v-for="p in posList" :key="p.pos_id" :value="p.pos_id">{{ p.name }}</option>
+          <label class="label">考点（单选）</label>
+          <select v-model="profile.pos_id" class="input">
+            <option :value="null" disabled>请选择考点</option>
+            <option v-for="p in posList" :key="p.pos_id" :value="p.pos_id">{{ p.name }}（{{ p.pos_id }}）</option>
           </select>
         </div>
         <div class="col-span-2">
