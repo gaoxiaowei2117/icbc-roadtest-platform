@@ -42,6 +42,8 @@ def _bootstrap_admin() -> None:
         except IntegrityError:
             logger.info("bootstrap admin 已被其他实例创建，跳过")
             return
+        user.email_verified = True  # 系统账号免邮箱验证
+        db.commit()
         logger.warning("已创建 bootstrap admin 账号：%s（id=%d）", user.email, user.id)
 
 
