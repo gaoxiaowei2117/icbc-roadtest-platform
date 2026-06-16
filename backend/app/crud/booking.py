@@ -18,6 +18,19 @@ def list_for_user(db: Session, user_id: int, limit: int = 50) -> Sequence[Bookin
     return db.scalars(stmt).all()
 
 
+def has_active(db: Session, user_id: int) -> bool:
+    """用户是否已有进行中的任务（pending 或 running）。"""
+    stmt = (
+        select(Booking)
+        .where(
+            Booking.user_id == user_id,
+            Booking.status.in_([BookingStatus.pending, BookingStatus.running]),
+        )
+        .limit(1)
+    )
+    return db.scalar(stmt) is not None
+
+
 def list_all(db: Session, status: BookingStatus | None = None, limit: int = 100) -> Sequence[Booking]:
     stmt = select(Booking).order_by(Booking.created_at.desc()).limit(limit)
     if status is not None:

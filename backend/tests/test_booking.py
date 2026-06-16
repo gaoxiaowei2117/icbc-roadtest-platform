@@ -20,6 +20,23 @@ def test_create_and_list(client, ready_user):
     assert any(b["id"] == bid for b in listing)
 
 
+def test_only_one_active_booking(client, ready_user):
+    """同账户同时只能有一个进行中任务（pending/running）。"""
+    h, *_ = ready_user()
+    assert client.post("/api/bookings", headers=h, json={}).status_code == 201
+    r2 = client.post("/api/bookings", headers=h, json={})
+    assert r2.status_code == 409
+    assert "进行中" in r2.json()["detail"]
+
+
+def test_can_create_after_cancel(client, ready_user):
+    """取消后可以再建新任务。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post(f"/api/bookings/{bid}/cancel", headers=h)
+    assert client.post("/api/bookings", headers=h, json={}).status_code == 201
+
+
 def test_cancel(client, ready_user, db):
     h, *_ = ready_user()
     bid = client.post("/api/bookings", headers=h, json={}).json()["id"]

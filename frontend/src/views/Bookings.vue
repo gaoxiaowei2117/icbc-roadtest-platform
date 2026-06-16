@@ -19,14 +19,12 @@ async function refresh() {
 }
 
 async function onCreate() {
-  error.value = ''
-  message.value = ''
   try {
     await createBooking()
-    message.value = '任务已创建，等待 worker 执行'
+    alert('任务已创建，等待 worker 执行')
     await refresh()
   } catch (e: any) {
-    error.value = e.response?.data?.detail || '创建失败'
+    alert('创建失败：' + (e.response?.data?.detail || '未知错误'))
   }
 }
 

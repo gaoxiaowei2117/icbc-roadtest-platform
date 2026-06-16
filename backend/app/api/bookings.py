@@ -39,6 +39,10 @@ def create_booking(
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, f"请先在设置页补全：{'、'.join(missing)}"
         )
+    if booking_crud.has_active(db, user.id):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "已有进行中的任务，完成或取消后再新建"
+        )
     return booking_crud.create(db, user.id)
 
 

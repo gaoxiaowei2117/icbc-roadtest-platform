@@ -5,8 +5,6 @@ import { deleteSecret, getSecretStatus, setSecret, updateMe } from '@/api/users'
 import { getPosList, type PosEntry } from '@/api/pos'
 
 const auth = useAuthStore()
-const message = ref('')
-const error = ref('')
 const posList = ref<PosEntry[]>([])
 
 const WEEK = [
@@ -21,7 +19,8 @@ const profile = reactive({
   pos_id: null as number | null,
   expect_after_date: '',
   expect_before_date: '',
-  expect_time_range: '09:00-17:00',
+  time_start: '09:00',
+  time_end: '17:00',
   pref_days_of_week: [0, 1, 2, 3, 4, 5, 6] as number[],
   pref_parts_of_day: [0, 1] as number[],
 })
@@ -38,7 +37,9 @@ onMounted(async () => {
     profile.pos_id = (auth.user.pos_ids || [])[0] ?? null
     profile.expect_after_date = auth.user.expect_after_date || ''
     profile.expect_before_date = auth.user.expect_before_date || ''
-    profile.expect_time_range = auth.user.expect_time_range || '09:00-17:00'
+    const [ts, te] = (auth.user.expect_time_range || '09:00-17:00').split('-')
+    profile.time_start = ts || '09:00'
+    profile.time_end = te || '17:00'
     profile.pref_days_of_week = auth.user.pref_days_of_week || [0, 1, 2, 3, 4, 5, 6]
     profile.pref_parts_of_day = auth.user.pref_parts_of_day || [0, 1]
   }
@@ -47,8 +48,15 @@ onMounted(async () => {
 })
 
 async function saveProfile() {
-  error.value = ''
-  message.value = ''
+  if (profile.expect_after_date && profile.expect_before_date &&
+      profile.expect_before_date < profile.expect_after_date) {
+    alert('结束日期不能早于开始日期')
+    return
+  }
+  if (profile.time_start && profile.time_end && profile.time_end <= profile.time_start) {
+    alert('结束时间必须晚于开始时间')
+    return
+  }
   try {
     const updated = await updateMe({
       icbc_license_no: profile.icbc_license_no || null,
@@ -57,35 +65,37 @@ async function saveProfile() {
       pos_ids: profile.pos_id != null ? [profile.pos_id] : null,
       expect_after_date: profile.expect_after_date || null,
       expect_before_date: profile.expect_before_date || null,
-      expect_time_range: profile.expect_time_range || null,
+      expect_time_range: `${profile.time_start}-${profile.time_end}`,
       pref_days_of_week: profile.pref_days_of_week,
       pref_parts_of_day: profile.pref_parts_of_day,
     })
     auth.user = updated
-    message.value = '资料已保存'
+    alert('资料已保存')
   } catch (e: any) {
-    error.value = e.response?.data?.detail || '保存失败'
+    alert('保存失败：' + (e.response?.data?.detail || '未知错误'))
   }
 }
 
 async function saveSecret() {
-  error.value = ''
-  message.value = ''
   try {
     await setSecret({ keyword: secret.keyword })
     secret.keyword = ''
     hasSecret.value = true
-    message.value = 'keyword 已加密保存'
+    alert('keyword 已加密保存')
   } catch (e: any) {
-    error.value = e.response?.data?.detail || '保存失败'
+    alert('保存失败：' + (e.response?.data?.detail || '未知错误'))
   }
 }
 
 async function removeSecret() {
   if (!confirm('确定要删除 ICBC keyword 吗？删除后无法启动抢约。')) return
-  await deleteSecret()
-  hasSecret.value = false
-  message.value = 'keyword 已删除'
+  try {
+    await deleteSecret()
+    hasSecret.value = false
+    alert('keyword 已删除')
+  } catch (e: any) {
+    alert('删除失败：' + (e.response?.data?.detail || '未知错误'))
+  }
 }
 </script>
 
@@ -109,8 +119,12 @@ async function removeSecret() {
           <input v-model="profile.exam_class" class="input" />
         </div>
         <div>
-          <label class="label">时间区间（HH:MM-HH:MM）</label>
-          <input v-model="profile.expect_time_range" class="input" placeholder="09:00-17:00" />
+          <label class="label">时间区间（开始 — 结束）</label>
+          <div class="flex items-center gap-2">
+            <input v-model="profile.time_start" type="time" class="input" />
+            <span>—</span>
+            <input v-model="profile.time_end" type="time" class="input" />
+          </div>
         </div>
         <div>
           <label class="label">期望最早日期</label>
@@ -165,8 +179,5 @@ async function removeSecret() {
         <button v-if="hasSecret" class="btn-danger" @click="removeSecret">删除</button>
       </div>
     </div>
-
-    <p v-if="message" class="text-sm text-green-600">{{ message }}</p>
-    <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
   </div>
 </template>
