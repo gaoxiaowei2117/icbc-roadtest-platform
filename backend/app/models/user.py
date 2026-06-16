@@ -15,6 +15,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    verify_code: Mapped[str | None] = mapped_column(String(6))
+    verify_code_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     icbc_license_no: Mapped[str | None] = mapped_column(String(50))
     icbc_last_name: Mapped[str | None] = mapped_column(String(100))
