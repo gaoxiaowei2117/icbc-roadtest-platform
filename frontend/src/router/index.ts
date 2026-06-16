@@ -18,6 +18,12 @@ const router = createRouter({
       meta: { guest: true },
     },
     {
+      path: '/verify',
+      name: 'verify',
+      component: () => import('@/views/VerifyEmail.vue'),
+      meta: { guest: true },
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/Dashboard.vue'),

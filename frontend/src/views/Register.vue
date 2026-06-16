@@ -24,7 +24,7 @@ async function onSubmit() {
   loading.value = true
   try {
     await auth.register(email.value, password.value)
-    router.push('/dashboard')
+    router.push({ name: 'verify', query: { email: email.value } })
   } catch (e: any) {
     error.value = e.response?.data?.detail || '注册失败'
   } finally {

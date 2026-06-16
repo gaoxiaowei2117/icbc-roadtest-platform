@@ -17,7 +17,13 @@ async function onSubmit() {
     await auth.login(email.value, password.value)
     router.push('/dashboard')
   } catch (e: any) {
-    error.value = e.response?.data?.detail || '登录失败'
+    if (e.response?.status === 403) {
+      if (confirm('邮箱未验证，是否前往验证？')) {
+        router.push({ name: 'verify', query: { email: email.value } })
+      }
+    } else {
+      error.value = e.response?.data?.detail || '登录失败'
+    }
   } finally {
     loading.value = false
   }
