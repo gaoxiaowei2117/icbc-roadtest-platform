@@ -40,6 +40,23 @@ def test_build_config_injects_icbc_and_gmail(monkeypatch):
     assert cfg["icbc"]["expactTimeRange"] == "10:00-17:00"
 
 
+def test_dry_run_disables_booking_and_email_replace(monkeypatch):
+    """dry_run=True：autoBooking 与 emailReplace 都关，只查号不下单不改邮箱。"""
+    monkeypatch.setattr(road_adapter.settings, "dry_run", True)
+    monkeypatch.setattr(road_adapter.settings, "booking_timeout_seconds", 0.2)
+    monkeypatch.setattr(road_adapter.settings, "booking_poll_seconds", 0.05)
+    captured = {}
+    def fake_job(cfg):
+        captured["cfg"] = {**cfg}
+        return "no_appointments"
+    with patch.object(road_adapter.road, "load_config", return_value=_base()), \
+         patch.object(road_adapter.road, "job", side_effect=fake_job), \
+         patch.object(road_adapter.road, "get_weblogin", return_value=None):
+        road_adapter.run(TASK)
+    assert captured["cfg"]["autoBooking"]["enable"] is False
+    assert captured["cfg"]["emailReplace"]["enable"] is False
+
+
 def test_success_maps_result(monkeypatch):
     monkeypatch.setattr(road_adapter.settings, "booking_timeout_seconds", 5)
     monkeypatch.setattr(road_adapter.settings, "booking_poll_seconds", 0.01)

@@ -33,13 +33,18 @@ def _icbc_from_task(task, pos_id: int) -> dict:
 
 
 def _build_config(task) -> dict:
-    """系统级 base + 注入 gmail 凭据 + 强制真实下单/收码。icbc 段在轮询时逐 posID 覆盖。"""
+    """系统级 base + 注入 gmail 凭据 + 按 dry_run 决定是否真实下单/收码。
+
+    dry_run=True：autoBooking/emailReplace 都关 → 只登录+查号+通知，不锁号/下单/改邮箱。
+    dry_run=False：都开 → 真实抢号。icbc 段在轮询时逐 posID 覆盖。
+    """
     config = road.load_config(settings.road_config_path)
     config.setdefault("gmail", {})
     config["gmail"]["email"] = settings.gmail_email
     config["gmail"]["password"] = settings.gmail_app_password
-    config.setdefault("autoBooking", {})["enable"] = True
-    config.setdefault("emailReplace", {})["enable"] = True
+    real = not settings.dry_run
+    config.setdefault("autoBooking", {})["enable"] = real
+    config.setdefault("emailReplace", {})["enable"] = real
     return config
 
 

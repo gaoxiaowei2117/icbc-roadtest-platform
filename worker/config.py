@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     gmail_email: str = ""
     gmail_app_password: str = ""
 
+    # dry-run：True 时只登录+查号+通知，不锁号/不下单/不改 ICBC 邮箱（安全联调）
+    dry_run: bool = False
+
     poll_interval_seconds: int = 5
     max_concurrent: int = 3
     headless: bool = True
