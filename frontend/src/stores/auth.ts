@@ -65,9 +65,17 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(email: string, password: string) {
-    const r = await axios.post('/api/auth/register', { email, password })
+    await axios.post('/api/auth/register', { email, password })
+  }
+
+  async function verifyEmail(email: string, code: string) {
+    const r = await axios.post('/api/auth/verify-email', { email, code })
     setTokens(r.data.access_token, r.data.refresh_token)
     await fetchMe()
+  }
+
+  async function resendCode(email: string) {
+    await axios.post('/api/auth/resend-code', { email })
   }
 
   async function fetchMe() {
@@ -83,5 +91,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(REFRESH_KEY)
   }
 
-  return { token, refreshToken, user, isLoggedIn, login, register, fetchMe, logout, setTokens }
+  return { token, refreshToken, user, isLoggedIn, login, register, verifyEmail, resendCode, fetchMe, logout, setTokens }
 })
