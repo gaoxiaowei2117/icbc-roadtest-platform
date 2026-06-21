@@ -67,8 +67,8 @@ Nginx (9443)
 | id | int | 主键 |
 | user_id | int | 外键 → user |
 | status | enum | pending/running/done/failed/cancelled |
-| attempt_count | int | 已尝试次数 |
-| progress_rounds | int | worker 上报的累计查询轮次 |
+| attempt_count | int | worker 认领/重新认领任务的累计次数，不等于查号轮次 |
+| progress_rounds | int | worker 成功上报的累计考点查询次数 |
 | last_progress | text | 最近一次脱敏进度摘要 |
 | last_progress_at | timestamp | 最近一次进度上报时间 |
 | last_error | text | 最后一次错误 |
@@ -80,7 +80,8 @@ Nginx (9443)
 1. **凭据加密（非对称封装）**：ICBC 凭据用 libsodium **SealedBox**（X25519 + XSalsa20-Poly1305）加密存 DB。
    - 云端只持**公钥**（`SECRET_PUBLIC_KEY`），**只能加密、无法解密**。
    - **私钥**（`SECRET_PRIVATE_KEY`）只放本地 worker 的 `.env`，是全系统唯一能还原明文的地方。
-   - claim 时密文原样下发，明文凭据**不经过云端**，由 worker 本地解密 → 即便 VPS 整机沦陷，攻击者拿到的也只是无法解密的密文。
+   - 用户通过 HTTPS 把 keyword 提交给后端，后端用公钥加密后只保存密文；claim 时密文原样下发，由 worker 本地解密。
+   - 该设计保护数据库静态数据和备份泄漏场景。它不防止已经控制云端应用进程的攻击者截获之后提交的新 keyword，因此仍必须保证 HTTPS、主机和发布链路安全。
 2. **JWT**：access 30 分钟 + refresh 7 天；refresh 存 localStorage，自动续期
 3. **Worker 鉴权**：worker 调 `POST /api/worker/claim` 必须带 `X-Worker-Key: $WORKER_API_KEY` 头
 4. **admin 鉴权**：用 `Depends(get_admin_user)` 限制 `/api/admin/*`
@@ -91,6 +92,14 @@ Nginx (9443)
 - 每个容器只需要出站 HTTPS 访问 VPS，不需要暴露端口。
 - 多容器共用同一组 `API_BASE_URL`、`WORKER_API_KEY`、`SECRET_PRIVATE_KEY` 可以工作；为了互不干扰，建议给每个容器挂载独立的 `config.yml`、日志目录和 `data_directory`。
 - VPS 后端仍建议 systemd 直跑。VPS 只有 1.9GB 内存，后端容器化收益不高；worker 在本地机器容器化更适合隔离多实例。
+
+## 持续抢号与故障恢复
+
+- worker 在一个执行周期内逐个查询任务配置的考点，没有合适考位时随机等待 12-20 秒再进入下一轮。
+- 单个执行周期默认上限为 600 秒。未抢到号属于可重试结果，worker 把任务从 `running` 重排为 `pending`，后续再次认领；因此 `attempt_count` 会增加，而 `progress_rounds` 跨周期累计。
+- 用户取消任务后，worker 通过状态接口发现 `cancelled` 并停止后续循环。
+- 后端 reaper 每分钟扫描 `running` 任务。最近活动时间优先使用 `last_progress_at`，没有进度时才使用 `started_at`；连续 15 分钟没有活动才视为 worker 失联并重排。
+- 600 秒周期重排是正常续跑，15 分钟 reaper 重排是异常恢复，两者含义不同。
 
 ## 为什么用 9443 不用 443
 - 443 端口大陆需要 ICP 备案

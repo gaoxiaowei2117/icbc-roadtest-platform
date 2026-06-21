@@ -97,16 +97,16 @@
 
 ## 模块 E：worker 抢号（⚠️ 真实操作，需准备）
 
-> 多用户化后 `road_adapter` 强制 `autoBooking.enable=true`，**无 dry-run**：worker 一跑就真去 ICBC 锁号、下单、改账户邮箱、占考位。务必用可控的真实测试账号。
+> worker 已支持系统级 `DRY_RUN`。联调必须先使用 `DRY_RUN=true`，此时只登录和查号，不锁号、不下单、不修改 ICBC 邮箱；确认配置后再用 `DRY_RUN=false` 测试真实预约。
 
 ### TC-E1 worker 认领并用网页档案抢号
 - 前置：worker `.env`/`config.yml` 配好；某账户档案 + keyword 真实有效；有一个 `pending` 任务
 - 步骤：启动 worker
-- 预期：worker 日志显示 claim 到任务 → 解密 keyword → 用该账户档案（考点/日期/时间/偏好）构造 config → 登录 ICBC → 查号；有合适号则锁号、收 OTP（系统 Gmail）、下单、确认；任务回报 `done`（成功）或 `failed`（超时/无号）
+- 预期：worker 日志显示 claim 到任务 → 解密 keyword → 用该账户档案（考点/日期/时间/偏好）构造 config → 登录 ICBC → 查号；有合适号时，`DRY_RUN=false` 才会锁号、收 OTP、下单并回报 `done`。无号时持续查询，600 秒后重排继续，不应标记为 `failed`。
 
 ### TC-E2 任务卡死 reaper
 - 前置：worker 中途崩溃，任务停在 `running`
-- 预期：超过 `RUNNING_TIMEOUT_MINUTES`（默认 15）后，后端 reaper 把任务重置为 `pending`
+- 预期：连续超过 `RUNNING_TIMEOUT_MINUTES`（默认 15）没有进度心跳后，后端 reaper 把任务重置为 `pending`；持续有 `last_progress_at` 更新的长任务不应被重置
 
 ---
 
@@ -114,8 +114,7 @@
 
 1. **限一个活跃任务**的范围：目前 `pending` 和 `running` 都算"活跃"。`failed`/`done`/`cancelled` 不算（可再建）。是否符合预期？
    回答：符合预期
-2. **worker 无 dry-run**：是否需要加一个系统级 `DRY_RUN` 开关，让 TC-E1 能安全联调（只查号不下单）？
-   回答：加DRY_RUN
+2. **worker dry-run**：已增加系统级 `DRY_RUN` 开关；联调使用 `true`，真实预约使用 `false`。
 3. 是否需要把这些用例做成**自动化**（后端已有 pytest；前端可加 Playwright E2E）？
    回答：需要自动化
 

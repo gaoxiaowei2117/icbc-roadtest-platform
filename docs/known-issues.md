@@ -22,8 +22,8 @@
 |---|---|---|---|
 | F4 | 高 | `crud/secret.py` 先 `.encode()` 成 bytes 再传给 `encrypt_secret(plaintext: str)`，后者又 `.encode()` → `AttributeError`，**保存 ICBC 凭据必 500**（连带堵死建任务主链路）。改为传 str。 | ✅ 已修 |
 | F5 | 高 | `api/worker.py` 用了 `BookingStatus` 但漏 import；claim 无待办任务时侥幸不触发，但 worker 回报结果路径必 `NameError` 500（抢约成功也写不回库）。补 import。 | ✅ 已修 |
-| S1 | 高 | **A1 安全承诺与实现相反**：原用对称 Fernet，密钥（`ENCRYPTION_KEY`）在云端 `.env`，云端能解密、claim 响应里下发明文 → VPS 沦陷即凭据全失。改为非对称 **SealedBox**：云端只持公钥（只加密），私钥仅在本地 worker，密文下发、worker 端解密。A1 现已名副其实。 | ✅ 已修 |
-| T2 | 中 | 任务卡死无清理：worker 崩溃后任务永停 `running`。加后台 reaper 守护线程：`started_at` 超 `RUNNING_TIMEOUT_MINUTES`（默认 15）→ 重置为 `pending`。 | ✅ 已修 |
+| S1 | 高 | 原用对称 Fernet，解密密钥在云端，数据库泄漏后可直接还原凭据。改为非对称 **SealedBox**：云端只持公钥，私钥仅在本地 worker，claim 下发密文并由 worker 解密。该方案保护静态密文，但不防止已控制云端应用的攻击者截获后续提交的新 keyword。 | ✅ 已修 |
+| T2 | 中 | 任务卡死无清理：worker 崩溃后任务永停 `running`。加后台 reaper 守护线程：最近活动时间优先取 `last_progress_at`，无进度时回退到 `started_at`；连续超过 `RUNNING_TIMEOUT_MINUTES`（默认 15）无活动才重置为 `pending`。 | ✅ 已修 |
 | T10 | 中 | `/api/auth/login` `/register` 无速率限制，可被暴力枚举。用 slowapi 加 `AUTH_RATE_LIMIT`（默认 5/分钟），超限 429。 | ✅ 已修 |
 | T3 | 中 | 零测试（F4/F5 正是缺测试漏掉的）。建 `backend/tests/` pytest 套件，33 个用例覆盖 auth flow、SealedBox 加密 + 私钥解密往返、claim 返回密文 + 原子认领、worker 回报、admin 鉴权、reaper、限速。 | ✅ 已修 |
 | T1 | 中 | `worker/booking_engine.py` 接入真实抢号：薄封装 vendor road.py，road_adapter 限时循环调 job()。**单用户阶段**完成；多用户化（每用户 keyword/Gmail/偏好 + 多用户 OTP）见后续 spec。 | ✅ 本阶段完成 |
@@ -42,11 +42,18 @@
 | T8 | 无日志聚合：backend 写到 stdout（systemd 重定向到 `/var/log/icbc-api.log`），worker 写到 `worker.log` | 上规模后接 Loki/CloudWatch；当前体量不需要 |
 | T9 | `vue-tsc` 在 `npm run build` 里跑，但 `npm run dev` 不做类型检查 | IDE 编译时检查就够；不强求 |
 
+## 当前运行约定（2026-06-21）
+
+- 没号时随机等待 12-20 秒再查询。
+- worker 每次认领最多执行 600 秒；未抢到会正常回到 `pending`，随后继续认领，不记录为失败。
+- `attempt_count` 统计认领次数，`progress_rounds` 统计成功上报的考点查询次数，两者不要求相等。
+- 任务页面显示累计查询进度；worker 本地日志中的“第 N 轮”只表示当前 600 秒执行周期内的轮次。
+
 ## 设计决策（写下来免得以后被"修正"）
 
 | ID | 决策 | 理由 |
 |---|---|---|
-| A1 | 凭据 **SealedBox 非对称**加密存 DB，云端只持公钥、私钥只在本地 worker | 假设 VPS 被攻破，攻击者拿不到 ICBC 凭据明文（见 S1：原对称实现已废弃） |
+| A1 | 凭据 **SealedBox 非对称**加密存 DB，云端只持公钥、私钥只在本地 worker | 降低数据库、备份或云端静态配置泄漏造成的凭据风险；不把它当作云端运行时失陷后的绝对保护 |
 | A2 | Worker 主动 poll `POST /api/worker/claim`，不放 push | VPS 1.9G 内存跑不了长连接/WebSocket 组件；轮询 5s 可接受 |
 | A3 | 用 `select ... for update skip locked` 实现原子认领 | postgres 9.5+ 原生支持；不用外部队列 |
 | A4 | 不上 Docker（backend 直 systemd） | 1.9G VPS 上 Docker daemon 占 200-400M；无跨机迁移需求 |

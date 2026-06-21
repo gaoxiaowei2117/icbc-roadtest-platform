@@ -79,7 +79,7 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 返回当前用户所有任务，按 `created_at desc`。
 每条任务包含：
 - `attempt_count`：worker 认领该任务的次数
-- `progress_rounds`：worker 已上报的累计查询轮次
+- `progress_rounds`：worker 已成功上报的累计考点查询次数；多个考点会分别计数
 - `last_progress` / `last_progress_at`：最近一次脱敏进度摘要与时间
 
 ### POST /bookings
@@ -119,11 +119,13 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 头：`X-Worker-Key: $WORKER_API_KEY`
 ```json
 {
-  "status": "done",        // done | failed
+  "status": "done",        // pending | done | failed
   "last_error": null,      // failed 时填
   "result": { "confirmation_no": "ABC123", "booked_at": "..." }
 }
 ```
+
+`pending` 表示本次 600 秒执行周期没有抢到号，但任务仍可重试。后端会清空本轮运行状态并重新排队，`last_error` 应为 `null`。
 
 ### POST /worker/bookings/{id}/progress
 头：`X-Worker-Key: $WORKER_API_KEY`
@@ -131,6 +133,12 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 { "message": "考点 274 查询结果 no_appointments" }
 ```
 后端只保存累计轮次、最近进度摘要和时间，供用户页面判断任务是否仍在运行；不要上传明文 credential、验证码、HTTP token 或完整 ICBC/Gmail 响应。
+
+### GET /worker/bookings/{id}/status
+
+头：`X-Worker-Key: $WORKER_API_KEY`
+
+返回 `{ "id": 42, "status": "running" }`。worker 在查询期间用它检测用户是否已取消任务。
 
 ## Admin
 

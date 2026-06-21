@@ -1,209 +1,290 @@
-# 部署指南
+# 部署与运维指南
 
-## 0. 准备
+## 1. 当前环境
 
-VPS：Ubuntu 24.04，2 核 1.9G RAM，50G 盘。已有 nginx、python3、certbot。
+| 项目 | 配置 |
+|---|---|
+| SSH 别名 | `mycloud` |
+| 云端目录 | `/opt/icbc-platform` |
+| 后端服务 | `icbc-api`，监听 `127.0.0.1:8000` |
+| 数据库 | PostgreSQL 16 |
+| 前端目录 | `/var/www/icbc-platform` |
+| Nginx | HTTPS 9443 |
+| 页面 | `https://gogoxoxo.duckdns.org:9443/booking/` |
+| 健康检查 | `https://gogoxoxo.duckdns.org:9443/health` |
+| worker | 本地 Docker，不部署到云服务器运行 |
 
-域名：`gogoxoxo.duckdns.org`（已通过 duckdns 指向 VPS）。
+云端 `/opt/icbc-platform` 当前不是 Git 工作区。日常更新应从本地经过检查的代码使用 `rsync` 发布，不要在云端执行 `git pull`。
 
-## 1. 推代码到 GitHub
+## 2. 首次部署
 
-```bash
-cd /home/xgao/workspace/icbc-roadtest-platform
-git init
-git add .
-git commit -m "initial scaffold"
-git remote add origin git@github.com:gaoxiaowei2117/icbc-roadtest-platform.git
-git push -u origin main
-```
+以下操作只用于新服务器。日常更新不要重复运行 `deploy/setup.sh` 或 `deploy/init-db.sh`。
 
-## 2. VPS 拉代码
+### 2.1 准备服务器和代码
 
-```bash
-ssh tencent_117   # 你起的别名
-sudo mkdir -p /opt/icbc-platform
-sudo chown $USER:$USER /opt/icbc-platform
-cd /opt/icbc-platform
-git clone git@github.com:gaoxiaowei2117/icbc-roadtest-platform.git .
-```
+服务器要求：Ubuntu 24.04，SSH 用户有 sudo 权限，安全组已开放 TCP 9443。
 
-## 3. 生成密钥
-
-在 VPS 上生成后端 JWT 和 worker 共享密钥：
+先在本地安装并构建前端，再把仓库同步到服务器：
 
 ```bash
-echo "JWT_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
-echo "WORKER_API_KEY=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+npm --prefix frontend ci
+npm --prefix frontend run build
+
+ssh mycloud 'sudo mkdir -p /opt/icbc-platform && sudo chown $USER:$USER /opt/icbc-platform'
+rsync -az --exclude='.git/' --exclude='.env' --exclude='backend/.venv/' \
+  --exclude='frontend/node_modules/' --exclude='worker/.env' \
+  --exclude='worker/config.yml' ./ mycloud:/opt/icbc-platform/
 ```
 
-SealedBox 密钥对建议在本地 worker 机器上生成，因为私钥只属于 worker。若本地已装 worker 依赖，可运行：
+### 2.2 生成密钥
+
+在可信设备上生成 JWT、worker 共享密钥：
 
 ```bash
-cd path/to/icbc-roadtest-platform/worker
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python -c "from nacl.public import PrivateKey; from nacl.encoding import Base64Encoder; sk=PrivateKey.generate(); print('SECRET_PRIVATE_KEY=' + sk.encode(Base64Encoder).decode()); print('SECRET_PUBLIC_KEY=' + sk.public_key.encode(Base64Encoder).decode())"
+python3 -c 'import secrets; print(secrets.token_urlsafe(32))'
+python3 -c 'import secrets; print(secrets.token_urlsafe(24))'
 ```
 
-也可以用临时 Docker 容器生成，不污染本机 Python 环境：
+在运行 worker 的本地设备生成 SealedBox 密钥对：
 
 ```bash
 docker run --rm python:3.12-slim sh -c "pip install --quiet pynacl && python -c \"from nacl.public import PrivateKey; from nacl.encoding import Base64Encoder; sk=PrivateKey.generate(); print('SECRET_PRIVATE_KEY=' + sk.encode(Base64Encoder).decode()); print('SECRET_PUBLIC_KEY=' + sk.public_key.encode(Base64Encoder).decode())\""
 ```
 
-把 `JWT_SECRET`、`WORKER_API_KEY`、`SECRET_PUBLIC_KEY` 连同其他变量写进 VPS 的 `.env`：
-```bash
-cp deploy/env.example /opt/icbc-platform/.env
-nano /opt/icbc-platform/.env    # 填实际值
-```
+- `SECRET_PUBLIC_KEY` 写入云端 `/opt/icbc-platform/.env`。
+- `SECRET_PRIVATE_KEY` 只写入本地 `worker/.env`，禁止上传服务器或提交 Git。
+- `WORKER_API_KEY` 在云端和 worker 中必须一致。
 
-`SECRET_PRIVATE_KEY` 只放本地 worker 的 `.env`，不要放到 VPS。
-
-## 4. 初始化数据库
+### 2.3 准备环境和数据库
 
 ```bash
+ssh mycloud
 cd /opt/icbc-platform
-export POSTGRES_PASSWORD='你的强密码'   # init-db.sh 用的
+cp deploy/env.example .env
+nano .env
+
+sudo apt-get update
+sudo apt-get install -y postgresql-16 python3-venv python3-pip nginx certbot python3-certbot-dns-duckdns
+
+export POSTGRES_PASSWORD='使用强密码'
 sudo bash deploy/init-db.sh
 ```
 
-## 5. 跑 setup.sh
+`.env` 中至少要配置数据库、JWT、worker key、SealedBox 公钥、SMTP、管理员账号和应用 URL。不要把 `.env` 内容输出到终端记录或聊天中。
 
-```bash
-sudo bash deploy/setup.sh
-```
+### 2.4 HTTPS 证书
 
-会自动：
-- 装 postgres / venv / certbot-dns-duckdns
-- 建应用用户 `icbc`
-- 建 venv + 装依赖
-- 跑 alembic 迁移
-- 把前端构建产物放 `/var/www/icbc-platform/`
-- 装 nginx 配置
-- 装 systemd unit
-
-## 6. 签 HTTPS 证书
-
-duckdns 走 DNS-01：
+`deploy/setup.sh` 安装 Nginx 配置时会执行 `nginx -t`，因此新服务器必须先取得配置中引用的证书：
 
 ```bash
 sudo certbot certonly \
-    --authenticator dns-duckdns \
-    --dns-duckdns-token '你的 duckdns token' \
-    --dns-duckdns-propagation-seconds 60 \
-    -d gogoxoxo.duckdns.org \
-    --server https://acme-v02.api.letsencrypt.org/directory
+  --authenticator dns-duckdns \
+  --dns-duckdns-token 'DuckDNS token' \
+  --dns-duckdns-propagation-seconds 60 \
+  -d gogoxoxo.duckdns.org \
+  --server https://acme-v02.api.letsencrypt.org/directory
 ```
 
-成功后证书在 `/etc/letsencrypt/live/gogoxoxo.duckdns.org/`。
-
-## 7. 重启服务
+证书应位于 `/etc/letsencrypt/live/gogoxoxo.duckdns.org/`。取得证书后再完成服务安装：
 
 ```bash
-sudo systemctl restart icbc-api
-sudo systemctl status icbc-api
+cd /opt/icbc-platform
+sudo bash deploy/setup.sh
+sudo systemctl status icbc-api --no-pager
 ```
 
-## 8. 验证
+## 3. 日常更新 mycloud
+
+### 3.1 发布前检查
+
+在仓库根目录检查变更，不要把无关的未提交文件一起发布：
 
 ```bash
-curl https://gogoxoxo.duckdns.org:9443/health
-# {"status":"ok"}
+git status --short --branch
+git diff --stat
+git diff
 ```
 
-浏览器访问 `https://gogoxoxo.duckdns.org:9443/booking/`，用 `BOOTSTRAP_ADMIN_EMAIL` 注册的账号登录。
-
-## 9. 本地 worker 跑起来
-
-worker 可以裸跑，也可以放进 Docker。推荐 Docker，因为同一台本地设备上可以启动多个隔离实例。
-
-### 方案 A：Docker worker（推荐）
-
-本地准备配置：
+按变更范围执行验证：
 
 ```bash
-cd path/to/icbc-roadtest-platform
+python3 -m compileall -q backend/app
+python3 -m pytest worker/tests -q
+npm --prefix frontend run build
+```
+
+后端完整测试需要可用的测试 PostgreSQL。如果本机测试数据库配置不匹配，应说明未运行原因，不要修改生产密码来迁就测试。
+
+### 3.2 记录云端状态并备份
+
+```bash
+ssh mycloud 'systemctl is-active icbc-api nginx postgresql; curl -fsS http://127.0.0.1:8000/health'
+ssh mycloud 'cd /opt/icbc-platform/backend && sudo -u icbc bash -c "set -a; source /opt/icbc-platform/.env; set +a; .venv/bin/alembic current"'
+
+ssh mycloud 'ts=$(date +%Y%m%d-%H%M%S); sudo mkdir -p /opt/icbc-backups/$ts/backend /opt/icbc-backups/$ts/frontend; sudo rsync -a --exclude=.venv/ /opt/icbc-platform/backend/ /opt/icbc-backups/$ts/backend/; sudo rsync -a /var/www/icbc-platform/ /opt/icbc-backups/$ts/frontend/'
+```
+
+备份不包含数据库、`.env` 和后端虚拟环境。数据库应另外配置定期 `pg_dump`。
+
+### 3.3 同步代码
+
+先同步到临时目录，再由 sudo 提升到应用目录，明确保护生产配置和虚拟环境：
+
+```bash
+ssh mycloud 'rm -rf /tmp/icbc-platform-release && mkdir -p /tmp/icbc-platform-release'
+rsync -az --delete \
+  --exclude='.git/' --exclude='.env' --exclude='backend/.venv/' \
+  --exclude='frontend/node_modules/' --exclude='frontend/dist/' \
+  --exclude='worker/.env' --exclude='worker/config.yml' \
+  --exclude='*.log' \
+  ./ mycloud:/tmp/icbc-platform-release/
+
+ssh mycloud "sudo rsync -a --delete --chown=icbc:icbc \
+  --exclude='.env' --exclude='backend/.venv/' \
+  --exclude='worker/.env' --exclude='worker/config.yml' \
+  /tmp/icbc-platform-release/ /opt/icbc-platform/"
+```
+
+如果工作区包含不应发布的改动，应从目标 commit 创建临时 worktree，并从干净 worktree 同步。
+
+### 3.4 更新后端和数据库
+
+```bash
+ssh mycloud 'sudo -u icbc /opt/icbc-platform/backend/.venv/bin/pip install -q -r /opt/icbc-platform/backend/requirements.txt'
+ssh mycloud 'cd /opt/icbc-platform/backend && sudo -u icbc bash -c "set -a; source /opt/icbc-platform/.env; set +a; .venv/bin/alembic upgrade head"'
+ssh mycloud 'sudo systemctl restart icbc-api && systemctl is-active icbc-api'
+```
+
+只执行向前迁移，不要在生产环境自动执行 Alembic downgrade。
+
+如果修改了 systemd unit：
+
+```bash
+scp deploy/icbc-api.service mycloud:/tmp/icbc-api.service
+ssh mycloud 'sudo install -m 0644 /tmp/icbc-api.service /etc/systemd/system/icbc-api.service && sudo systemctl daemon-reload && sudo systemctl restart icbc-api'
+```
+
+### 3.5 发布前端
+
+```bash
+npm --prefix frontend run build
+rsync -az --delete --rsync-path='sudo rsync' frontend/dist/ mycloud:/var/www/icbc-platform/
+ssh mycloud 'sudo chown -R www-data:www-data /var/www/icbc-platform'
+```
+
+如果修改了 Nginx 配置：
+
+```bash
+scp deploy/nginx-icbc.conf mycloud:/tmp/nginx-icbc.conf
+ssh mycloud 'sudo install -m 0644 /tmp/nginx-icbc.conf /etc/nginx/sites-available/icbc-platform && sudo nginx -t && sudo systemctl reload nginx'
+```
+
+### 3.6 发布后验证
+
+```bash
+ssh mycloud 'systemctl is-active icbc-api nginx postgresql'
+ssh mycloud 'cd /opt/icbc-platform/backend && sudo -u icbc bash -c "set -a; source /opt/icbc-platform/.env; set +a; .venv/bin/alembic current"'
+curl -fsS https://gogoxoxo.duckdns.org:9443/health
+curl -fsSI https://gogoxoxo.duckdns.org:9443/booking/
+```
+
+必须确认 Alembic 位于 `head`、三个服务均为 `active`、健康检查返回 `{"status":"ok"}`、页面返回 HTTP 200，才能认为发布完成。
+
+## 4. 本地 Docker worker
+
+### 4.1 配置
+
+```bash
 cp worker/.env.example worker/.env
 cp worker/config.example.yml worker/config.yml
 ```
 
-编辑 `worker/.env`：
+`worker/.env` 的关键配置：
 
 - `API_BASE_URL=https://gogoxoxo.duckdns.org:9443`
-- `WORKER_API_KEY` 与 VPS `.env` 一致
-- `SECRET_PRIVATE_KEY` 使用上面生成的私钥
+- `WORKER_API_KEY` 与云端一致
+- `SECRET_PRIVATE_KEY` 与云端公钥成对
 - `ROAD_CONFIG_PATH=/app/config.yml`
 - `LOG_FILE=/app/log/worker.log`
-- `GMAIL_EMAIL` / `GMAIL_APP_PASSWORD` 填系统 Gmail
-- `BOOKING_POLL_MIN_SECONDS=12` 与 `BOOKING_POLL_MAX_SECONDS=20` 表示没号时随机等待 12-20 秒再查下一次
-- `DRY_RUN=true` 可先安全联调；确认后再改为 `false`
+- `GMAIL_EMAIL` 和 `GMAIL_APP_PASSWORD` 使用 Gmail 应用专用密码
+- `BOOKING_POLL_MIN_SECONDS=12`、`BOOKING_POLL_MAX_SECONDS=20`
+- 联调使用 `DRY_RUN=true`；真实预约使用 `DRY_RUN=false`
 
-编辑 `worker/config.yml`：
-
-- `icbc` 段只是占位，运行时会被用户档案覆盖
-- `gmail.email/password` 会被 `worker/.env` 覆盖
-- 默认 compose 不挂载日志目录；多实例各自写自己的容器文件系统，运行日志用 `docker compose logs` 查看
-- 如果需要把 road.py 数据持久化到宿主机，不要让多个容器共享同一个目录；给每个实例单独挂载目录
-
-构建并启动 1 个 worker：
+### 4.2 启停和日志
 
 ```bash
+# 启动或更新一个 worker
 docker compose -f docker-compose.worker.yml up -d --build
-```
 
-启动多个 worker 容器：
-
-```bash
+# 启动三个隔离实例
 docker compose -f docker-compose.worker.yml up -d --build --scale worker=3
-```
 
-查看日志：
-
-```bash
+# 状态与日志
+docker compose -f docker-compose.worker.yml ps
+docker compose -f docker-compose.worker.yml logs --tail=200 worker
 docker compose -f docker-compose.worker.yml logs -f worker
-```
 
-停止：
-
-```bash
+# 停止
 docker compose -f docker-compose.worker.yml down
 ```
 
-多个 worker 同时运行是允许的：后端 claim 使用数据库行锁原子认领任务，不会把同一个 pending 任务发给两个 worker。
+不要在任务为 `running` 时直接重启 worker。worker 的当前执行状态保存在进程内，强制重启会留下暂时无人处理的任务；后端需要等待 15 分钟无进度后才能自动重排。应先在页面停止任务，确认状态不再是 `running`，再重启 worker。
 
-### 方案 B：本地 Python 裸跑
+默认 compose 不映射日志目录。多个实例使用各自的容器文件系统，通过 `docker compose logs` 查看日志；如需持久化，每个实例必须使用独立目录。
+
+## 5. 状态和日志排查
+
+### 云端服务
 
 ```bash
-# 在本地电脑
-cd path/to/icbc-roadtest-platform/worker
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-cp .env.example .env
-# 填 API_BASE_URL、WORKER_API_KEY、SECRET_PRIVATE_KEY、GMAIL_EMAIL、GMAIL_APP_PASSWORD
-
-python worker.py
+ssh mycloud 'sudo systemctl status icbc-api --no-pager -l'
+ssh mycloud 'sudo tail -n 200 /var/log/icbc-api.log'
+ssh mycloud 'sudo journalctl -u nginx -n 100 --no-pager'
 ```
 
-## 常见问题
+### worker
 
-**Q: worker 拿不到任务**
-- 检查 `WORKER_API_KEY` 是否跟 VPS 一致
-- 检查 VPS 安全组 9443 端口是否开放
-- 检查用户是否已创建 `pending` 任务
-- 看 worker.log：`tail -f worker.log`
-- Docker 模式看：`docker compose -f docker-compose.worker.yml logs -f worker`
+```bash
+docker compose -f docker-compose.worker.yml ps
+docker compose -f docker-compose.worker.yml logs --since=30m --tail=500 worker
+```
 
-**Q: 访问 9443 提示证书错误**
-- certbot 是否成功签发？看 `/var/log/letsencrypt/`
-- 证书路径在 nginx 配置里要对得上
+空闲 worker 仍会每 5 秒请求一次 `/api/worker/claim`，出现持续的 HTTP 200 日志是正常的，不代表仍在抢号。判断任务是否执行应查看是否出现“拿到任务”、`booking #...`、进度上报，以及页面任务状态。
 
-**Q: worker 解密失败**
-- 检查 worker 的 `SECRET_PRIVATE_KEY` 是否与 VPS 的 `SECRET_PUBLIC_KEY` 成对
-- 换密钥对后，旧 keyword 密文无法解开，需要用户重新保存 keyword
+### 常见故障
 
-**Q: 多个 worker 会不会抢同一个任务**
-- 不会。`/api/worker/claim` 在数据库层用 `SELECT ... FOR UPDATE SKIP LOCKED` 认领任务。
-- 但同一台设备跑多个真实抢号实例会增加对 ICBC/Gmail 的请求量，先用 `DRY_RUN=true` 做联调。
+**worker 拿不到任务**
+
+- 检查容器是否为 `Up`，并查看 claim 是否返回 401/403/网络错误。
+- 检查 `WORKER_API_KEY` 是否与云端一致。
+- 检查页面是否存在 `pending` 任务。
+- 检查本地能否访问 `https://gogoxoxo.duckdns.org:9443/health`。
+
+**Gmail `AUTHENTICATIONFAILED`**
+
+- 使用 Gmail 应用专用密码，不是普通登录密码。
+- 确认账号已开启两步验证，应用密码没有被撤销。
+
+**任务显示“worker 超时，自动重置重排”**
+
+- 后端连续 15 分钟没有收到该任务的进度心跳，认为 worker 可能崩溃或断网。
+- 这是故障恢复机制，不是 600 秒正常执行周期；正常周期结束会无错误地回到 `pending` 并继续。
+
+**9443 或证书错误**
+
+- 检查云安全组 TCP 9443、`sudo nginx -t` 和证书路径。
+- 查看 `/var/log/letsencrypt/`，确认续签没有失败。
+
+**凭据解密失败**
+
+- 检查本地私钥与云端公钥是否成对。
+- 更换密钥对后，旧 keyword 密文不可解，用户必须重新保存 keyword。
+
+## 6. 运维安全边界
+
+- 永远不要同步、打印、提交或下载云端 `.env`。
+- 永远不要把 `SECRET_PRIVATE_KEY` 放到云端。
+- SealedBox 保护数据库静态密文，但 keyword 提交仍依赖 HTTPS 和云端应用完整性；服务器失陷后必须轮换相关密钥和用户凭据。
+- 日常发布不重启 PostgreSQL，不运行初始化脚本，不自动回滚数据库迁移。
+- 发布成功不能只看文件同步结果，必须完成迁移、服务、健康检查和页面验证。
+- 多个 worker 不会领取同一个任务，但实例越多，对 ICBC/Gmail 的请求量越大，应保持合理并发。
