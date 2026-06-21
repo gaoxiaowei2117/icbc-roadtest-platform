@@ -15,7 +15,10 @@ _sk = PrivateKey.generate()
 TEST_PRIVATE_KEY = _sk.encode(Base64Encoder).decode()
 TEST_PUBLIC_KEY = _sk.public_key.encode(Base64Encoder).decode()
 
-os.environ["DATABASE_URL"] = "postgresql+psycopg://icbc:postgres@127.0.0.1:5432/icbc_test"
+os.environ["DATABASE_URL"] = os.environ.get(
+    "TEST_DATABASE_URL",
+    "postgresql+psycopg://icbc:postgres@127.0.0.1:5432/icbc_test",
+)
 os.environ["SECRET_PUBLIC_KEY"] = TEST_PUBLIC_KEY
 os.environ["JWT_SECRET"] = "test-jwt-secret"
 os.environ["WORKER_API_KEY"] = "test-worker-key"

@@ -143,4 +143,10 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 ## Admin
 
 ### GET /admin/bookings?status_filter=...&limit=...
-返回所有用户的任务，仅 `is_admin=true` 可访问。
+返回所有用户的任务，每条包含 `user_id` 和 `user_email`，仅 `is_admin=true` 可访问。
+
+### GET /admin/users?limit=...
+返回用户列表和当前 ICBC/预约配置。`has_secret` 仅表示 keyword 是否已配置，不返回密码哈希、keyword 密文或明文。仅 `is_admin=true` 可访问。
+
+### DELETE /admin/users/{user_id}
+删除普通用户，并级联删除该用户的任务和加密凭据。管理员账号不允许通过此接口删除。

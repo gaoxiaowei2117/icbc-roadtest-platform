@@ -1,6 +1,8 @@
 """用户相关的数据库操作。"""
+from typing import Sequence
+
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.security import hash_password, verify_password
 from app.models.user import User
@@ -12,6 +14,21 @@ def get_by_email(db: Session, email: str) -> User | None:
 
 def get_by_id(db: Session, user_id: int) -> User | None:
     return db.get(User, user_id)
+
+
+def list_all(db: Session, limit: int = 200) -> Sequence[User]:
+    stmt = (
+        select(User)
+        .options(joinedload(User.secret))
+        .order_by(User.created_at.desc())
+        .limit(limit)
+    )
+    return db.scalars(stmt).all()
+
+
+def delete(db: Session, user: User) -> None:
+    db.delete(user)
+    db.commit()
 
 
 def create(db: Session, email: str, password: str, is_admin: bool = False) -> User:

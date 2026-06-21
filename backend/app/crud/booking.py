@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Sequence
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.booking import Booking, BookingStatus
 
@@ -32,7 +32,12 @@ def has_active(db: Session, user_id: int) -> bool:
 
 
 def list_all(db: Session, status: BookingStatus | None = None, limit: int = 100) -> Sequence[Booking]:
-    stmt = select(Booking).order_by(Booking.created_at.desc()).limit(limit)
+    stmt = (
+        select(Booking)
+        .options(joinedload(Booking.user))
+        .order_by(Booking.created_at.desc())
+        .limit(limit)
+    )
     if status is not None:
         stmt = stmt.where(Booking.status == status)
     return db.scalars(stmt).all()

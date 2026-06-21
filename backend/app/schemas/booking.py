@@ -1,6 +1,6 @@
 """抢号任务 schema。"""
 from datetime import date, datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 from app.models.booking import BookingStatus
 
@@ -25,6 +25,10 @@ class BookingOut(BaseModel):
     finished_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+
+class AdminBookingOut(BookingOut):
+    user_email: EmailStr
 
 
 class WorkerClaimOut(BaseModel):

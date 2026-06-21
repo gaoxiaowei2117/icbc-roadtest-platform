@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from '@/i18n'
 
 const email = ref('')
 const password = ref('')
@@ -10,15 +11,16 @@ const error = ref('')
 const loading = ref(false)
 const auth = useAuthStore()
 const router = useRouter()
+const { tr, apiError } = useI18n()
 
 async function onSubmit() {
   error.value = ''
   if (password.value !== confirm.value) {
-    error.value = '两次密码不一致'
+    error.value = tr('两次密码不一致', 'Passwords do not match')
     return
   }
   if (password.value.length < 8) {
-    error.value = '密码至少 8 位'
+    error.value = tr('密码至少 8 位', 'Password must be at least 8 characters')
     return
   }
   loading.value = true
@@ -26,7 +28,7 @@ async function onSubmit() {
     await auth.register(email.value, password.value)
     router.push({ name: 'verify', query: { email: email.value } })
   } catch (e: any) {
-    error.value = e.response?.data?.detail || '注册失败'
+    error.value = apiError(e, '注册失败', 'Registration failed')
   } finally {
     loading.value = false
   }
@@ -36,26 +38,26 @@ async function onSubmit() {
 <template>
   <div class="max-w-md mx-auto mt-20">
     <div class="card">
-      <h1 class="text-2xl font-bold mb-6 text-center">注册</h1>
+      <h1 class="text-2xl font-bold mb-6 text-center">{{ tr('注册', 'Register') }}</h1>
       <form @submit.prevent="onSubmit" class="space-y-4">
         <div>
-          <label class="label">邮箱</label>
+          <label class="label">{{ tr('邮箱', 'Email') }}</label>
           <input v-model="email" type="email" required class="input" />
         </div>
         <div>
-          <label class="label">密码（至少 8 位）</label>
+          <label class="label">{{ tr('密码（至少 8 位）', 'Password (at least 8 characters)') }}</label>
           <input v-model="password" type="password" required minlength="8" class="input" />
         </div>
         <div>
-          <label class="label">确认密码</label>
+          <label class="label">{{ tr('确认密码', 'Confirm password') }}</label>
           <input v-model="confirm" type="password" required minlength="8" class="input" />
         </div>
         <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
         <button type="submit" class="btn-primary w-full" :disabled="loading">
-          {{ loading ? '注册中…' : '注册' }}
+          {{ loading ? tr('注册中…', 'Registering…') : tr('注册', 'Register') }}
         </button>
         <p class="text-sm text-center text-slate-600">
-          已有账号？<RouterLink to="/login" class="text-blue-600 hover:underline">登录</RouterLink>
+          {{ tr('已有账号？', 'Already have an account? ') }}<RouterLink to="/login" class="text-blue-600 hover:underline">{{ tr('登录', 'Log in') }}</RouterLink>
         </p>
       </form>
     </div>

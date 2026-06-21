@@ -3,13 +3,17 @@ import { onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { deleteSecret, getSecretStatus, setSecret, updateMe } from '@/api/users'
 import { getPosList, type PosEntry } from '@/api/pos'
+import { useI18n } from '@/i18n'
 
 const auth = useAuthStore()
 const posList = ref<PosEntry[]>([])
+const { tr, apiError } = useI18n()
 
 const WEEK = [
-  { v: 0, label: '周一' }, { v: 1, label: '周二' }, { v: 2, label: '周三' },
-  { v: 3, label: '周四' }, { v: 4, label: '周五' }, { v: 5, label: '周六' }, { v: 6, label: '周日' },
+  { v: 0, zh: '周一', en: 'Mon' }, { v: 1, zh: '周二', en: 'Tue' },
+  { v: 2, zh: '周三', en: 'Wed' }, { v: 3, zh: '周四', en: 'Thu' },
+  { v: 4, zh: '周五', en: 'Fri' }, { v: 5, zh: '周六', en: 'Sat' },
+  { v: 6, zh: '周日', en: 'Sun' },
 ]
 
 const profile = reactive({
@@ -47,20 +51,36 @@ onMounted(async () => {
   hasSecret.value = s.has_secret
 })
 
-async function saveProfile() {
-  if (profile.expect_after_date && profile.expect_before_date &&
-      profile.expect_before_date < profile.expect_after_date) {
-    alert('结束日期不能早于开始日期')
-    return
-  }
-  if (profile.time_start && profile.time_end && profile.time_end <= profile.time_start) {
-    alert('结束时间必须晚于开始时间')
-    return
-  }
+async function saveIcbcProfile() {
   try {
     const updated = await updateMe({
       icbc_license_no: profile.icbc_license_no || null,
       icbc_last_name: profile.icbc_last_name || null,
+    })
+    auth.user = updated
+    if (secret.keyword) {
+      await setSecret({ keyword: secret.keyword })
+      secret.keyword = ''
+      hasSecret.value = true
+    }
+    alert(tr('ICBC 资料已保存', 'ICBC profile saved'))
+  } catch (e: any) {
+    alert(tr('保存失败：', 'Save failed: ') + apiError(e, '未知错误', 'Unknown error'))
+  }
+}
+
+async function saveBookingSettings() {
+  if (profile.expect_after_date && profile.expect_before_date &&
+      profile.expect_before_date < profile.expect_after_date) {
+    alert(tr('结束日期不能早于开始日期', 'End date cannot be earlier than start date'))
+    return
+  }
+  if (profile.time_start && profile.time_end && profile.time_end <= profile.time_start) {
+    alert(tr('结束时间必须晚于开始时间', 'End time must be later than start time'))
+    return
+  }
+  try {
+    const updated = await updateMe({
       exam_class: profile.exam_class || null,
       pos_ids: profile.pos_id != null ? [profile.pos_id] : null,
       expect_after_date: profile.expect_after_date || null,
@@ -70,56 +90,68 @@ async function saveProfile() {
       pref_parts_of_day: profile.pref_parts_of_day,
     })
     auth.user = updated
-    alert('资料已保存')
+    alert(tr('预约设置已保存', 'Booking settings saved'))
   } catch (e: any) {
-    alert('保存失败：' + (e.response?.data?.detail || '未知错误'))
-  }
-}
-
-async function saveSecret() {
-  try {
-    await setSecret({ keyword: secret.keyword })
-    secret.keyword = ''
-    hasSecret.value = true
-    alert('keyword 已加密保存')
-  } catch (e: any) {
-    alert('保存失败：' + (e.response?.data?.detail || '未知错误'))
+    alert(tr('保存失败：', 'Save failed: ') + apiError(e, '未知错误', 'Unknown error'))
   }
 }
 
 async function removeSecret() {
-  if (!confirm('确定要删除 ICBC keyword 吗？删除后无法启动抢约。')) return
+  if (!confirm(tr('确定要删除 ICBC keyword 吗？删除后无法启动抢约。', 'Delete the ICBC keyword? Booking cannot start without it.'))) return
   try {
     await deleteSecret()
     hasSecret.value = false
-    alert('keyword 已删除')
+    alert(tr('keyword 已删除', 'Keyword deleted'))
   } catch (e: any) {
-    alert('删除失败：' + (e.response?.data?.detail || '未知错误'))
+    alert(tr('删除失败：', 'Delete failed: ') + apiError(e, '未知错误', 'Unknown error'))
   }
 }
 </script>
 
 <template>
   <div class="space-y-6">
-    <h1 class="text-2xl font-bold">设置</h1>
+    <h1 class="text-2xl font-bold">{{ tr('设置', 'Settings') }}</h1>
 
     <div class="card space-y-4">
-      <h2 class="text-lg font-semibold">ICBC 资料</h2>
-      <div class="grid grid-cols-2 gap-4">
+      <h2 class="text-lg font-semibold">{{ tr('ICBC 资料', 'ICBC Profile') }}</h2>
+      <p class="text-sm text-slate-600">
+        {{ tr('ICBC 登录使用姓氏、驾照号和 keyword。keyword 使用非对称加密保存，云端无法解密。', 'ICBC login uses your last name, licence number, and keyword. The keyword is asymmetrically encrypted and cannot be decrypted by the server.') }}
+      </p>
+      <div class="grid md:grid-cols-2 gap-4">
         <div>
-          <label class="label">驾照号</label>
+          <label class="label">{{ tr('驾照号', 'Licence number') }}</label>
           <input v-model="profile.icbc_license_no" class="input" />
         </div>
         <div>
-          <label class="label">姓氏（Last Name）</label>
+          <label class="label">{{ tr('姓氏（Last Name）', 'Last name') }}</label>
           <input v-model="profile.icbc_last_name" class="input" />
         </div>
+        <div class="md:col-span-2">
+          <label class="label">keyword</label>
+          <input
+            v-model="secret.keyword"
+            type="password"
+            class="input"
+            :placeholder="hasSecret ? tr('已配置；留空表示不修改', 'Configured; leave blank to keep it') : tr('请输入 keyword', 'Enter keyword')"
+          />
+          <p v-if="hasSecret" class="mt-2 text-sm text-green-700">{{ tr('已加密配置', 'Encrypted and configured') }}</p>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn-primary" @click="saveIcbcProfile">{{ tr('保存 ICBC 资料', 'Save ICBC profile') }}</button>
+        <button v-if="hasSecret" class="btn-danger" @click="removeSecret">{{ tr('删除 keyword', 'Delete keyword') }}</button>
+      </div>
+    </div>
+
+    <div class="card space-y-4">
+      <h2 class="text-lg font-semibold">{{ tr('预约设置', 'Booking Settings') }}</h2>
+      <div class="grid md:grid-cols-2 gap-4">
         <div>
-          <label class="label">考试类型（examClass，如 5=5 类车）</label>
+          <label class="label">{{ tr('考试类型（examClass，如 5=5 类车）', 'Exam class (for example, 5 = Class 5)') }}</label>
           <input v-model="profile.exam_class" class="input" />
         </div>
         <div>
-          <label class="label">时间区间（开始 — 结束）</label>
+          <label class="label">{{ tr('时间区间（开始 — 结束）', 'Time range (start — end)') }}</label>
           <div class="flex items-center gap-2">
             <input v-model="profile.time_start" type="time" class="input" />
             <span>—</span>
@@ -127,57 +159,41 @@ async function removeSecret() {
           </div>
         </div>
         <div>
-          <label class="label">期望最早日期</label>
+          <label class="label">{{ tr('期望最早日期', 'Earliest date') }}</label>
           <input v-model="profile.expect_after_date" type="date" class="input" />
         </div>
         <div>
-          <label class="label">期望最晚日期</label>
+          <label class="label">{{ tr('期望最晚日期', 'Latest date') }}</label>
           <input v-model="profile.expect_before_date" type="date" class="input" />
         </div>
         <div class="col-span-2">
-          <label class="label">考点（单选）</label>
+          <label class="label">{{ tr('考点（单选）', 'Location') }}</label>
           <select v-model="profile.pos_id" class="input">
-            <option :value="null" disabled>请选择考点</option>
-            <option v-for="p in posList" :key="p.pos_id" :value="p.pos_id">{{ p.name }}（{{ p.pos_id }}）</option>
+            <option :value="null" disabled>{{ tr('请选择考点', 'Select a location') }}</option>
+            <option v-for="p in posList" :key="p.pos_id" :value="p.pos_id">{{ p.name }} ({{ p.pos_id }})</option>
           </select>
         </div>
         <div class="col-span-2">
-          <label class="label">星期偏好</label>
+          <label class="label">{{ tr('星期偏好', 'Preferred days') }}</label>
           <div class="flex flex-wrap gap-3 text-sm">
             <label v-for="d in WEEK" :key="d.v" class="flex items-center gap-1">
-              <input type="checkbox" :value="d.v" v-model="profile.pref_days_of_week" />{{ d.label }}
+              <input type="checkbox" :value="d.v" v-model="profile.pref_days_of_week" />{{ tr(d.zh, d.en) }}
             </label>
           </div>
         </div>
         <div class="col-span-2">
-          <label class="label">时段偏好</label>
+          <label class="label">{{ tr('时段偏好', 'Preferred time of day') }}</label>
           <div class="flex gap-4 text-sm">
             <label class="flex items-center gap-1">
-              <input type="checkbox" :value="0" v-model="profile.pref_parts_of_day" />上午
+              <input type="checkbox" :value="0" v-model="profile.pref_parts_of_day" />{{ tr('上午', 'Morning') }}
             </label>
             <label class="flex items-center gap-1">
-              <input type="checkbox" :value="1" v-model="profile.pref_parts_of_day" />下午
+              <input type="checkbox" :value="1" v-model="profile.pref_parts_of_day" />{{ tr('下午', 'Afternoon') }}
             </label>
           </div>
         </div>
       </div>
-      <button class="btn-primary" @click="saveProfile">保存资料</button>
-    </div>
-
-    <div class="card space-y-4">
-      <h2 class="text-lg font-semibold">ICBC 登录 keyword</h2>
-      <p class="text-sm text-slate-600">
-        ICBC 登录用 姓氏 + 驾照号 + keyword。keyword 用非对称加密保存，私钥只在本地 worker，云端无法解密。
-      </p>
-      <div v-if="hasSecret" class="text-sm text-green-700">✓ 已配置</div>
-      <div>
-        <label class="label">keyword</label>
-        <input v-model="secret.keyword" type="password" class="input" />
-      </div>
-      <div class="flex gap-2">
-        <button class="btn-primary" @click="saveSecret">{{ hasSecret ? '更新' : '保存' }} keyword</button>
-        <button v-if="hasSecret" class="btn-danger" @click="removeSecret">删除</button>
-      </div>
+      <button class="btn-primary" @click="saveBookingSettings">{{ tr('保存预约设置', 'Save booking settings') }}</button>
     </div>
   </div>
 </template>

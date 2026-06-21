@@ -24,6 +24,12 @@ class UserPublic(ProfileFields):
     created_at: datetime
 
 
+class AdminUserOut(UserPublic):
+    is_active: bool
+    email_verified: bool
+    has_secret: bool
+
+
 class UserUpdate(ProfileFields):
     icbc_license_no: str | None = Field(default=None, max_length=50)
     icbc_last_name: str | None = Field(default=None, max_length=100)

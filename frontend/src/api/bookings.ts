@@ -3,6 +3,7 @@ import { api } from './client'
 export interface Booking {
   id: number
   user_id: number
+  user_email?: string
   status: 'pending' | 'running' | 'done' | 'failed' | 'cancelled'
   attempt_count: number
   progress_rounds: number
