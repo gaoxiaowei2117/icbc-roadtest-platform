@@ -11,7 +11,22 @@ Base URL：`https://gogoxoxo.duckdns.org:9443/api`
 ```json
 { "email": "user@example.com", "password": "********" }
 ```
-返回 `201` + `TokenOut`（access + refresh）。
+返回 `201`：
+```json
+{ "message": "验证码已发送到邮箱，请查收并验证" }
+```
+
+### POST /auth/verify-email
+```json
+{ "email": "user@example.com", "code": "123456" }
+```
+返回 `TokenOut`（access + refresh）。
+
+### POST /auth/resend-code
+```json
+{ "email": "user@example.com" }
+```
+返回通用提示，不泄露邮箱是否存在。
 
 ### POST /auth/login
 ```json
@@ -36,17 +51,21 @@ Base URL：`https://gogoxoxo.duckdns.org:9443/api`
 {
   "icbc_license_no": "1234567",
   "icbc_last_name": "Smith",
-  "preferred_pos": ["Vancouver", "Burnaby"],
-  "time_windows": { "morning": true, "afternoon": true, "evening": false },
-  "max_wait_days": 60
+  "exam_class": "5",
+  "pos_ids": [274],
+  "expect_after_date": "2026-07-01",
+  "expect_before_date": "2026-07-31",
+  "expect_time_range": "09:00-17:00",
+  "pref_days_of_week": [0, 1, 2, 3, 4, 5, 6],
+  "pref_parts_of_day": [0, 1]
 }
 ```
 
 ### PUT /users/me/secret
 ```json
-{ "icbc_username": "user", "icbc_password": "********" }
+{ "keyword": "********" }
 ```
-凭据会以 Fernet 加密后存 DB。
+ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SECRET_PUBLIC_KEY`，不能解密；worker 持 `SECRET_PRIVATE_KEY` 后才能解密执行任务。
 
 ### GET /users/me/secret
 返回 `{ has_secret, updated_at }`，不会返回明文。
@@ -60,19 +79,14 @@ Base URL：`https://gogoxoxo.duckdns.org:9443/api`
 返回当前用户所有任务，按 `created_at desc`。
 
 ### POST /bookings
-```json
-{
-  "target_date": "2026-07-01",   // 可空
-  "time_window": { "morning": true, ... },
-  "pos_code": "Vancouver"          // 可空
-}
-```
-**前置条件**：用户必须已填 ICBC 资料和凭据。
+请求体为空或 `{}`。抢号参数来自用户档案。
+
+**前置条件**：用户必须已填驾照号、姓氏、考试类型、考点、日期区间和 keyword。每个用户同一时间只能有一个 `pending` 或 `running` 任务。
 
 ### GET /bookings/{id}
 ### POST /bookings/{id}/cancel
 
-## Worker（仅 admin 共享密钥）
+## Worker（共享密钥）
 
 ### POST /worker/claim
 头：`X-Worker-Key: $WORKER_API_KEY`
@@ -82,14 +96,20 @@ Base URL：`https://gogoxoxo.duckdns.org:9443/api`
 {
   "booking_id": 42,
   "user_id": 7,
-  "target_date": "2026-07-01",
-  "time_window": { "morning": true, ... },
-  "pos_code": null,
-  "icbc_username": "user",
-  "icbc_password": "********",   // 明文（仅本机）
-  "max_wait_days": 60
+  "drvr_last_name": "Smith",
+  "licence_number": "1234567",
+  "keyword_ciphertext": "base64...",
+  "exam_class": "5",
+  "pos_ids": [274],
+  "expect_after_date": "2026-07-01",
+  "expect_before_date": "2026-07-31",
+  "expect_time_range": "09:00-17:00",
+  "pref_days_of_week": [0, 1, 2, 3, 4, 5, 6],
+  "pref_parts_of_day": [0, 1]
 }
 ```
+
+后端用数据库行锁原子认领任务；多个 worker 或多个 worker 容器可以同时轮询，不会领取同一个 `pending` 任务。
 
 ### POST /worker/bookings/{id}/result
 头：`X-Worker-Key: $WORKER_API_KEY`

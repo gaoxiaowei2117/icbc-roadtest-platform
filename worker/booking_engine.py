@@ -8,6 +8,7 @@
 """
 import logging
 from dataclasses import dataclass
+from collections.abc import Callable
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -40,9 +41,11 @@ class Result:
     confirmation_no: str | None = None
     details: dict[str, Any] | None = None
     error: str | None = None
+    retryable: bool = False
+    cancelled: bool = False
 
 
-def run(task: Task) -> Result:
+def run(task: Task, should_continue: Callable[[], bool] | None = None) -> Result:
     """执行一次抢号（限时循环），委托给 road_adapter。"""
     import road_adapter  # 延迟 import：避免 import 期拉起 vendor.road 依赖链
-    return road_adapter.run(task)
+    return road_adapter.run(task, should_continue=should_continue)

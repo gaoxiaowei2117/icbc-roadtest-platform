@@ -28,5 +28,12 @@ class APIClient:
         )
         r.raise_for_status()
 
+    def booking_status(self, booking_id: int) -> str | None:
+        r = self._client.get(f"/api/worker/bookings/{booking_id}/status")
+        if r.status_code == 404:
+            return None
+        r.raise_for_status()
+        return r.json()["status"]
+
     def close(self) -> None:
         self._client.close()

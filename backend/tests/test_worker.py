@@ -53,6 +53,36 @@ def test_worker_report_completes_booking(client, ready_user, db):
     assert booking.result == {"confirmation_no": "CONF-1"}
 
 
+def test_worker_report_pending_requeues_booking(client, ready_user, db):
+    """没抢到号是可重试结果：任务回到 pending，下一轮继续 claim。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+
+    r = client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"status": "pending", "last_error": "本轮没号，继续抢", "result": None},
+    )
+    assert r.status_code == 204
+    db.expire_all()
+    booking = db.get(Booking, bid)
+    assert booking.status == BookingStatus.pending
+    assert booking.started_at is None
+    assert booking.finished_at is None
+    assert booking.last_error == "本轮没号，继续抢"
+
+
+def test_worker_can_read_booking_status(client, ready_user):
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+
+    r = client.get(f"/api/worker/bookings/{bid}/status", headers=WORKER_HEADERS)
+    assert r.status_code == 200
+    assert r.json() == {"id": bid, "status": "running"}
+
+
 def test_worker_report_requires_key(client, ready_user):
     h, *_ = ready_user()
     bid = client.post("/api/bookings", headers=h, json={}).json()["id"]

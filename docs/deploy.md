@@ -29,17 +29,36 @@ git clone git@github.com:gaoxiaowei2117/icbc-roadtest-platform.git .
 
 ## 3. 生成密钥
 
+在 VPS 上生成后端 JWT 和 worker 共享密钥：
+
 ```bash
 echo "JWT_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
-echo "ENCRYPTION_KEY=$(python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')"
 echo "WORKER_API_KEY=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
 ```
 
-把生成的三个值连同其他变量写进 `.env`：
+SealedBox 密钥对建议在本地 worker 机器上生成，因为私钥只属于 worker。若本地已装 worker 依赖，可运行：
+
+```bash
+cd path/to/icbc-roadtest-platform/worker
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -c "from nacl.public import PrivateKey; from nacl.encoding import Base64Encoder; sk=PrivateKey.generate(); print('SECRET_PRIVATE_KEY=' + sk.encode(Base64Encoder).decode()); print('SECRET_PUBLIC_KEY=' + sk.public_key.encode(Base64Encoder).decode())"
+```
+
+也可以用临时 Docker 容器生成，不污染本机 Python 环境：
+
+```bash
+docker run --rm python:3.12-slim sh -c "pip install --quiet pynacl && python -c \"from nacl.public import PrivateKey; from nacl.encoding import Base64Encoder; sk=PrivateKey.generate(); print('SECRET_PRIVATE_KEY=' + sk.encode(Base64Encoder).decode()); print('SECRET_PUBLIC_KEY=' + sk.public_key.encode(Base64Encoder).decode())\""
+```
+
+把 `JWT_SECRET`、`WORKER_API_KEY`、`SECRET_PUBLIC_KEY` 连同其他变量写进 VPS 的 `.env`：
 ```bash
 cp deploy/env.example /opt/icbc-platform/.env
 nano /opt/icbc-platform/.env    # 填实际值
 ```
+
+`SECRET_PRIVATE_KEY` 只放本地 worker 的 `.env`，不要放到 VPS。
 
 ## 4. 初始化数据库
 
@@ -97,16 +116,73 @@ curl https://gogoxoxo.duckdns.org:9443/health
 
 ## 9. 本地 worker 跑起来
 
+worker 可以裸跑，也可以放进 Docker。推荐 Docker，因为同一台本地设备上可以启动多个隔离实例。
+
+### 方案 A：Docker worker（推荐）
+
+本地准备配置：
+
+```bash
+cd path/to/icbc-roadtest-platform
+cp worker/.env.example worker/.env
+cp worker/config.example.yml worker/config.yml
+```
+
+编辑 `worker/.env`：
+
+- `API_BASE_URL=https://gogoxoxo.duckdns.org:9443`
+- `WORKER_API_KEY` 与 VPS `.env` 一致
+- `SECRET_PRIVATE_KEY` 使用上面生成的私钥
+- `ROAD_CONFIG_PATH=/app/config.yml`
+- `LOG_FILE=/app/log/worker.log`
+- `GMAIL_EMAIL` / `GMAIL_APP_PASSWORD` 填系统 Gmail
+- `BOOKING_POLL_MIN_SECONDS=12` 与 `BOOKING_POLL_MAX_SECONDS=20` 表示没号时随机等待 12-20 秒再查下一次
+- `DRY_RUN=true` 可先安全联调；确认后再改为 `false`
+
+编辑 `worker/config.yml`：
+
+- `icbc` 段只是占位，运行时会被用户档案覆盖
+- `gmail.email/password` 会被 `worker/.env` 覆盖
+- 默认 compose 不挂载日志目录；多实例各自写自己的容器文件系统，运行日志用 `docker compose logs` 查看
+- 如果需要把 road.py 数据持久化到宿主机，不要让多个容器共享同一个目录；给每个实例单独挂载目录
+
+构建并启动 1 个 worker：
+
+```bash
+docker compose -f docker-compose.worker.yml up -d --build
+```
+
+启动多个 worker 容器：
+
+```bash
+docker compose -f docker-compose.worker.yml up -d --build --scale worker=3
+```
+
+查看日志：
+
+```bash
+docker compose -f docker-compose.worker.yml logs -f worker
+```
+
+停止：
+
+```bash
+docker compose -f docker-compose.worker.yml down
+```
+
+多个 worker 同时运行是允许的：后端 claim 使用数据库行锁原子认领任务，不会把同一个 pending 任务发给两个 worker。
+
+### 方案 B：本地 Python 裸跑
+
 ```bash
 # 在本地电脑
 cd path/to/icbc-roadtest-platform/worker
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-playwright install chromium
 
 cp .env.example .env
-# 填 API_BASE_URL 和 WORKER_API_KEY（与 VPS .env 一致）
+# 填 API_BASE_URL、WORKER_API_KEY、SECRET_PRIVATE_KEY、GMAIL_EMAIL、GMAIL_APP_PASSWORD
 
 python worker.py
 ```
@@ -116,11 +192,18 @@ python worker.py
 **Q: worker 拿不到任务**
 - 检查 `WORKER_API_KEY` 是否跟 VPS 一致
 - 检查 VPS 安全组 9443 端口是否开放
+- 检查用户是否已创建 `pending` 任务
 - 看 worker.log：`tail -f worker.log`
+- Docker 模式看：`docker compose -f docker-compose.worker.yml logs -f worker`
 
 **Q: 访问 9443 提示证书错误**
 - certbot 是否成功签发？看 `/var/log/letsencrypt/`
 - 证书路径在 nginx 配置里要对得上
 
-**Q: 启动报错 "fernet key invalid"**
-- `ENCRYPTION_KEY` 不能换，换了旧凭据全废
+**Q: worker 解密失败**
+- 检查 worker 的 `SECRET_PRIVATE_KEY` 是否与 VPS 的 `SECRET_PUBLIC_KEY` 成对
+- 换密钥对后，旧 keyword 密文无法解开，需要用户重新保存 keyword
+
+**Q: 多个 worker 会不会抢同一个任务**
+- 不会。`/api/worker/claim` 在数据库层用 `SELECT ... FOR UPDATE SKIP LOCKED` 认领任务。
+- 但同一台设备跑多个真实抢号实例会增加对 ICBC/Gmail 的请求量，先用 `DRY_RUN=true` 做联调。

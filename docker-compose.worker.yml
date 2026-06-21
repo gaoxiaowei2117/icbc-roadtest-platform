@@ -1,0 +1,9 @@
+services:
+  worker:
+    build:
+      context: ./worker
+    env_file:
+      - ./worker/.env
+    volumes:
+      - ./worker/config.yml:/app/config.yml:ro
+    restart: unless-stopped

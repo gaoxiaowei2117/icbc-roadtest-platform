@@ -5,6 +5,7 @@
 （settings.road_config_path 指向的 yaml）。对 Task 的每个 posID 逐个轮询抢号。
 """
 import logging
+import random
 import time
 
 from booking_engine import Result
@@ -48,15 +49,21 @@ def _build_config(task) -> dict:
     return config
 
 
-def run(task):
+def run(task, should_continue=None):
     config = _build_config(task)
     pos_ids = task.pos_ids or []
     deadline = time.monotonic() + settings.booking_timeout_seconds
     rounds = 0
     try:
         while time.monotonic() < deadline:
+            if should_continue is not None and not should_continue():
+                logger.info("booking #%s 已取消，停止本轮抢号", task.booking_id)
+                return Result(success=False, cancelled=True, error="任务已取消")
             rounds += 1
             for pos_id in pos_ids:
+                if should_continue is not None and not should_continue():
+                    logger.info("booking #%s 已取消，停止本轮抢号", task.booking_id)
+                    return Result(success=False, cancelled=True, error="任务已取消")
                 config["icbc"] = _icbc_from_task(task, pos_id)
                 try:
                     status = road.job(config)
@@ -64,16 +71,36 @@ def run(task):
                     logger.exception("booking #%s 第 %d 轮 posID=%s job 异常", task.booking_id, rounds, pos_id)
                     status = None
                 logger.info("booking #%s 第 %d 轮 posID=%s：job 返回 %s", task.booking_id, rounds, pos_id, status)
+                if should_continue is not None and not should_continue():
+                    logger.info("booking #%s 已取消，停止本轮抢号", task.booking_id)
+                    return Result(success=False, cancelled=True, error="任务已取消")
                 if status in _SUCCESS_STATES:
                     return _success_result(config, status)
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
-            time.sleep(min(settings.booking_poll_seconds, remaining))
-        return Result(success=False,
-                      error=f"到达时限（{settings.booking_timeout_seconds}s）仍未抢到号")
+            delay = _next_poll_delay()
+            logger.info("booking #%s 下一轮将在 %.1fs 后开始", task.booking_id, min(delay, remaining))
+            time.sleep(min(delay, remaining))
+        return Result(
+            success=False,
+            error=f"到达时限（{settings.booking_timeout_seconds}s）仍未抢到号，自动重排继续抢",
+            retryable=True,
+        )
     finally:
         _best_effort_restore(config)
+
+
+def _next_poll_delay() -> float:
+    min_seconds = settings.booking_poll_min_seconds
+    max_seconds = settings.booking_poll_max_seconds
+    if min_seconds is None or max_seconds is None:
+        return float(settings.booking_poll_seconds)
+    if min_seconds <= 0 or max_seconds <= 0:
+        return float(settings.booking_poll_seconds)
+    if max_seconds < min_seconds:
+        min_seconds, max_seconds = max_seconds, min_seconds
+    return random.uniform(min_seconds, max_seconds)
 
 
 def _success_result(config, status):

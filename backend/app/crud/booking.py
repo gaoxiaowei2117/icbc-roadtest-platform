@@ -101,6 +101,8 @@ def requeue(db: Session, booking: Booking, last_error: str | None) -> Booking:
     booking.status = BookingStatus.pending
     booking.last_error = last_error
     booking.started_at = None
+    booking.finished_at = None
+    booking.result = None
     db.commit()
     db.refresh(booking)
     return booking

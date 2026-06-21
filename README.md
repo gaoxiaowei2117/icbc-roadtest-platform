@@ -4,13 +4,14 @@
 
 ## 架构
 - **VPS（广州腾讯云）**：FastAPI + PostgreSQL + Nginx（9443），负责注册/登录、任务管理
-- **本地电脑（温哥华）**：Python worker 轮询 VPS 拿任务，跑实际抢约逻辑
+- **本地电脑（温哥华）**：Python worker 轮询 VPS 拿任务，跑实际抢约逻辑；推荐用 Docker 跑一个或多个 worker 实例
 - 通信：worker → VPS 出站 HTTPS，本地无需公网 IP
 
 ## 端口与 URL
 - 前端：`https://gogoxoxo.duckdns.org:9443/booking/`
 - API：`https://gogoxoxo.duckdns.org:9443/api/`
 - worker 心跳：5s 轮询 `/api/worker/claim`
+- worker 容器：不需要暴露端口，只需要能出站访问 API
 
 ## 目录
 - `backend/`  FastAPI 后端

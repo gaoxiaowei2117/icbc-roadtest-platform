@@ -57,6 +57,22 @@ def report_result(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
     if booking.status not in (BookingStatus.running, BookingStatus.pending):
         raise HTTPException(status.HTTP_409_CONFLICT, "任务不在运行中")
+    if payload.status == BookingStatus.pending:
+        booking_crud.requeue(db, booking, payload.last_error)
+        return
     booking_crud.complete(
         db, booking, payload.status, last_error=payload.last_error, result=payload.result
     )
+
+
+@router.get("/bookings/{booking_id}/status")
+def get_booking_status(
+    booking_id: int,
+    db: Session = Depends(get_db),
+    x_worker_key: str = Header(..., alias="X-Worker-Key"),
+) -> dict:
+    require_worker_key(x_worker_key)
+    booking = booking_crud.get(db, booking_id)
+    if booking is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
+    return {"id": booking.id, "status": booking.status}
