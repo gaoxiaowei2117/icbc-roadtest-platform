@@ -60,7 +60,10 @@ def _execute_task(client: APIClient, raw: dict) -> None:
                 logger.warning("任务 #%s 状态检查失败，继续执行本轮：%s", booking_id, e)
                 return True
 
-        result: Result = run(task, should_continue=should_continue)
+        def on_progress(message: str) -> None:
+            client.report_progress(booking_id, message)
+
+        result: Result = run(task, should_continue=should_continue, on_progress=on_progress)
         if result.success:
             client.report(booking_id, "done", None, {
                 "booked_at": result.booked_at,

@@ -45,7 +45,11 @@ class Result:
     cancelled: bool = False
 
 
-def run(task: Task, should_continue: Callable[[], bool] | None = None) -> Result:
+def run(
+    task: Task,
+    should_continue: Callable[[], bool] | None = None,
+    on_progress: Callable[[str], None] | None = None,
+) -> Result:
     """执行一次抢号（限时循环），委托给 road_adapter。"""
     import road_adapter  # 延迟 import：避免 import 期拉起 vendor.road 依赖链
-    return road_adapter.run(task, should_continue=should_continue)
+    return road_adapter.run(task, should_continue=should_continue, on_progress=on_progress)

@@ -8,7 +8,7 @@ from app.api.deps import require_worker_key
 from app.core.database import get_db
 from app.crud import booking as booking_crud
 from app.models.booking import BookingStatus
-from app.schemas.booking import WorkerClaimOut, WorkerResultIn
+from app.schemas.booking import WorkerClaimOut, WorkerProgressIn, WorkerResultIn
 
 router = APIRouter(prefix="/worker", tags=["worker"])
 
@@ -63,6 +63,22 @@ def report_result(
     booking_crud.complete(
         db, booking, payload.status, last_error=payload.last_error, result=payload.result
     )
+
+
+@router.post("/bookings/{booking_id}/progress", status_code=status.HTTP_204_NO_CONTENT)
+def report_progress(
+    booking_id: int,
+    payload: WorkerProgressIn,
+    db: Session = Depends(get_db),
+    x_worker_key: str = Header(..., alias="X-Worker-Key"),
+):
+    require_worker_key(x_worker_key)
+    booking = booking_crud.get(db, booking_id)
+    if booking is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
+    if booking.status != BookingStatus.running:
+        raise HTTPException(status.HTTP_409_CONFLICT, "任务不在运行中")
+    booking_crud.record_progress(db, booking, payload.message)
 
 
 @router.get("/bookings/{booking_id}/status")

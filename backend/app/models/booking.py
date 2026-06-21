@@ -31,6 +31,9 @@ class Booking(Base):
     )
 
     attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    progress_rounds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_progress: Mapped[str | None] = mapped_column(Text)
+    last_progress_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_error: Mapped[str | None] = mapped_column(Text)
     result: Mapped[dict | None] = mapped_column(JSON)
 

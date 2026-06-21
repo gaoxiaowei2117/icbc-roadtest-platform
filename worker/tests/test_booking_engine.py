@@ -15,5 +15,5 @@ def test_run_delegates_to_adapter():
     fake = Result(success=True, confirmation_no="2026-07-15")
     with patch("road_adapter.run", return_value=fake) as adapter:
         out = booking_engine.run(TASK)
-    adapter.assert_called_once_with(TASK, should_continue=None)
+    adapter.assert_called_once_with(TASK, should_continue=None, on_progress=None)
     assert out is fake

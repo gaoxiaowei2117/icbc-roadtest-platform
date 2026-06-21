@@ -68,6 +68,9 @@ Nginx (9443)
 | user_id | int | 外键 → user |
 | status | enum | pending/running/done/failed/cancelled |
 | attempt_count | int | 已尝试次数 |
+| progress_rounds | int | worker 上报的累计查询轮次 |
+| last_progress | text | 最近一次脱敏进度摘要 |
+| last_progress_at | timestamp | 最近一次进度上报时间 |
 | last_error | text | 最后一次错误 |
 | result | jsonb | 成功时存 confirmation_no 等 |
 | started_at | timestamp | 第一次进入 running |

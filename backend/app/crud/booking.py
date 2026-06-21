@@ -108,6 +108,15 @@ def requeue(db: Session, booking: Booking, last_error: str | None) -> Booking:
     return booking
 
 
+def record_progress(db: Session, booking: Booking, message: str) -> Booking:
+    booking.progress_rounds = (booking.progress_rounds or 0) + 1
+    booking.last_progress = message[:500]
+    booking.last_progress_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(booking)
+    return booking
+
+
 def reset_stale_running(db: Session, timeout_minutes: int) -> int:
     """把卡死的 running 任务重置回 pending（T2 reaper）。
 

@@ -28,6 +28,13 @@ class APIClient:
         )
         r.raise_for_status()
 
+    def report_progress(self, booking_id: int, message: str) -> None:
+        r = self._client.post(
+            f"/api/worker/bookings/{booking_id}/progress",
+            json={"message": message},
+        )
+        r.raise_for_status()
+
     def booking_status(self, booking_id: int) -> str | None:
         r = self._client.get(f"/api/worker/bookings/{booking_id}/status")
         if r.status_code == 404:

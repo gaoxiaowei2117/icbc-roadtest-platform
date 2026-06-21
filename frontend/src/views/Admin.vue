@@ -19,6 +19,10 @@ async function refresh() {
 }
 
 onMounted(refresh)
+
+function formatDateTime(value: string | null) {
+  return value ? new Date(value).toLocaleString() : '—'
+}
 </script>
 
 <template>
@@ -45,7 +49,9 @@ onMounted(refresh)
             <th>user</th>
             <th>状态</th>
             <th>尝试</th>
-            <th>最后错误</th>
+            <th>查询轮次</th>
+            <th>最近动态</th>
+            <th>更新时间</th>
             <th>创建</th>
           </tr>
         </thead>
@@ -55,7 +61,12 @@ onMounted(refresh)
             <td>{{ b.user_id }}</td>
             <td>{{ b.status }}</td>
             <td>{{ b.attempt_count }}</td>
-            <td class="text-red-600 text-xs truncate max-w-xs">{{ b.last_error || '—' }}</td>
+            <td>{{ b.progress_rounds }}</td>
+            <td class="text-xs truncate max-w-xs">
+              <span v-if="b.last_error" class="text-red-600">{{ b.last_error }}</span>
+              <span v-else class="text-slate-600">{{ b.last_progress || '—' }}</span>
+            </td>
+            <td class="text-xs text-slate-500">{{ formatDateTime(b.last_progress_at || b.updated_at) }}</td>
             <td>{{ new Date(b.created_at).toLocaleString() }}</td>
           </tr>
         </tbody>

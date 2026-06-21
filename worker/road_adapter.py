@@ -49,7 +49,7 @@ def _build_config(task) -> dict:
     return config
 
 
-def run(task, should_continue=None):
+def run(task, should_continue=None, on_progress=None):
     config = _build_config(task)
     pos_ids = task.pos_ids or []
     deadline = time.monotonic() + settings.booking_timeout_seconds
@@ -71,6 +71,10 @@ def run(task, should_continue=None):
                     logger.exception("booking #%s 第 %d 轮 posID=%s job 异常", task.booking_id, rounds, pos_id)
                     status = None
                 logger.info("booking #%s 第 %d 轮 posID=%s：job 返回 %s", task.booking_id, rounds, pos_id, status)
+                _report_progress(
+                    on_progress,
+                    f"第 {rounds} 轮：考点 {pos_id} 查询结果 {status or 'error'}",
+                )
                 if should_continue is not None and not should_continue():
                     logger.info("booking #%s 已取消，停止本轮抢号", task.booking_id)
                     return Result(success=False, cancelled=True, error="任务已取消")
@@ -101,6 +105,15 @@ def _next_poll_delay() -> float:
     if max_seconds < min_seconds:
         min_seconds, max_seconds = max_seconds, min_seconds
     return random.uniform(min_seconds, max_seconds)
+
+
+def _report_progress(on_progress, message: str) -> None:
+    if on_progress is None:
+        return
+    try:
+        on_progress(message)
+    except Exception:
+        logger.warning("进度上报失败，继续执行本轮抢号", exc_info=True)
 
 
 def _success_result(config, status):

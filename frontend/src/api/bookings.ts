@@ -5,6 +5,9 @@ export interface Booking {
   user_id: number
   status: 'pending' | 'running' | 'done' | 'failed' | 'cancelled'
   attempt_count: number
+  progress_rounds: number
+  last_progress: string | null
+  last_progress_at: string | null
   last_error: string | null
   result: Record<string, unknown> | null
   started_at: string | null

@@ -16,6 +16,9 @@ class BookingOut(BaseModel):
     user_id: int
     status: BookingStatus
     attempt_count: int
+    progress_rounds: int
+    last_progress: str | None
+    last_progress_at: datetime | None
     last_error: str | None
     result: dict | None
     started_at: datetime | None
@@ -44,3 +47,7 @@ class WorkerResultIn(BaseModel):
     status: BookingStatus
     last_error: str | None = None
     result: dict | None = None
+
+
+class WorkerProgressIn(BaseModel):
+    message: str
