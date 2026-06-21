@@ -73,7 +73,7 @@ def run(task, should_continue=None, on_progress=None):
                 logger.info("booking #%s 第 %d 轮 posID=%s：job 返回 %s", task.booking_id, rounds, pos_id, status)
                 _report_progress(
                     on_progress,
-                    f"第 {rounds} 轮：考点 {pos_id} 查询结果 {status or 'error'}",
+                    f"考点 {pos_id} 查询结果 {status or 'error'}",
                 )
                 if should_continue is not None and not should_continue():
                     logger.info("booking #%s 已取消，停止本轮抢号", task.booking_id)

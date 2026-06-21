@@ -91,13 +91,13 @@ def test_worker_report_progress_updates_summary(client, ready_user, db):
     r = client.post(
         f"/api/worker/bookings/{bid}/progress",
         headers=WORKER_HEADERS,
-        json={"message": "第 1 轮：考点 274 查询结果 no_appointments"},
+        json={"message": "考点 274 查询结果 no_appointments"},
     )
     assert r.status_code == 204
     db.expire_all()
     booking = db.get(Booking, bid)
     assert booking.progress_rounds == 1
-    assert booking.last_progress == "第 1 轮：考点 274 查询结果 no_appointments"
+    assert booking.last_progress == "考点 274 查询结果 no_appointments"
     assert booking.last_progress_at is not None
 
 

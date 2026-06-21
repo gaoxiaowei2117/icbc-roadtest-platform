@@ -36,6 +36,19 @@ def test_fresh_running_not_reset(client, ready_user, db):
     assert db.get(Booking, bid).status == BookingStatus.running
 
 
+def test_running_with_recent_progress_not_reset(client, ready_user, db):
+    bid = _make_running(client, ready_user, db,
+                        datetime.now(timezone.utc) - timedelta(hours=2))
+    booking = db.get(Booking, bid)
+    booking.last_progress_at = datetime.now(timezone.utc)
+    db.commit()
+
+    n = booking_crud.reset_stale_running(db, timeout_minutes=15)
+    assert n == 0
+    db.expire_all()
+    assert db.get(Booking, bid).status == BookingStatus.running
+
+
 def test_reaper_ignores_non_running(client, ready_user, db):
     """pending / done 任务不受 reaper 影响。"""
     h, *_ = ready_user()

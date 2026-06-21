@@ -74,7 +74,7 @@ def _execute_task(client: APIClient, raw: dict) -> None:
         elif result.cancelled:
             logger.info("任务 #%s 已取消，worker 停止执行，不回写结果", booking_id)
         elif result.retryable:
-            client.report(booking_id, "pending", result.error or "本轮未抢到号，自动重排", None)
+            client.report(booking_id, "pending", None, None)
             logger.info("任务 #%s 本轮未抢到号，已重排继续抢：%s", booking_id, result.error)
         else:
             client.report(booking_id, "failed", result.error or "未知失败", None)

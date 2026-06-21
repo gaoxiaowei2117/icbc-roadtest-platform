@@ -97,7 +97,7 @@ def test_reports_progress_after_each_job(monkeypatch):
          patch.object(road_adapter.road, "load_booking_status", return_value=None), \
          patch.object(road_adapter.road, "get_weblogin", return_value=None):
         road_adapter.run(TASK, on_progress=messages.append)
-    assert messages == ["第 1 轮：考点 1 查询结果 booking_success"]
+    assert messages == ["考点 1 查询结果 booking_success"]
 
 
 def test_timeout_returns_failure(monkeypatch):

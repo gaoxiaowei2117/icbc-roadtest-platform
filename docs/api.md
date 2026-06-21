@@ -128,7 +128,7 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 ### POST /worker/bookings/{id}/progress
 头：`X-Worker-Key: $WORKER_API_KEY`
 ```json
-{ "message": "第 12 轮：考点 274 查询结果 no_appointments" }
+{ "message": "考点 274 查询结果 no_appointments" }
 ```
 后端只保存累计轮次、最近进度摘要和时间，供用户页面判断任务是否仍在运行；不要上传明文 credential、验证码、HTTP token 或完整 ICBC/Gmail 响应。
 
