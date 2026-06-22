@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { RouterView, RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/i18n'
@@ -8,10 +9,18 @@ const route = useRoute()
 const router = useRouter()
 const { tr, locale } = useI18n()
 
-// 打赏链接：换成你自己的 Ko-fi / 爱发电 / Buy Me a Coffee 地址即可。
-// 留空（''）则不显示打赏入口。话术只谈“支持开发”，请勿在收款页提及 ICBC / 抢约。
-const DONATE_URL = 'https://ko-fi.com/yourname'
+// ── 打赏配置 ──────────────────────────────────────────────
+// 话术只谈“支持开发”，请勿在收款页 / 二维码备注里提及 ICBC / 抢约。
+//
+// 1) 信用卡 / PayPal：填你的 Ko-fi（或 Buy Me a Coffee / PayPal.me）链接；留空则隐藏该按钮。
+const KOFI_URL = 'https://ko-fi.com/galaxtools'
+// 2) 微信 / 支付宝收款码：把收款码图片放到 frontend/public/donate/ 下，
+//    文件名保持 wechat.jpg / alipay.jpg 即可（jpg/png 均可，后缀和实际文件一致即可）。
+const WECHAT_QR = `${import.meta.env.BASE_URL}donate/wechat.jpg`
+const ALIPAY_QR = `${import.meta.env.BASE_URL}donate/alipay.jpg`
+
 const currentYear = new Date().getFullYear()
+const showDonate = ref(false)
 
 async function onLogout() {
   await auth.logout()
@@ -72,17 +81,70 @@ async function onLogout() {
         class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-slate-500"
       >
         <span>© {{ currentYear }} {{ tr('独立开发的小工具，与 ICBC 无任何关联。', 'An independent tool, not affiliated with ICBC.', 'Un outil indépendant, sans lien avec ICBC.', 'Una herramienta independiente, sin relación con ICBC.', '獨立開發的小工具，與 ICBC 無任何關聯。') }}</span>
-        <a
-          v-if="DONATE_URL"
-          :href="DONATE_URL"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
           class="inline-flex items-center gap-2 rounded-full bg-rose-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-600 hover:shadow-md transition-all"
+          @click="showDonate = true"
         >
           <span aria-hidden="true" class="text-base">☕</span>
           {{ tr('请我喝杯咖啡', 'Buy me a coffee', 'Offrez-moi un café', 'Invítame un café', '請我喝杯咖啡') }}
-        </a>
+        </button>
       </div>
     </footer>
+
+    <!-- 打赏弹窗：同时覆盖 微信/支付宝 与 信用卡/PayPal -->
+    <div
+      v-if="showDonate"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      @click.self="showDonate = false"
+    >
+      <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">
+              {{ tr('支持这个小工具', 'Support this tool', 'Soutenir cet outil', 'Apoyar esta herramienta', '支持這個小工具') }}
+            </h2>
+            <p class="mt-1 text-sm text-slate-500">
+              {{ tr('它一直免费提供，你的支持用于服务器开销和功能改进，谢谢 ❤️', 'It is free to use — your support covers server costs and improvements. Thank you ❤️', 'Gratuit à utiliser — votre soutien couvre les frais de serveur et les améliorations. Merci ❤️', 'Es de uso gratuito — tu apoyo cubre los costos del servidor y mejoras. ¡Gracias ❤️', '它一直免費提供，你的支持用於伺服器開銷和功能改進，謝謝 ❤️') }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="ml-3 text-2xl leading-none text-slate-400 hover:text-slate-600"
+            :aria-label="tr('关闭', 'Close', 'Fermer', 'Cerrar', '關閉')"
+            @click="showDonate = false"
+          >
+            ×
+          </button>
+        </div>
+
+        <!-- 微信 / 支付宝收款码 -->
+        <div class="mt-5 grid grid-cols-2 gap-4">
+          <div class="flex flex-col items-center gap-2">
+            <img :src="WECHAT_QR" alt="WeChat Pay" class="w-full rounded-lg border border-slate-200" />
+            <span class="text-sm text-slate-600">{{ tr('微信', 'WeChat Pay', 'WeChat Pay', 'WeChat Pay', '微信') }}</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <img :src="ALIPAY_QR" alt="Alipay" class="w-full rounded-lg border border-slate-200" />
+            <span class="text-sm text-slate-600">{{ tr('支付宝', 'Alipay', 'Alipay', 'Alipay', '支付寶') }}</span>
+          </div>
+        </div>
+        <p class="mt-2 text-center text-xs text-slate-400">
+          {{ tr('微信 / 支付宝扫码即可，无需登录', 'Scan with WeChat / Alipay — no login needed', 'Scannez avec WeChat / Alipay — sans connexion', 'Escanea con WeChat / Alipay — sin iniciar sesión', '微信 / 支付寶掃碼即可，無需登入') }}
+        </p>
+
+        <!-- 信用卡 / PayPal -->
+        <a
+          v-if="KOFI_URL"
+          :href="KOFI_URL"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-5 flex items-center justify-center gap-2 rounded-full bg-slate-800 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-900 transition-colors"
+        >
+          <span aria-hidden="true">💳</span>
+          {{ tr('用信用卡 / PayPal 支持', 'Pay with card / PayPal', 'Payer par carte / PayPal', 'Pagar con tarjeta / PayPal', '用信用卡 / PayPal 支持') }}
+        </a>
+      </div>
+    </div>
   </div>
 </template>
