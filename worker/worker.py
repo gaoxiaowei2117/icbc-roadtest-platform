@@ -6,7 +6,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from api_client import APIClient
+from api_client import APIClient, StaleClaimError
 from booking_engine import BookingEngineError, Result, Task, run
 from config import settings
 from crypto import decrypt_secret
@@ -42,30 +42,43 @@ def build_task(raw: dict, keyword: str) -> Task:
     )
 
 
+def _safe_report(
+    client: APIClient, booking_id: int, attempt: int,
+    status: str, last_error: str | None, result: dict | None,
+) -> None:
+    """回写结果；若认领已过期则忽略，避免覆盖接管 worker 的运行。"""
+    try:
+        client.report(booking_id, attempt, status, last_error, result)
+    except StaleClaimError:
+        logger.info("任务 #%s 回写时发现认领已过期，放弃回写", booking_id)
+
+
 def _execute_task(client: APIClient, raw: dict) -> None:
     booking_id = raw["booking_id"]
-    logger.info("拿到任务 #%s（user=%s）", booking_id, raw["user_id"])
+    attempt = raw["attempt"]
+    logger.info("拿到任务 #%s（user=%s，attempt=%s）", booking_id, raw["user_id"], attempt)
     try:
         keyword = decrypt_secret(raw["keyword_ciphertext"])
     except Exception as e:  # noqa: BLE001 — 解密失败即任务失败，回报后跳过
         logger.error("任务 #%s 凭据解密失败：%s", booking_id, e)
-        client.report(booking_id, "failed", f"凭据解密失败：{e}", None)
+        _safe_report(client, booking_id, attempt, "failed", f"凭据解密失败：{e}", None)
         return
     task = build_task(raw, keyword)
     try:
         def should_continue() -> bool:
             try:
-                return client.booking_status(booking_id) == "running"
+                # 状态非 running（含认领已过期/任务被取消，后端返回 None）即停止本轮
+                return client.booking_status(booking_id, attempt) == "running"
             except Exception as e:  # noqa: BLE001 — 状态检查失败时保守继续，避免误杀任务
                 logger.warning("任务 #%s 状态检查失败，继续执行本轮：%s", booking_id, e)
                 return True
 
         def on_progress(message: str) -> None:
-            client.report_progress(booking_id, message)
+            client.report_progress(booking_id, attempt, message)
 
         result: Result = run(task, should_continue=should_continue, on_progress=on_progress)
         if result.success:
-            client.report(booking_id, "done", None, {
+            client.report(booking_id, attempt, "done", None, {
                 "booked_at": result.booked_at,
                 "confirmation_no": result.confirmation_no,
                 **({"details": result.details} if result.details else {}),
@@ -74,17 +87,20 @@ def _execute_task(client: APIClient, raw: dict) -> None:
         elif result.cancelled:
             logger.info("任务 #%s 已取消，worker 停止执行，不回写结果", booking_id)
         elif result.retryable:
-            client.report(booking_id, "pending", None, None)
+            client.report(booking_id, attempt, "pending", None, None)
             logger.info("任务 #%s 本轮未抢到号，已重排继续抢：%s", booking_id, result.error)
         else:
-            client.report(booking_id, "failed", result.error or "未知失败", None)
+            client.report(booking_id, attempt, "failed", result.error or "未知失败", None)
             logger.warning("任务 #%s 失败：%s", booking_id, result.error)
+    except StaleClaimError:
+        # 任务被 reaper 重排并由其他 worker 接管，本 worker 的运行已作废，直接放弃回写
+        logger.info("任务 #%s 的认领已过期（已被重排并由其他 worker 接管），本 worker 放弃回写", booking_id)
     except BookingEngineError as e:
-        client.report(booking_id, "failed", str(e), None)
+        _safe_report(client, booking_id, attempt, "failed", str(e), None)
         logger.warning("任务 #%s 失败：%s", booking_id, e)
     except Exception as e:
         logger.exception("任务 #%s 异常", booking_id)
-        client.report(booking_id, "failed", f"worker 异常：{e!r}", None)
+        _safe_report(client, booking_id, attempt, "failed", f"worker 异常：{e!r}", None)
 
 
 _shutdown = threading.Event()

@@ -13,6 +13,17 @@ from app.schemas.booking import WorkerClaimOut, WorkerProgressIn, WorkerResultIn
 router = APIRouter(prefix="/worker", tags=["worker"])
 
 
+def _check_fencing(booking, attempt: int) -> None:
+    """拒绝过期认领的回写（fencing token）。
+
+    任务被 reaper 重排并被另一个 worker 重新认领后，attempt_count 会自增。
+    旧 worker 携带的 attempt 与当前不一致，说明它的认领已失效，必须拒绝，
+    否则慢 worker 的迟到回报会覆盖新 worker 正在进行的那次运行。
+    """
+    if attempt != booking.attempt_count:
+        raise HTTPException(status.HTTP_409_CONFLICT, "认领已过期（任务已被重排并重新认领）")
+
+
 @router.post("/claim", response_model=WorkerClaimOut | None)
 def claim_task(
     db: Session = Depends(get_db),
@@ -30,6 +41,7 @@ def claim_task(
         return None
     return WorkerClaimOut(
         booking_id=booking.id,
+        attempt=booking.attempt_count,
         user_id=user.id,
         drvr_last_name=user.icbc_last_name or "",
         licence_number=user.icbc_license_no or "",
@@ -55,6 +67,7 @@ def report_result(
     booking = booking_crud.get(db, booking_id)
     if booking is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
+    _check_fencing(booking, payload.attempt)
     if booking.status not in (BookingStatus.running, BookingStatus.pending):
         raise HTTPException(status.HTTP_409_CONFLICT, "任务不在运行中")
     if payload.status == BookingStatus.pending:
@@ -76,6 +89,7 @@ def report_progress(
     booking = booking_crud.get(db, booking_id)
     if booking is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
+    _check_fencing(booking, payload.attempt)
     if booking.status != BookingStatus.running:
         raise HTTPException(status.HTTP_409_CONFLICT, "任务不在运行中")
     booking_crud.record_progress(db, booking, payload.message)
@@ -84,6 +98,7 @@ def report_progress(
 @router.get("/bookings/{booking_id}/status")
 def get_booking_status(
     booking_id: int,
+    attempt: int,
     db: Session = Depends(get_db),
     x_worker_key: str = Header(..., alias="X-Worker-Key"),
 ) -> dict:
@@ -91,4 +106,6 @@ def get_booking_status(
     booking = booking_crud.get(db, booking_id)
     if booking is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
-    return {"id": booking.id, "status": booking.status}
+    # 认领已过期时返回 409，worker 据此停止本轮执行，避免与新 worker 并行抢同一任务
+    _check_fencing(booking, attempt)
+    return {"id": booking.id, "status": booking.status, "attempt": booking.attempt_count}

@@ -21,6 +21,7 @@ def test_claim_returns_ciphertext_no_plaintext(client, ready_user, decrypt_secre
     assert body["expect_time_range"] == "10:00-17:00"
     assert "keyword_ciphertext" in body
     assert "keyword" not in body  # 明文 keyword 不下发
+    assert body["attempt"] == 1  # 首次认领下发 fencing token
     assert decrypt_secret(body["keyword_ciphertext"]) == f"{icbc_user}\n{icbc_pass}"
 
 
@@ -44,7 +45,7 @@ def test_worker_report_completes_booking(client, ready_user, db):
     client.post("/api/worker/claim", headers=WORKER_HEADERS)
 
     r = client.post(f"/api/worker/bookings/{bid}/result", headers=WORKER_HEADERS,
-                    json={"status": "done", "last_error": None,
+                    json={"attempt": 1, "status": "done", "last_error": None,
                           "result": {"confirmation_no": "CONF-1"}})
     assert r.status_code == 204
     db.expire_all()
@@ -62,7 +63,7 @@ def test_worker_report_pending_requeues_booking(client, ready_user, db):
     r = client.post(
         f"/api/worker/bookings/{bid}/result",
         headers=WORKER_HEADERS,
-        json={"status": "pending", "last_error": "本轮没号，继续抢", "result": None},
+        json={"attempt": 1, "status": "pending", "last_error": "本轮没号，继续抢", "result": None},
     )
     assert r.status_code == 204
     db.expire_all()
@@ -78,9 +79,9 @@ def test_worker_can_read_booking_status(client, ready_user):
     bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
     client.post("/api/worker/claim", headers=WORKER_HEADERS)
 
-    r = client.get(f"/api/worker/bookings/{bid}/status", headers=WORKER_HEADERS)
+    r = client.get(f"/api/worker/bookings/{bid}/status?attempt=1", headers=WORKER_HEADERS)
     assert r.status_code == 200
-    assert r.json() == {"id": bid, "status": "running"}
+    assert r.json() == {"id": bid, "status": "running", "attempt": 1}
 
 
 def test_worker_report_progress_updates_summary(client, ready_user, db):
@@ -91,7 +92,7 @@ def test_worker_report_progress_updates_summary(client, ready_user, db):
     r = client.post(
         f"/api/worker/bookings/{bid}/progress",
         headers=WORKER_HEADERS,
-        json={"message": "考点 274 查询结果 no_appointments"},
+        json={"attempt": 1, "message": "考点 274 查询结果 no_appointments"},
     )
     assert r.status_code == 204
     db.expire_all()
@@ -105,5 +106,71 @@ def test_worker_report_requires_key(client, ready_user):
     h, *_ = ready_user()
     bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
     r = client.post(f"/api/worker/bookings/{bid}/result", headers={"X-Worker-Key": "wrong"},
-                    json={"status": "done"})
+                    json={"attempt": 1, "status": "done"})
     assert r.status_code == 401
+
+
+def _requeue_and_reclaim(client, bid: int) -> int:
+    """模拟 reaper 重排 + 新 worker 接管，返回新的 attempt（fencing token）。"""
+    client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"attempt": 1, "status": "pending", "last_error": "超时重排", "result": None},
+    )
+    return client.post("/api/worker/claim", headers=WORKER_HEADERS).json()["attempt"]
+
+
+def test_stale_attempt_result_rejected(client, ready_user, db):
+    """S1 fencing：任务被重排重新认领后，慢 worker 用旧 attempt 的回写被拒，不覆盖新运行。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    assert client.post("/api/worker/claim", headers=WORKER_HEADERS).json()["attempt"] == 1
+    assert _requeue_and_reclaim(client, bid) == 2  # worker B 接管 → attempt 2
+
+    # 慢 worker A 用旧 attempt=1 回报 done → 被拒，任务仍 running（B 的运行未被覆盖）
+    stale = client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"attempt": 1, "status": "done", "result": {"confirmation_no": "A"}},
+    )
+    assert stale.status_code == 409
+    db.expire_all()
+    booking = db.get(Booking, bid)
+    assert booking.status == BookingStatus.running
+    assert booking.result is None
+
+    # worker B 用当前 attempt=2 回报 done → 成功
+    ok = client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"attempt": 2, "status": "done", "result": {"confirmation_no": "B"}},
+    )
+    assert ok.status_code == 204
+    db.expire_all()
+    booking = db.get(Booking, bid)
+    assert booking.status == BookingStatus.done
+    assert booking.result == {"confirmation_no": "B"}
+
+
+def test_stale_attempt_progress_rejected(client, ready_user):
+    """重排重认领后，旧 attempt 的进度上报被拒。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    _requeue_and_reclaim(client, bid)
+    r = client.post(
+        f"/api/worker/bookings/{bid}/progress",
+        headers=WORKER_HEADERS,
+        json={"attempt": 1, "message": "stale"},
+    )
+    assert r.status_code == 409
+
+
+def test_stale_attempt_status_rejected(client, ready_user):
+    """重排重认领后，旧 attempt 查询 status 返回 409（worker 据此停止本轮）。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    _requeue_and_reclaim(client, bid)
+    assert client.get(f"/api/worker/bookings/{bid}/status?attempt=1", headers=WORKER_HEADERS).status_code == 409
+    assert client.get(f"/api/worker/bookings/{bid}/status?attempt=2", headers=WORKER_HEADERS).status_code == 200
