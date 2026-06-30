@@ -1,4 +1,8 @@
 """建任务的前置校验、列表、取消，以及 claim 原子认领。"""
+import pytest
+from sqlalchemy.exc import IntegrityError
+
+from app.crud import booking as booking_crud
 from app.models.booking import Booking, BookingStatus
 from tests.conftest import WORKER_HEADERS
 
@@ -51,6 +55,16 @@ def test_user_only_sees_own_bookings(client, ready_user):
     client.post("/api/bookings", headers=h1, json={})
     h2, *_ = ready_user(email="u2@gmail.com")
     assert client.get("/api/bookings", headers=h2).json() == []
+
+
+def test_db_unique_index_blocks_second_active(client, ready_user, db):
+    """部分唯一索引兜底：绕过 has_active 直接建第二个进行中任务会被 DB 拒绝（防 TOCTOU 竞态）。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    uid = db.get(Booking, bid).user_id
+    with pytest.raises(IntegrityError):
+        booking_crud.create(db, uid)  # 第二个 pending 撞 uq_booking_one_active_per_user
+    db.rollback()
 
 
 def test_claim_is_atomic_single_winner(client, ready_user, db):

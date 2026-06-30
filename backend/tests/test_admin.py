@@ -20,6 +20,16 @@ def test_admin_requires_auth(client):
     assert client.get("/api/admin/bookings").status_code == 401
 
 
+def test_admin_limit_is_bounded(client, auth_headers, db):
+    """limit 超出上限 → 422，避免无界全表查询拖垮内存。"""
+    h = auth_headers(email="admin@gmail.com")
+    user = db.query(User).filter_by(email="admin@gmail.com").first()
+    user.is_admin = True
+    db.commit()
+    assert client.get("/api/admin/bookings?limit=999999", headers=h).status_code == 422
+    assert client.get("/api/admin/users?limit=999999", headers=h).status_code == 422
+
+
 def test_admin_can_list_users(client, auth_headers, db):
     auth_headers(email="user1@gmail.com")
     admin_headers = auth_headers(email="admin@gmail.com")

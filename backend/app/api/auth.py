@@ -85,7 +85,8 @@ def login(request: Request, payload: LoginIn, db: Session = Depends(get_db)) -> 
 
 
 @router.post("/refresh", response_model=AccessTokenOut)
-def refresh(payload: RefreshIn, db: Session = Depends(get_db)) -> AccessTokenOut:
+@limiter.limit(_auth_limit)
+def refresh(request: Request, payload: RefreshIn, db: Session = Depends(get_db)) -> AccessTokenOut:
     user_id = decode_token(payload.refresh_token, "refresh")
     if user_id is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "refresh token 无效")

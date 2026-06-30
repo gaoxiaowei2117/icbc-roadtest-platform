@@ -8,6 +8,7 @@ import logging
 import random
 import time
 
+from api_client import StaleClaimError
 from booking_engine import Result
 from config import settings
 from vendor import road
@@ -112,6 +113,10 @@ def _report_progress(on_progress, message: str) -> None:
         return
     try:
         on_progress(message)
+    except StaleClaimError:
+        # 认领已过期（被重排并由其他 worker 接管）：必须向上抛出，
+        # 让 _execute_task 立即停止本轮，避免与接管 worker 并行操作同一账号。
+        raise
     except Exception:
         logger.warning("进度上报失败，继续执行本轮抢号", exc_info=True)
 

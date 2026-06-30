@@ -120,18 +120,33 @@ def main() -> None:
     logger.info("worker 启动：API=%s，并发=%s，轮询=%ss",
                 settings.api_base_url, settings.max_concurrent, settings.poll_interval_seconds)
 
+    # 容量信号量：认领前必须先拿到空闲槽位，避免一次性认领超出并发数的任务，
+    # 否则多出来的任务在 DB 里被标成 running 却在线程池队列里空等，被 reaper 误判超时重排。
+    slots = threading.Semaphore(settings.max_concurrent)
+
+    def _run_and_release(raw: dict) -> None:
+        try:
+            _execute_task(client, raw)
+        finally:
+            slots.release()
+
     with ThreadPoolExecutor(max_workers=settings.max_concurrent) as pool:
         while not _shutdown.is_set():
+            # 等一个空闲槽位再去认领；超时则回到循环顶部重新检查关停信号
+            if not slots.acquire(timeout=settings.poll_interval_seconds):
+                continue
             try:
                 task = client.claim()
             except Exception as e:
                 logger.error("claim 失败：%s", e)
+                slots.release()
                 _shutdown.wait(settings.poll_interval_seconds)
                 continue
             if task is None:
+                slots.release()
                 _shutdown.wait(settings.poll_interval_seconds)
                 continue
-            pool.submit(_execute_task, client, task)
+            pool.submit(_run_and_release, task)
 
     client.close()
     logger.info("worker 退出")

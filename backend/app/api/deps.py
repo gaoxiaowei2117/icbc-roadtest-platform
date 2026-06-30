@@ -1,4 +1,6 @@
 """鉴权依赖：当前用户 / admin / worker。"""
+import hmac
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
@@ -35,6 +37,7 @@ def get_admin_user(user: User = Depends(get_current_user)) -> User:
 
 
 def require_worker_key(api_key: str) -> None:
-    """校验 worker 共享密钥。"""
-    if not settings.worker_api_key or api_key != settings.worker_api_key:
+    """校验 worker 共享密钥（常数时间比较，避免时序侧信道）。"""
+    expected = settings.worker_api_key
+    if not expected or not hmac.compare_digest(api_key, expected):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "worker key 无效")

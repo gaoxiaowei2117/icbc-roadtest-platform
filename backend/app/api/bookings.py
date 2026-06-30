@@ -1,5 +1,6 @@
 """/api/bookings/* 用户任务管理。"""
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -43,7 +44,14 @@ def create_booking(
         raise HTTPException(
             status.HTTP_409_CONFLICT, "已有进行中的任务，完成或取消后再新建"
         )
-    return booking_crud.create(db, user.id)
+    try:
+        return booking_crud.create(db, user.id)
+    except IntegrityError:
+        # 兜底：并发创建撞上部分唯一索引（uq_booking_one_active_per_user）
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "已有进行中的任务，完成或取消后再新建"
+        )
 
 
 @router.get("/{booking_id}", response_model=BookingOut)

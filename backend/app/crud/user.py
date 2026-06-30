@@ -52,8 +52,18 @@ def authenticate(db: Session, email: str, password: str) -> User | None:
     return user
 
 
+# 这些字段绝不允许经 update_profile 修改（防越权 / 防篡改账号状态）。
+# 是 hasattr 之外的数据层兜底：即使将来有人把它们加进 UserUpdate schema 也不会被写入。
+_IMMUTABLE_FIELDS = frozenset({
+    "id", "email", "password_hash", "is_admin", "is_active", "email_verified",
+    "verify_code", "verify_code_expires", "created_at",
+})
+
+
 def update_profile(db: Session, user: User, **fields) -> User:
     for key, value in fields.items():
+        if key in _IMMUTABLE_FIELDS:
+            continue
         if value is not None and hasattr(user, key):
             setattr(user, key, value)
     db.commit()

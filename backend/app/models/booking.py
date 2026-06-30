@@ -1,7 +1,7 @@
 """抢约任务。"""
 import enum
 from datetime import datetime
-from sqlalchemy import JSON, DateTime, Enum as SAEnum, ForeignKey, Integer, Text
+from sqlalchemy import JSON, DateTime, Enum as SAEnum, ForeignKey, Index, Integer, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -18,6 +18,16 @@ class BookingStatus(str, enum.Enum):
 
 class Booking(Base):
     __tablename__ = "booking"
+    __table_args__ = (
+        # 数据库层兜底"每用户最多一个进行中任务"，防止 has_active 的 TOCTOU 竞态：
+        # 并发两次创建时，第二条 INSERT 会撞唯一索引报错，由接口转成 409。
+        Index(
+            "uq_booking_one_active_per_user",
+            "user_id",
+            unique=True,
+            postgresql_where=text("status IN ('pending', 'running')"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(

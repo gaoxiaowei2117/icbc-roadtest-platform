@@ -1,5 +1,5 @@
 """/api/admin/* admin 角色专属：查看所有任务和管理用户。"""
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_admin_user
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 @router.get("/bookings", response_model=list[AdminBookingOut])
 def list_all_bookings(
     status_filter: BookingStatus | None = None,
-    limit: int = 100,
+    limit: int = Query(default=100, ge=1, le=500),
     _admin: User = Depends(get_admin_user),
     db: Session = Depends(get_db),
 ) -> list:
@@ -33,7 +33,7 @@ def list_all_bookings(
 
 @router.get("/users", response_model=list[AdminUserOut])
 def list_all_users(
-    limit: int = 200,
+    limit: int = Query(default=200, ge=1, le=500),
     _admin: User = Depends(get_admin_user),
     db: Session = Depends(get_db),
 ) -> list:
