@@ -32,6 +32,7 @@ npm --prefix frontend run build
 
 ssh mycloud 'sudo mkdir -p /opt/icbc-platform && sudo chown $USER:$USER /opt/icbc-platform'
 rsync -az --exclude='.git/' --exclude='.env' --exclude='backend/.venv/' \
+  --exclude='worker/.venv/' \
   --exclude='frontend/node_modules/' --exclude='worker/.env' \
   --exclude='worker/config.yml' ./ mycloud:/opt/icbc-platform/
 ```
@@ -134,13 +135,14 @@ ssh mycloud 'ts=$(date +%Y%m%d-%H%M%S); sudo mkdir -p /opt/icbc-backups/$ts/back
 ssh mycloud 'rm -rf /tmp/icbc-platform-release && mkdir -p /tmp/icbc-platform-release'
 rsync -az --delete \
   --exclude='.git/' --exclude='.env' --exclude='backend/.venv/' \
+  --exclude='worker/.venv/' \
   --exclude='frontend/node_modules/' --exclude='frontend/dist/' \
   --exclude='worker/.env' --exclude='worker/config.yml' \
   --exclude='*.log' \
   ./ mycloud:/tmp/icbc-platform-release/
 
 ssh mycloud "sudo rsync -a --delete --chown=icbc:icbc \
-  --exclude='.env' --exclude='backend/.venv/' \
+  --exclude='.env' --exclude='backend/.venv/' --exclude='worker/.venv/' \
   --exclude='worker/.env' --exclude='worker/config.yml' \
   /tmp/icbc-platform-release/ /opt/icbc-platform/"
 ```
