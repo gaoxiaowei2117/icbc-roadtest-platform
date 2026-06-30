@@ -36,7 +36,10 @@ export const useAuthStore = defineStore('auth', () => {
   axios.interceptors.response.use(
     (r) => r,
     async (err) => {
-      if (err.response?.status === 401 && refreshToken.value && !err.config._retry) {
+      // 不要对 auth 端点本身做刷新重试，否则 refresh 也过期时会无限刷新（401 风暴 → 路由守卫挂起 → 页面空白）
+      const url: string = err.config?.url || ''
+      const isAuthEndpoint = url.includes('/api/auth/')
+      if (err.response?.status === 401 && refreshToken.value && !err.config._retry && !isAuthEndpoint) {
         err.config._retry = true
         try {
           const r = await axios.post('/api/auth/refresh', { refresh_token: refreshToken.value })
