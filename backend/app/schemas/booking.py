@@ -34,6 +34,9 @@ class AdminBookingOut(BookingOut):
 class WorkerClaimOut(BaseModel):
     """worker 拉取到的任务：含完整抢号档案，keyword 为密文（worker 私钥解）。"""
     booking_id: int
+    # 认领令牌（fencing token）：等于本次认领时的 attempt_count。
+    # worker 回报 progress/result 及查询 status 时必须带上，后端据此拒绝过期认领的回写。
+    attempt: int
     user_id: int
     drvr_last_name: str
     licence_number: str
@@ -48,10 +51,12 @@ class WorkerClaimOut(BaseModel):
 
 
 class WorkerResultIn(BaseModel):
+    attempt: int
     status: BookingStatus
     last_error: str | None = None
     result: dict | None = None
 
 
 class WorkerProgressIn(BaseModel):
+    attempt: int
     message: str
