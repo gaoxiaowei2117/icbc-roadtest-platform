@@ -64,8 +64,24 @@ def _reaper_loop() -> None:
             logger.exception("reaper 循环异常，跳过本轮")
 
 
+def _require_secrets() -> None:
+    """启动即失败：缺少关键密钥时拒绝启动，避免用空 JWT 密钥（可伪造任意用户 token）静默上线。"""
+    s = get_settings()
+    missing = [
+        name for name, value in (
+            ("JWT_SECRET", s.jwt_secret),
+            ("WORKER_API_KEY", s.worker_api_key),
+            ("SECRET_PUBLIC_KEY", s.secret_public_key),
+        )
+        if not value
+    ]
+    if missing:
+        raise RuntimeError(f"缺少必需的密钥配置：{', '.join(missing)}（请检查 .env）")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _require_secrets()
     _bootstrap_admin()
     _reaper_stop.clear()
     reaper = threading.Thread(target=_reaper_loop, name="reaper", daemon=True)

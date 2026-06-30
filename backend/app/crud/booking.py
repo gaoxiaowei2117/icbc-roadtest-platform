@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.booking import Booking, BookingStatus
@@ -47,6 +47,11 @@ def get(db: Session, booking_id: int) -> Booking | None:
     return db.get(Booking, booking_id)
 
 
+def get_for_update(db: Session, booking_id: int) -> Booking | None:
+    """加行锁读取，供需要"读-改-写"原子性的路径使用（取消 / worker 回报）。"""
+    return db.get(Booking, booking_id, with_for_update=True)
+
+
 def create(db: Session, user_id: int, **fields) -> Booking:
     booking = Booking(user_id=user_id, **fields)
     db.add(booking)
@@ -56,13 +61,17 @@ def create(db: Session, user_id: int, **fields) -> Booking:
 
 
 def cancel(db: Session, booking: Booking) -> Booking:
-    if booking.status not in (BookingStatus.pending, BookingStatus.running):
-        raise ValueError(f"任务状态 {booking.status} 不可取消")
-    booking.status = BookingStatus.cancelled
-    booking.finished_at = datetime.now(timezone.utc)
+    # 加行锁后重新校验状态，避免与 worker 的 complete 并发时"后写者覆盖"（done 被改成 cancelled）
+    locked = db.get(Booking, booking.id, with_for_update=True)
+    if locked is None:
+        raise ValueError("任务不存在")
+    if locked.status not in (BookingStatus.pending, BookingStatus.running):
+        raise ValueError(f"任务状态 {locked.status} 不可取消")
+    locked.status = BookingStatus.cancelled
+    locked.finished_at = datetime.now(timezone.utc)
     db.commit()
-    db.refresh(booking)
-    return booking
+    db.refresh(locked)
+    return locked
 
 
 def claim_next_pending(db: Session) -> Booking | None:
@@ -137,15 +146,28 @@ def reset_stale_running(db: Session, timeout_minutes: int) -> int:
         Booking.started_at < cutoff,
     )
     candidates = db.scalars(stmt).all()
-    stale = []
+    stale_ids = []
     for booking in candidates:
         active_at = booking.last_progress_at or booking.started_at
         if active_at is not None and active_at >= cutoff:
             continue
-        stale.append(booking)
-        booking.status = BookingStatus.pending
-        booking.started_at = None
-        booking.last_error = f"worker 超时（>{timeout_minutes} 分钟）未完成，自动重置重排"
-    if stale:
-        db.commit()
-    return len(stale)
+        stale_ids.append(booking.id)
+    if not stale_ids:
+        return 0
+    # 守卫：UPDATE 必须带 status='running'，避免覆盖在"读取候选"与"提交"之间
+    # 已由 worker 完成（done/failed）或被用户取消（cancelled）的任务。
+    result = db.execute(
+        update(Booking)
+        .where(
+            Booking.id.in_(stale_ids),
+            Booking.status == BookingStatus.running,
+        )
+        .values(
+            status=BookingStatus.pending,
+            started_at=None,
+            last_error=f"worker 超时（>{timeout_minutes} 分钟）未完成，自动重置重排",
+        )
+        .execution_options(synchronize_session=False),
+    )
+    db.commit()
+    return result.rowcount

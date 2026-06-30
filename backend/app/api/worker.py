@@ -64,7 +64,9 @@ def report_result(
     x_worker_key: str = Header(..., alias="X-Worker-Key"),
 ):
     require_worker_key(x_worker_key)
-    booking = booking_crud.get(db, booking_id)
+    # 加行锁读取，使 fencing 校验 + 状态校验 + 写终态成为原子操作，
+    # 避免与用户取消（cancel 同样加行锁）并发时互相覆盖。
+    booking = booking_crud.get_for_update(db, booking_id)
     if booking is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
     _check_fencing(booking, payload.attempt)
