@@ -38,6 +38,30 @@ def test_claim_marks_running(client, ready_user, db):
     assert db.get(Booking, bid).status == BookingStatus.running
 
 
+def test_claim_fails_gracefully_on_incomplete_profile(client, ready_user, db):
+    """C 兜底：claim 时必填档案缺失，应判失败而非 500 卡死重排。
+
+    直接把字段清成 NULL 绕过 update_me 的 B 守卫，模拟历史脏数据或其它写入路径。
+    """
+    from app.models.user import User
+
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    u = db.query(User).filter_by(email="user@gmail.com").first()
+    u.expect_after_date = None
+    db.commit()
+
+    r = client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    assert r.status_code == 200
+    assert r.json() is None  # 没下发任务，而不是 500
+
+    db.expire_all()
+    booking = db.get(Booking, bid)
+    assert booking.status == BookingStatus.failed
+    assert "档案不完整" in booking.last_error
+    assert "开始日期" in booking.last_error
+
+
 def test_worker_report_completes_booking(client, ready_user, db):
     """F5 回归：回报结果不再 NameError，任务进入终态。"""
     h, *_ = ready_user()
@@ -174,3 +198,50 @@ def test_stale_attempt_status_rejected(client, ready_user):
     _requeue_and_reclaim(client, bid)
     assert client.get(f"/api/worker/bookings/{bid}/status?attempt=1", headers=WORKER_HEADERS).status_code == 409
     assert client.get(f"/api/worker/bookings/{bid}/status?attempt=2", headers=WORKER_HEADERS).status_code == 200
+
+
+def test_worker_result_rejects_running(client, ready_user, db):
+    """ISSUE-003：worker result 不得写入 running（会造出 finished_at 已设的不一致态）。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    r = client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"attempt": 1, "status": "running", "last_error": None, "result": None},
+    )
+    assert r.status_code == 422
+    db.expire_all()
+    booking = db.get(Booking, bid)
+    assert booking.status == BookingStatus.running
+    assert booking.finished_at is None
+
+
+def test_worker_result_rejects_cancelled(client, ready_user, db):
+    """ISSUE-003：worker result 不得写入 cancelled（仅用户取消路径可写）。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    r = client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"attempt": 1, "status": "cancelled", "last_error": None, "result": None},
+    )
+    assert r.status_code == 422
+    db.expire_all()
+    assert db.get(Booking, bid).status == BookingStatus.running
+
+
+def test_worker_result_still_accepts_done_failed_pending(client, ready_user, db):
+    """回归：合法的 done 仍能写终态，验证白名单没误伤正常回报。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    r = client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"attempt": 1, "status": "failed", "last_error": "网站维护", "result": None},
+    )
+    assert r.status_code == 204
+    db.expire_all()
+    assert db.get(Booking, bid).status == BookingStatus.failed
