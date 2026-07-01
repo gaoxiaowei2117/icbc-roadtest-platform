@@ -39,6 +39,14 @@ def update_me(
             status.HTTP_409_CONFLICT,
             f"任务进行中，不能清空：{'、'.join(cleared)}；请先取消任务再修改",
         )
+    # 日期区间顺序：schema 的 _check_date_order 只能看到本次 PATCH 同时提交的两个日期。
+    # 若只改其中一个，需与库中现有值合并后再校验，否则可能存成 结束 < 开始 的非法区间。
+    after = data.get("expect_after_date", user.expect_after_date)
+    before = data.get("expect_before_date", user.expect_before_date)
+    if after is not None and before is not None and before < after:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "结束日期不能早于开始日期"
+        )
     return user_crud.update_profile(db, user, **data)
 
 

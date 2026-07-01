@@ -1,8 +1,12 @@
 """抢号任务 schema。"""
 from datetime import date, datetime
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 from app.models.booking import BookingStatus
+
+# worker result 接口只允许回报这些终态/可重试态。running 由 claim 独占管理，
+# cancelled 只能由用户取消路径写入——都不该经 worker result 写库。
+_WORKER_REPORTABLE = (BookingStatus.done, BookingStatus.failed, BookingStatus.pending)
 
 
 class BookingCreate(BaseModel):
@@ -55,6 +59,13 @@ class WorkerResultIn(BaseModel):
     status: BookingStatus
     last_error: str | None = None
     result: dict | None = None
+
+    @field_validator("status")
+    @classmethod
+    def _only_worker_reportable(cls, v: BookingStatus) -> BookingStatus:
+        if v not in _WORKER_REPORTABLE:
+            raise ValueError("worker 只能回报 done / failed / pending")
+        return v
 
 
 class WorkerProgressIn(BaseModel):

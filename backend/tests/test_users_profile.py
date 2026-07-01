@@ -90,3 +90,34 @@ def test_can_change_required_field_to_valid_value_with_active_booking(client, re
     r = client.patch("/api/users/me", headers=h, json={"expect_before_date": "2026-09-01"})
     assert r.status_code == 200
     assert r.json()["expect_before_date"] == "2026-09-01"
+
+
+def test_patch_single_before_date_cannot_break_order(client, auth_headers):
+    """ISSUE-002：只 PATCH 一个日期时，需与库中已有日期合并校验顺序。"""
+    h = auth_headers()
+    client.patch(
+        "/api/users/me",
+        headers=h,
+        json={"expect_after_date": "2026-07-01", "expect_before_date": "2026-08-01"},
+    )
+    # 只改 before 到早于已有 after → 合并后 结束 < 开始，应 400
+    r = client.patch("/api/users/me", headers=h, json={"expect_before_date": "2026-06-01"})
+    assert r.status_code == 400
+    assert "结束日期" in r.json()["detail"]
+    # 未落库，保持原值
+    me = client.get("/api/users/me", headers=h).json()
+    assert me["expect_before_date"] == "2026-08-01"
+
+
+def test_patch_single_after_date_cannot_break_order(client, auth_headers):
+    """ISSUE-002 对称情形：只改 after 到晚于已有 before。"""
+    h = auth_headers()
+    client.patch(
+        "/api/users/me",
+        headers=h,
+        json={"expect_after_date": "2026-07-01", "expect_before_date": "2026-08-01"},
+    )
+    r = client.patch("/api/users/me", headers=h, json={"expect_after_date": "2026-09-01"})
+    assert r.status_code == 400
+    me = client.get("/api/users/me", headers=h).json()
+    assert me["expect_after_date"] == "2026-07-01"

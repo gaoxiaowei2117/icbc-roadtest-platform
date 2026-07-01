@@ -198,3 +198,50 @@ def test_stale_attempt_status_rejected(client, ready_user):
     _requeue_and_reclaim(client, bid)
     assert client.get(f"/api/worker/bookings/{bid}/status?attempt=1", headers=WORKER_HEADERS).status_code == 409
     assert client.get(f"/api/worker/bookings/{bid}/status?attempt=2", headers=WORKER_HEADERS).status_code == 200
+
+
+def test_worker_result_rejects_running(client, ready_user, db):
+    """ISSUE-003：worker result 不得写入 running（会造出 finished_at 已设的不一致态）。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    r = client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"attempt": 1, "status": "running", "last_error": None, "result": None},
+    )
+    assert r.status_code == 422
+    db.expire_all()
+    booking = db.get(Booking, bid)
+    assert booking.status == BookingStatus.running
+    assert booking.finished_at is None
+
+
+def test_worker_result_rejects_cancelled(client, ready_user, db):
+    """ISSUE-003：worker result 不得写入 cancelled（仅用户取消路径可写）。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    r = client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"attempt": 1, "status": "cancelled", "last_error": None, "result": None},
+    )
+    assert r.status_code == 422
+    db.expire_all()
+    assert db.get(Booking, bid).status == BookingStatus.running
+
+
+def test_worker_result_still_accepts_done_failed_pending(client, ready_user, db):
+    """回归：合法的 done 仍能写终态，验证白名单没误伤正常回报。"""
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    r = client.post(
+        f"/api/worker/bookings/{bid}/result",
+        headers=WORKER_HEADERS,
+        json={"attempt": 1, "status": "failed", "last_error": "网站维护", "result": None},
+    )
+    assert r.status_code == 204
+    db.expire_all()
+    assert db.get(Booking, bid).status == BookingStatus.failed
