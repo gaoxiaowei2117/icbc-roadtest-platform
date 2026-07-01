@@ -60,6 +60,24 @@ _IMMUTABLE_FIELDS = frozenset({
 })
 
 
+# 抢号任务必需的档案字段（字段名 -> 人类可读名）。ICBC keyword（secret）单独判断。
+# 单一事实源：创建任务的完整性校验、有 active 任务时的清空守卫、worker claim
+# 的兜底校验都用它，避免三处各写一份必填列表而漂移。
+BOOKING_REQUIRED_FIELDS: dict[str, str] = {
+    "icbc_license_no": "驾照号",
+    "icbc_last_name": "姓氏",
+    "exam_class": "考试类型",
+    "pos_ids": "考点",
+    "expect_after_date": "开始日期",
+    "expect_before_date": "结束日期",
+}
+
+
+def missing_booking_fields(user: User) -> list[str]:
+    """返回 user 缺失的抢号必填档案字段（人类可读名）；空列表表示齐全。"""
+    return [label for field, label in BOOKING_REQUIRED_FIELDS.items() if not getattr(user, field)]
+
+
 def update_profile(db: Session, user: User, **fields) -> User:
     # 调用方用 model_dump(exclude_unset=True)，因此 fields 里只有客户端显式提交的字段。
     # 显式传入的 None 表示「清空该字段」，必须写入——不能跳过 None，否则清空操作会被吞掉。

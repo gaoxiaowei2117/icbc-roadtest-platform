@@ -38,6 +38,30 @@ def test_claim_marks_running(client, ready_user, db):
     assert db.get(Booking, bid).status == BookingStatus.running
 
 
+def test_claim_fails_gracefully_on_incomplete_profile(client, ready_user, db):
+    """C 兜底：claim 时必填档案缺失，应判失败而非 500 卡死重排。
+
+    直接把字段清成 NULL 绕过 update_me 的 B 守卫，模拟历史脏数据或其它写入路径。
+    """
+    from app.models.user import User
+
+    h, *_ = ready_user()
+    bid = client.post("/api/bookings", headers=h, json={}).json()["id"]
+    u = db.query(User).filter_by(email="user@gmail.com").first()
+    u.expect_after_date = None
+    db.commit()
+
+    r = client.post("/api/worker/claim", headers=WORKER_HEADERS)
+    assert r.status_code == 200
+    assert r.json() is None  # 没下发任务，而不是 500
+
+    db.expire_all()
+    booking = db.get(Booking, bid)
+    assert booking.status == BookingStatus.failed
+    assert "档案不完整" in booking.last_error
+    assert "开始日期" in booking.last_error
+
+
 def test_worker_report_completes_booking(client, ready_user, db):
     """F5 回归：回报结果不再 NameError，任务进入终态。"""
     h, *_ = ready_user()

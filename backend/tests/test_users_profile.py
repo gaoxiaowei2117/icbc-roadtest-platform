@@ -57,3 +57,36 @@ def test_clear_profile_fields(client, auth_headers):
     assert me["pos_ids"] is None
     assert me["expect_after_date"] is None
     assert me["icbc_last_name"] == "GAO"
+
+
+def test_cannot_clear_required_field_with_active_booking(client, ready_user):
+    """B 守卫：有进行中任务时，清空抢号必填字段应被 409 拒绝且不落库。"""
+    h, *_ = ready_user()
+    client.post("/api/bookings", headers=h, json={})  # 建一个 active 任务
+
+    r = client.patch("/api/users/me", headers=h, json={"expect_after_date": None})
+    assert r.status_code == 409
+    assert "任务进行中" in r.json()["detail"]
+    # 原值保持不变
+    me = client.get("/api/users/me", headers=h).json()
+    assert me["expect_after_date"] == "2026-07-01"
+
+
+def test_can_edit_nonrequired_field_with_active_booking(client, ready_user):
+    """B 守卫只挡清空必填字段：清空非必填字段（时间区间）仍放行。"""
+    h, *_ = ready_user()
+    client.post("/api/bookings", headers=h, json={})
+
+    r = client.patch("/api/users/me", headers=h, json={"expect_time_range": None})
+    assert r.status_code == 200
+    assert r.json()["expect_time_range"] is None
+
+
+def test_can_change_required_field_to_valid_value_with_active_booking(client, ready_user):
+    """B 守卫只挡清空，不挡改成别的合法值。"""
+    h, *_ = ready_user()
+    client.post("/api/bookings", headers=h, json={})
+
+    r = client.patch("/api/users/me", headers=h, json={"expect_before_date": "2026-09-01"})
+    assert r.status_code == 200
+    assert r.json()["expect_before_date"] == "2026-09-01"

@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
+from app.crud import booking as booking_crud
 from app.crud import secret as secret_crud
 from app.crud import user as user_crud
+from app.crud.user import BOOKING_REQUIRED_FIELDS
 from app.models.user import User
 from app.schemas.user import SecretIn, SecretStatus, UserPublic, UserUpdate
 
@@ -23,7 +25,21 @@ def update_me(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> User:
-    return user_crud.update_profile(db, user, **payload.model_dump(exclude_unset=True))
+    data = payload.model_dump(exclude_unset=True)
+    # 有进行中的任务时，禁止清空抢号必填字段：worker claim 会读取实时档案，
+    # 若必填字段被清成 NULL，claim 组装 WorkerClaimOut 时会因非空约束 500，
+    # 任务卡在 running 反复被 reaper 重排。修改成别的合法值不受影响，只挡清空。
+    cleared = [
+        BOOKING_REQUIRED_FIELDS[k]
+        for k, v in data.items()
+        if k in BOOKING_REQUIRED_FIELDS and not v
+    ]
+    if cleared and booking_crud.has_active(db, user.id):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"任务进行中，不能清空：{'、'.join(cleared)}；请先取消任务再修改",
+        )
+    return user_crud.update_profile(db, user, **data)
 
 
 @router.put("/me/secret", response_model=SecretStatus)

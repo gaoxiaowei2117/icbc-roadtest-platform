@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.crud import booking as booking_crud
+from app.crud import user as user_crud
 from app.models.user import User
 from app.schemas.booking import BookingCreate, BookingOut
 
@@ -25,17 +26,9 @@ def create_booking(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    missing = []
-    if not user.icbc_license_no or not user.icbc_last_name:
-        missing.append("驾照号/姓氏")
+    missing = user_crud.missing_booking_fields(user)
     if user.secret is None:
         missing.append("ICBC keyword")
-    if not user.exam_class:
-        missing.append("考试类型")
-    if not user.pos_ids:
-        missing.append("考点")
-    if not user.expect_after_date or not user.expect_before_date:
-        missing.append("日期区间")
     if missing:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, f"请先在设置页补全：{'、'.join(missing)}"
