@@ -22,6 +22,12 @@ def _load_pos() -> list[dict]:
     return out
 
 
+@lru_cache
+def valid_pos_ids() -> frozenset[int]:
+    """合法 posID 集合，供档案校验做存在性检查。"""
+    return frozenset(p["pos_id"] for p in _load_pos())
+
+
 @router.get("/pos-list")
 def pos_list() -> list[dict]:
     return _load_pos()
