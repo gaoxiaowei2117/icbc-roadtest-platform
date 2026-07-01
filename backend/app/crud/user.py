@@ -61,10 +61,12 @@ _IMMUTABLE_FIELDS = frozenset({
 
 
 def update_profile(db: Session, user: User, **fields) -> User:
+    # 调用方用 model_dump(exclude_unset=True)，因此 fields 里只有客户端显式提交的字段。
+    # 显式传入的 None 表示「清空该字段」，必须写入——不能跳过 None，否则清空操作会被吞掉。
     for key, value in fields.items():
         if key in _IMMUTABLE_FIELDS:
             continue
-        if value is not None and hasattr(user, key):
+        if hasattr(user, key):
             setattr(user, key, value)
     db.commit()
     db.refresh(user)
