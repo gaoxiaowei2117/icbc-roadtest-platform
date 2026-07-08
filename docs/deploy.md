@@ -4,15 +4,25 @@
 
 | 项目 | 配置 |
 |---|---|
-| SSH 别名 | `mycloud` |
+| SSH 别名 | `mycloud`（腾讯云轻量 Ubuntu，`43.136.116.117:8822`） |
 | 云端目录 | `/opt/icbc-platform` |
 | 后端服务 | `icbc-api`，监听 `127.0.0.1:8000` |
 | 数据库 | PostgreSQL 16 |
 | 前端目录 | `/var/www/icbc-platform` |
-| Nginx | HTTPS 9443 |
-| 页面 | `https://gogoxoxo.duckdns.org:9443/booking/` |
-| 健康检查 | `https://gogoxoxo.duckdns.org:9443/health` |
-| worker | 本地 Docker，不部署到云服务器运行 |
+| Nginx | 监听 9443，双 server 块（新域名 / DuckDNS） |
+| 正式入口 | `https://roadtestgo.com/booking/`（Cloudflare 代理 443 → 回源 9443） |
+| 旧入口（过渡） | `https://gogoxoxo.duckdns.org:9443/booking/` |
+| 健康检查 | `https://roadtestgo.com/health` |
+| worker | 本地 Docker，`API_BASE_URL=https://roadtestgo.com` |
+
+### 域名与边缘（Cloudflare）
+
+- 域名 `roadtestgo.com` 在 Cloudflare Registrar 注册，DNS 托管在 Cloudflare。
+- DNS：`@` A → `43.136.116.117`（代理开启），`www` CNAME → `roadtestgo.com`（代理开启）。
+- Origin Rule `origin-port-9443`：全部请求回源端口改写为 9443，对外隐藏端口。
+- SSL 模式 **Full (Strict)**；源站装 Cloudflare Origin CA 证书（15 年，`/etc/ssl/cloudflare/roadtestgo-origin.pem` + `/etc/ssl/private/roadtestgo-origin.key`），私钥在服务器生成，从未离开服务器。
+- Always Use HTTPS 已开启（HTTP 80 → 301 HTTPS）。
+- 腾讯云防火墙：9443 入站仅放通 [Cloudflare 官方 IPv4 段](https://www.cloudflare.com/ips/)（15 条，备注 `cf N/15`），直连源站 IP 已被拒。**注意：`全部IPv6地址 9443` 旧规则仍在，IPv6 尚未收紧。**
 
 云端 `/opt/icbc-platform` 当前不是 Git 工作区。日常更新应从本地经过检查的代码使用 `rsync` 发布，不要在云端执行 `git pull`。
 
