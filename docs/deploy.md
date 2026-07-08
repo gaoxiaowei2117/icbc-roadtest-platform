@@ -22,7 +22,7 @@
 - Origin Rule `origin-port-9443`：全部请求回源端口改写为 9443，对外隐藏端口。
 - SSL 模式 **Full (Strict)**；源站装 Cloudflare Origin CA 证书（15 年，`/etc/ssl/cloudflare/roadtestgo-origin.pem` + `/etc/ssl/private/roadtestgo-origin.key`），私钥在服务器生成，从未离开服务器。
 - Always Use HTTPS 已开启（HTTP 80 → 301 HTTPS）。
-- 腾讯云防火墙：9443 入站仅放通 [Cloudflare 官方 IPv4 段](https://www.cloudflare.com/ips/)（15 条，备注 `cf N/15`），直连源站 IP 已被拒。**注意：`全部IPv6地址 9443` 旧规则仍在，IPv6 尚未收紧。**
+- 腾讯云防火墙：9443 入站仅放通 [Cloudflare 官方 IPv4 段](https://www.cloudflare.com/ips/)（15 条，备注 `cf N/15`），直连源站 IP 已被拒。原 `全部IPv6地址 9443` 放通规则已删除（源站无 AAAA，Cloudflare 走 IPv4 回源）。
 
 云端 `/opt/icbc-platform` 当前不是 Git 工作区。日常更新应从本地经过检查的代码使用 `rsync` 发布，不要在云端执行 `git pull`。
 
