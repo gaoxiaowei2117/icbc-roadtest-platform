@@ -7,6 +7,7 @@
 import logging
 import random
 import time
+from pathlib import Path
 
 from api_client import StaleClaimError
 from booking_engine import Result
@@ -41,6 +42,13 @@ def _build_config(task) -> dict:
     dry_run=False：都开 → 真实抢号。icbc 段在轮询时逐 posID 覆盖。
     """
     config = road.load_config(settings.road_config_path)
+    # road.py 会把 booking_status、邮箱恢复备份等运行状态写进 data_directory。
+    # 多用户 worker 必须按任务隔离，否则一个任务的 booked 状态会让后续任务
+    # 在登录 ICBC 前被误判为 already_booked。
+    base_data_directory = Path(config.get("data_directory", "./data"))
+    config["data_directory"] = str(
+        base_data_directory / "bookings" / str(task.booking_id)
+    )
     config.setdefault("gmail", {})
     config["gmail"]["email"] = settings.gmail_email
     config["gmail"]["password"] = settings.gmail_app_password

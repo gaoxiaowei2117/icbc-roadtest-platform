@@ -1,4 +1,5 @@
 """road_adapter 单测：全部 mock vendor.road，不触真实 ICBC。"""
+import json
 from unittest.mock import patch
 
 import road_adapter
@@ -14,6 +15,18 @@ TASK = Task(
 
 def _base():
     return {"gmail": {}, "autoBooking": {}, "emailReplace": {"enable": True}}
+
+
+def test_build_config_isolates_road_state_by_booking(tmp_path):
+    shared_status = tmp_path / "booking_status.json"
+    shared_status.write_text(json.dumps({"status": "booked"}), encoding="utf-8")
+    base = {**_base(), "data_directory": str(tmp_path)}
+
+    with patch.object(road_adapter.road, "load_config", return_value=base):
+        config = road_adapter._build_config(TASK)
+
+    assert config["data_directory"] == str(tmp_path / "bookings" / "1")
+    assert road_adapter.road.check_if_already_booked(config) is False
 
 
 def test_build_config_injects_icbc_and_gmail(monkeypatch):
