@@ -24,6 +24,7 @@ def _icbc_from_task(task, pos_id: int) -> dict:
     return {
         "drvrLastName": task.drvr_last_name,
         "licenceNumber": task.licence_number,
+        "originalEmail": task.original_email,
         "keyword": task.keyword,
         "examClass": task.exam_class,
         "posID": pos_id,
@@ -76,6 +77,9 @@ def run(task, should_continue=None, on_progress=None):
                 config["icbc"] = _icbc_from_task(task, pos_id)
                 try:
                     status = road.job(config)
+                except road.EmailSafetyError as exc:
+                    logger.error("booking #%s 邮箱安全检查失败：%s", task.booking_id, exc)
+                    return Result(success=False, error=str(exc))
                 except Exception:  # noqa: BLE001 — 单轮异常不中断循环
                     logger.exception("booking #%s 第 %d 轮 posID=%s job 异常", task.booking_id, rounds, pos_id)
                     status = None

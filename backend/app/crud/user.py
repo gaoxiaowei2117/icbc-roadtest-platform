@@ -66,6 +66,7 @@ _IMMUTABLE_FIELDS = frozenset({
 BOOKING_REQUIRED_FIELDS: dict[str, str] = {
     "icbc_license_no": "驾照号",
     "icbc_last_name": "姓氏",
+    "icbc_original_email": "ICBC 原始邮箱",
     "exam_class": "考试类型",
     "pos_ids": "考点",
     "expect_after_date": "开始日期",

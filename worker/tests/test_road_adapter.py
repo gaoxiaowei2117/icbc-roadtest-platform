@@ -7,6 +7,7 @@ from booking_engine import Task
 
 TASK = Task(
     booking_id=1, user_id=1, drvr_last_name="GAO", licence_number="1234567",
+    original_email="driver@example.com",
     keyword="kw", exam_class="5", pos_ids=[1, 274],
     expect_after_date="2026-07-01", expect_before_date="2026-08-01",
     expect_time_range="10:00-17:00", pref_days_of_week=[0, 1, 2], pref_parts_of_day=[0, 1],
@@ -47,6 +48,7 @@ def test_build_config_injects_icbc_and_gmail(monkeypatch):
     assert cfg["gmail"]["password"] == "applekey"
     assert cfg["autoBooking"]["enable"] is True
     assert cfg["icbc"]["drvrLastName"] == "GAO"
+    assert cfg["icbc"]["originalEmail"] == "driver@example.com"
     assert cfg["icbc"]["keyword"] == "kw"
     assert cfg["icbc"]["examClass"] == "5"
     assert cfg["icbc"]["prfDaysOfWeek"] == "[0,1,2]"
@@ -134,6 +136,22 @@ def test_job_exception_is_retried(monkeypatch):
          patch.object(road_adapter.road, "get_weblogin", return_value=None):
         result = road_adapter.run(TASK)
     assert result.success is True
+
+
+def test_email_safety_error_fails_without_retry(monkeypatch):
+    monkeypatch.setattr(road_adapter.settings, "booking_timeout_seconds", 5)
+    with patch.object(road_adapter.road, "load_config", return_value=_base()), \
+         patch.object(
+             road_adapter.road,
+             "job",
+             side_effect=road_adapter.road.EmailSafetyError("email mismatch"),
+         ) as job, \
+         patch.object(road_adapter.road, "get_weblogin", return_value=None):
+        result = road_adapter.run(TASK)
+
+    assert result.success is False
+    assert result.error == "email mismatch"
+    job.assert_called_once()
 
 
 def test_finally_restores_email_when_enabled(monkeypatch):

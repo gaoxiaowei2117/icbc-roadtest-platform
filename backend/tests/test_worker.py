@@ -17,6 +17,7 @@ def test_claim_returns_ciphertext_no_plaintext(client, ready_user, decrypt_secre
     body = r.json()
     # 含完整档案 + keyword 密文，不含明文
     assert body["exam_class"] == "5"
+    assert body["original_email"] == "driver@example.com"
     assert body["pos_ids"] == [1, 274]
     assert body["expect_time_range"] == "10:00-17:00"
     assert "keyword_ciphertext" in body

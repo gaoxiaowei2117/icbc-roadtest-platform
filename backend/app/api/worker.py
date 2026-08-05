@@ -56,6 +56,7 @@ def claim_task(
         user_id=user.id,
         drvr_last_name=user.icbc_last_name or "",
         licence_number=user.icbc_license_no or "",
+        original_email=user.icbc_original_email or "",
         keyword_ciphertext=base64.b64encode(user.secret.ciphertext).decode(),
         exam_class=user.exam_class or "",
         pos_ids=user.pos_ids or [],

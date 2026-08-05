@@ -12,6 +12,7 @@ class ProfileFields(BaseModel):
     """抢号档案字段（UserPublic 与 UserUpdate 共用形状）。"""
     icbc_license_no: str | None = None
     icbc_last_name: str | None = None
+    icbc_original_email: EmailStr | None = None
     exam_class: str | None = None
     pos_ids: list[int] | None = None
     expect_after_date: date | None = None

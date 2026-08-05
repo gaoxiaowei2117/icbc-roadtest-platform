@@ -21,6 +21,7 @@ class User(Base):
 
     icbc_license_no: Mapped[str | None] = mapped_column(String(50))
     icbc_last_name: Mapped[str | None] = mapped_column(String(100))
+    icbc_original_email: Mapped[str | None] = mapped_column(String(255))
     exam_class: Mapped[str | None] = mapped_column(String(10))
     pos_ids: Mapped[list[int] | None] = mapped_column(JSON)
     expect_after_date: Mapped[date | None] = mapped_column(Date)

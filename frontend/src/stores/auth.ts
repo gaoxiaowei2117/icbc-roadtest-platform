@@ -8,6 +8,7 @@ export interface User {
   is_admin: boolean
   icbc_license_no: string | null
   icbc_last_name: string | null
+  icbc_original_email: string | null
   exam_class: string | null
   pos_ids: number[] | null
   expect_after_date: string | null

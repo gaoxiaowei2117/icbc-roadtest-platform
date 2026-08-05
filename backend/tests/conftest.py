@@ -92,6 +92,7 @@ def ready_user(client, auth_headers):
         h = auth_headers(email=email)
         client.patch("/api/users/me", headers=h, json={
             "icbc_license_no": "1234567", "icbc_last_name": "GAO",
+            "icbc_original_email": "driver@example.com",
             "exam_class": "5", "pos_ids": [1, 274],
             "expect_after_date": "2026-07-01", "expect_before_date": "2026-08-01",
             "expect_time_range": "10:00-17:00",
