@@ -13,9 +13,6 @@ const availableCredits = ref(0)
 let refreshTimer: number | undefined
 const { tr, apiError, dateLocale } = useI18n()
 
-// Payment methods previously shown in the standalone donation dialog now belong
-// to the execution-payment step for a concrete booking.
-const KOFI_URL = 'https://ko-fi.com/galaxtools'
 const WECHAT_QR = `${import.meta.env.BASE_URL}donate/wechat.jpg`
 const ALIPAY_QR = `${import.meta.env.BASE_URL}donate/alipay.jpg`
 const paymentReference = ref('')
@@ -146,16 +143,6 @@ onUnmounted(() => {
           <span class="text-sm text-slate-600">{{ tr('支付宝付款', 'Alipay') }}</span>
         </div>
       </div>
-      <a
-        v-if="KOFI_URL"
-        :href="KOFI_URL"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-900 transition-colors"
-      >
-        <span aria-hidden="true">💳</span>
-        {{ tr('使用信用卡 / PayPal 付款', 'Pay with card / PayPal') }}
-      </a>
       <input
         v-model="paymentReference"
         class="input"
