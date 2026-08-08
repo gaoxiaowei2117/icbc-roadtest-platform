@@ -41,5 +41,10 @@ class User(Base):
         "Secret", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
     bookings: Mapped[list["Booking"]] = relationship(  # noqa: F821
-        "Booking", back_populates="user", cascade="all, delete-orphan"
+        "Booking", back_populates="user", cascade="all, delete-orphan",
+        foreign_keys="Booking.user_id",
+    )
+    execution_passes: Mapped[list["ExecutionPass"]] = relationship(  # noqa: F821
+        "ExecutionPass", back_populates="user", cascade="all, delete-orphan",
+        foreign_keys="ExecutionPass.user_id",
     )

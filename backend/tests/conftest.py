@@ -46,7 +46,9 @@ def _schema():
 def _clean():
     """每个测试前清空所有表，保证测试相互独立。"""
     with engine.begin() as conn:
-        conn.exec_driver_sql('TRUNCATE secret, booking, "user" RESTART IDENTITY CASCADE')
+        conn.exec_driver_sql(
+            'TRUNCATE execution_pass, secret, booking, "user" RESTART IDENTITY CASCADE'
+        )
     yield
 
 
@@ -100,6 +102,14 @@ def ready_user(client, auth_headers):
         })
         client.put("/api/users/me/secret", headers=h,
                    json={"keyword": f"{icbc_user}\n{icbc_pass}"})
+        # Existing task/worker tests represent a user who has already received
+        # one execution entitlement. New payment-flow tests deliberately omit it.
+        with SessionLocal() as s:
+            from app.models.user import User
+            from app.models.execution_pass import ExecutionPass
+            u = s.query(User).filter_by(email=email).first()
+            s.add(ExecutionPass(user_id=u.id))
+            s.commit()
         return h, icbc_user, icbc_pass
     return _make
 

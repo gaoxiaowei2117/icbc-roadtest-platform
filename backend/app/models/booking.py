@@ -9,11 +9,28 @@ from app.core.database import Base
 
 
 class BookingStatus(str, enum.Enum):
+    awaiting_payment = "awaiting_payment"
+    awaiting_review = "awaiting_review"
+    payment_rejected = "payment_rejected"
     pending = "pending"
     running = "running"
     done = "done"
     failed = "failed"
     cancelled = "cancelled"
+
+
+class PaymentStatus(str, enum.Enum):
+    """Payment/entitlement state for a booking.
+
+    ``not_required`` is retained for bookings created before the paid execution
+    flow was introduced.
+    """
+
+    not_required = "not_required"
+    awaiting_payment = "awaiting_payment"
+    awaiting_review = "awaiting_review"
+    approved = "approved"
+    rejected = "rejected"
 
 
 class Booking(Base):
@@ -25,7 +42,9 @@ class Booking(Base):
             "uq_booking_one_active_per_user",
             "user_id",
             unique=True,
-            postgresql_where=text("status IN ('pending', 'running')"),
+            postgresql_where=text(
+                "status IN ('awaiting_payment', 'awaiting_review', 'pending', 'running')"
+            ),
         ),
     )
 
@@ -39,6 +58,17 @@ class Booking(Base):
         nullable=False,
         index=True,
     )
+    payment_status: Mapped[PaymentStatus] = mapped_column(
+        SAEnum(PaymentStatus, name="payment_status", native_enum=False, length=20),
+        default=PaymentStatus.not_required,
+        nullable=False,
+        index=True,
+    )
+    payment_reference: Mapped[str | None] = mapped_column(Text)
+    payment_submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("user.id", ondelete="SET NULL"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_reason: Mapped[str | None] = mapped_column(Text)
 
     attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     progress_rounds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -56,4 +86,6 @@ class Booking(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    user: Mapped["User"] = relationship("User", back_populates="bookings")  # noqa: F821
+    user: Mapped["User"] = relationship(  # noqa: F821
+        "User", back_populates="bookings", foreign_keys=[user_id]
+    )

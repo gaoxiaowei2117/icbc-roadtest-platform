@@ -30,6 +30,9 @@ const profile = reactive({
   pref_parts_of_day: [0, 1] as number[],
 })
 
+const SERVICE_START = '08:00'
+const SERVICE_END = '18:00'
+
 const secret = reactive({ keyword: '' })
 const hasSecret = ref(false)
 
@@ -81,6 +84,20 @@ async function saveBookingSettings() {
   if (profile.time_start && profile.time_end && profile.time_end <= profile.time_start) {
     alert(tr('结束时间必须晚于开始时间', 'End time must be later than start time'))
     return
+  }
+  const hasOutsideTimeWindow = (ts: string, te: string) => ts < SERVICE_START || te > SERVICE_END
+  const allOutsideTimeWindow = (ts: string, te: string) =>
+    ts >= SERVICE_END || te <= SERVICE_START
+  if (profile.time_start && profile.time_end && allOutsideTimeWindow(profile.time_start, profile.time_end)) {
+    if (!confirm(tr(
+      '你设置的时间区间完全不在 ICBC 常规考试时间（08:00-18:00）内，任务可能一直无法匹配可用号。',
+      'The configured time range is completely outside ICBC normal booking hours (08:00-18:00), and this task may never match an appointment.',
+    ))) return
+  } else if (profile.time_start && profile.time_end && hasOutsideTimeWindow(profile.time_start, profile.time_end)) {
+    if (!confirm(tr(
+      '你设置的时间区间部分在 ICBC 常规考试时间（08:00-18:00）之外，请确认是否继续。',
+      'Part of the configured time range is outside ICBC normal booking hours (08:00-18:00). Confirm to continue.',
+    ))) return
   }
   try {
     const updated = await updateMe({

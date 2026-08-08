@@ -15,6 +15,7 @@ const statusFilter = ref<string>('')
 const error = ref('')
 const deletingUserId = ref<number | null>(null)
 const expandedUserId = ref<number | null>(null)
+const reviewingBookingId = ref<number | null>(null)
 const { tr, apiError, dateLocale, locale } = useI18n()
 
 async function refresh() {
@@ -84,6 +85,36 @@ async function deleteUser(user: User) {
     deletingUserId.value = null
   }
 }
+
+async function approvePayment(booking: Booking) {
+  if (!window.confirm(tr(
+    `确认已收到任务 #${booking.id} 的付款并发放一次执行权限？`,
+    `Confirm payment for booking #${booking.id} and grant one execution pass?`,
+  ))) return
+  reviewingBookingId.value = booking.id
+  try {
+    await api.post(`/api/admin/bookings/${booking.id}/approve-payment`)
+    await refresh()
+  } catch (e: any) {
+    error.value = apiError(e, '审核通过失败', 'Failed to approve payment')
+  } finally {
+    reviewingBookingId.value = null
+  }
+}
+
+async function rejectPayment(booking: Booking) {
+  const reason = window.prompt(tr('请输入拒绝原因（可选）：', 'Reason for rejection (optional):'))
+  if (reason === null) return
+  reviewingBookingId.value = booking.id
+  try {
+    await api.post(`/api/admin/bookings/${booking.id}/reject-payment`, { reason })
+    await refresh()
+  } catch (e: any) {
+    error.value = apiError(e, '拒绝付款失败', 'Failed to reject payment')
+  } finally {
+    reviewingBookingId.value = null
+  }
+}
 </script>
 
 <template>
@@ -138,7 +169,7 @@ async function deleteUser(user: User) {
               </td>
             </tr>
             <tr v-if="expandedUserId === user.id" class="border-b bg-slate-50">
-              <td colspan="7" class="p-4">
+              <td colspan="8" class="p-4">
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <h3 class="font-medium mb-2">{{ tr('ICBC 资料', 'ICBC Profile') }}</h3>
@@ -172,6 +203,9 @@ async function deleteUser(user: User) {
         <select v-model="statusFilter" class="input max-w-xs" @change="refresh">
           <option value="">{{ tr('全部', 'All') }}</option>
           <option value="pending">pending</option>
+          <option value="awaiting_payment">awaiting_payment</option>
+          <option value="awaiting_review">awaiting_review</option>
+          <option value="payment_rejected">payment_rejected</option>
           <option value="running">running</option>
           <option value="done">done</option>
           <option value="failed">failed</option>
@@ -185,6 +219,7 @@ async function deleteUser(user: User) {
             <th class="py-2">#</th>
             <th>{{ tr('用户', 'User') }}</th>
             <th>{{ tr('状态', 'Status') }}</th>
+            <th>{{ tr('付款', 'Payment') }}</th>
             <th>{{ tr('尝试', 'Attempts') }}</th>
             <th>{{ tr('查询轮次', 'Search rounds') }}</th>
             <th>{{ tr('最近动态', 'Latest activity') }}</th>
@@ -200,6 +235,23 @@ async function deleteUser(user: User) {
               <div class="text-xs text-slate-400">ID: {{ b.user_id }}</div>
             </td>
             <td>{{ b.status }}</td>
+            <td>
+              <div>{{ b.payment_status }}</div>
+              <div v-if="b.payment_reference" class="text-xs text-slate-500">{{ b.payment_reference }}</div>
+              <div v-if="b.review_reason" class="text-xs text-red-600">{{ b.review_reason }}</div>
+              <div v-if="b.status === 'awaiting_review'" class="flex gap-2 mt-1">
+                <button
+                  class="text-green-700 hover:underline disabled:opacity-50"
+                  :disabled="reviewingBookingId === b.id"
+                  @click="approvePayment(b)"
+                >{{ tr('通过', 'Approve') }}</button>
+                <button
+                  class="text-red-700 hover:underline disabled:opacity-50"
+                  :disabled="reviewingBookingId === b.id"
+                  @click="rejectPayment(b)"
+                >{{ tr('拒绝', 'Reject') }}</button>
+              </div>
+            </td>
             <td>{{ b.attempt_count }}</td>
             <td>{{ b.progress_rounds }}</td>
             <td class="text-xs truncate max-w-xs">
