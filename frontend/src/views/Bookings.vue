@@ -13,6 +13,13 @@ const availableCredits = ref(0)
 let refreshTimer: number | undefined
 const { tr, apiError, dateLocale } = useI18n()
 
+// Payment methods previously shown in the standalone donation dialog now belong
+// to the execution-payment step for a concrete booking.
+const KOFI_URL = 'https://ko-fi.com/galaxtools'
+const WECHAT_QR = `${import.meta.env.BASE_URL}donate/wechat.jpg`
+const ALIPAY_QR = `${import.meta.env.BASE_URL}donate/alipay.jpg`
+const paymentReference = ref('')
+
 const hasActiveBooking = computed(() =>
   bookings.value.some((b) => ['awaiting_payment', 'awaiting_review', 'pending', 'running'].includes(b.status)),
 )
@@ -53,11 +60,10 @@ async function onCreate() {
 }
 
 async function onSubmitPayment(b: Booking) {
-  const reference = window.prompt(tr('可填写付款凭证号或备注（可选）：', 'Payment reference or note (optional):'))
-  if (reference === null) return
   paymentSubmitting.value = true
   try {
-    await submitPayment(b.id, reference)
+    await submitPayment(b.id, paymentReference.value)
+    paymentReference.value = ''
     message.value = tr('付款已提交，等待超级管理员审核。', 'Payment submitted. Waiting for super-admin review.')
     await refresh()
   } catch (e: any) {
@@ -127,8 +133,33 @@ onUnmounted(() => {
     <div v-if="paymentBooking" class="card border-amber-200 bg-amber-50 space-y-3">
       <h2 class="text-lg font-semibold text-amber-900">{{ tr('付款后提交审核', 'Payment required') }}</h2>
       <p class="text-sm text-amber-800">
-        {{ tr('请按超级管理员提供的方式完成付款。付款完成后点击“我已付款”，管理员确认后会发放一次可执行权限。', 'Complete payment using the method provided by the super-admin. After paying, click “I have paid”; approval grants one execution pass.') }}
+        {{ tr('请使用下方任一种方式完成任务付款。付款完成后提交付款凭证，管理员确认后会发放一次可执行权限。', 'Pay for this execution using one of the methods below. Submit your payment reference afterward; approval grants one execution pass.') }}
       </p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="flex flex-col items-center gap-2 rounded-lg bg-white p-3">
+          <img :src="WECHAT_QR" alt="WeChat Pay" class="w-full max-w-xs rounded-lg border border-slate-200" />
+          <span class="text-sm text-slate-600">{{ tr('微信付款', 'WeChat Pay') }}</span>
+        </div>
+        <div class="flex flex-col items-center gap-2 rounded-lg bg-white p-3">
+          <img :src="ALIPAY_QR" alt="Alipay" class="w-full max-w-xs rounded-lg border border-slate-200" />
+          <span class="text-sm text-slate-600">{{ tr('支付宝付款', 'Alipay') }}</span>
+        </div>
+      </div>
+      <a
+        v-if="KOFI_URL"
+        :href="KOFI_URL"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-900 transition-colors"
+      >
+        <span aria-hidden="true">💳</span>
+        {{ tr('使用信用卡 / PayPal 付款', 'Pay with card / PayPal') }}
+      </a>
+      <input
+        v-model="paymentReference"
+        class="input"
+        :placeholder="tr('付款凭证号或备注（可选）', 'Payment reference or note (optional)')"
+      />
       <button class="btn-primary" :disabled="paymentSubmitting" @click="onSubmitPayment(paymentBooking)">
         {{ paymentSubmitting ? tr('提交中…', 'Submitting…') : tr('我已付款，提交审核', 'I have paid — submit for review') }}
       </button>
