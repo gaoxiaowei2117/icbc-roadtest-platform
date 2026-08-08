@@ -58,6 +58,28 @@ def test_payment_review_approval_grants_one_execution_pass(client, ready_user, a
     assert client.post("/api/worker/claim", headers=WORKER_HEADERS).json()["booking_id"] == bid
 
 
+def test_payment_reference_is_required(client, ready_user, db):
+    user_headers, _, _ = ready_user(email="payer@gmail.com")
+    _remove_pass(db, "payer@gmail.com")
+    bid = client.post("/api/bookings", headers=user_headers, json={}).json()["id"]
+
+    assert client.post(
+        f"/api/bookings/{bid}/payment-submitted", headers=user_headers, json={}
+    ).status_code == 422
+    assert client.post(
+        f"/api/bookings/{bid}/payment-submitted",
+        headers=user_headers,
+        json={"payment_reference": "   "},
+    ).status_code == 422
+    response = client.post(
+        f"/api/bookings/{bid}/payment-submitted",
+        headers=user_headers,
+        json={"payment_reference": "etransfer-456"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == BookingStatus.awaiting_review
+
+
 def test_cancel_releases_pass_and_success_consumes_it(client, ready_user, db):
     user_headers, _, _ = ready_user(email="payer@gmail.com")
     user_id = db.query(User).filter_by(email="payer@gmail.com").one().id
@@ -88,7 +110,11 @@ def test_admin_can_reject_payment(client, ready_user, auth_headers, db):
     _remove_pass(db, "payer@gmail.com")
     admin_headers = _make_admin(client, auth_headers, db)
     bid = client.post("/api/bookings", headers=user_headers, json={}).json()["id"]
-    client.post(f"/api/bookings/{bid}/payment-submitted", headers=user_headers, json={})
+    client.post(
+        f"/api/bookings/{bid}/payment-submitted",
+        headers=user_headers,
+        json={"payment_reference": "etransfer-reject"},
+    )
 
     response = client.post(
         f"/api/admin/bookings/{bid}/reject-payment",

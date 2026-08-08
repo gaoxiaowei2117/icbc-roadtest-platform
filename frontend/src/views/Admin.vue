@@ -6,7 +6,12 @@ import { getPosList, type PosEntry } from '@/api/pos'
 import type { User } from '@/stores/auth'
 import { useI18n } from '@/i18n'
 
-type AdminUser = User & { is_active: boolean; email_verified: boolean; has_secret: boolean }
+type AdminUser = User & {
+  is_active: boolean
+  email_verified: boolean
+  has_secret: boolean
+  available_execution_passes: number
+}
 
 const bookings = ref<Booking[]>([])
 const users = ref<AdminUser[]>([])
@@ -132,6 +137,7 @@ async function rejectPayment(booking: Booking) {
             <th>{{ tr('角色', 'Role') }}</th>
             <th>{{ tr('邮箱验证', 'Email verification') }}</th>
             <th>{{ tr('状态', 'Status') }}</th>
+            <th>{{ tr('可用次数', 'Available passes') }}</th>
             <th>{{ tr('注册时间', 'Registered') }}</th>
             <th class="text-right">{{ tr('操作', 'Actions') }}</th>
           </tr>
@@ -147,6 +153,7 @@ async function rejectPayment(booking: Booking) {
               </td>
               <td>{{ user.email_verified ? tr('已验证', 'Verified') : tr('未验证', 'Not verified') }}</td>
               <td>{{ user.is_active ? tr('启用', 'Active') : tr('停用', 'Disabled') }}</td>
+              <td>{{ user.available_execution_passes }}</td>
               <td>{{ formatDateTime(user.created_at) }}</td>
               <td>
                 <div class="flex justify-end gap-2">
@@ -169,7 +176,7 @@ async function rejectPayment(booking: Booking) {
               </td>
             </tr>
             <tr v-if="expandedUserId === user.id" class="border-b bg-slate-50">
-              <td colspan="8" class="p-4">
+              <td colspan="9" class="p-4">
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <h3 class="font-medium mb-2">{{ tr('ICBC 资料', 'ICBC Profile') }}</h3>

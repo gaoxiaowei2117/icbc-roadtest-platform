@@ -46,6 +46,21 @@ def test_admin_can_list_users(client, auth_headers, db):
     assert all("password_hash" not in user for user in response.json())
     assert all("ciphertext" not in user for user in response.json())
     assert all(user["has_secret"] is False for user in response.json())
+    assert all(user["available_execution_passes"] == 0 for user in response.json())
+
+
+def test_admin_can_see_available_execution_passes(client, auth_headers, ready_user, db):
+    ready_user(email="user-with-pass@gmail.com")
+    admin_headers = auth_headers(email="admin@gmail.com")
+    admin = db.query(User).filter_by(email="admin@gmail.com").first()
+    admin.is_admin = True
+    db.commit()
+
+    response = client.get("/api/admin/users", headers=admin_headers)
+
+    assert response.status_code == 200
+    user = next(item for item in response.json() if item["email"] == "user-with-pass@gmail.com")
+    assert user["available_execution_passes"] == 1
 
 
 def test_non_admin_cannot_list_or_delete_users(client, auth_headers):

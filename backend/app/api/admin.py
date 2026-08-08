@@ -1,5 +1,6 @@
 """/api/admin/* admin 角色专属：查看所有任务和管理用户。"""
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_admin_user
@@ -7,6 +8,7 @@ from app.core.database import get_db
 from app.crud import booking as booking_crud
 from app.crud import user as user_crud
 from app.models.booking import BookingStatus, PaymentStatus
+from app.models.execution_pass import ExecutionPass, ExecutionPassStatus
 from app.models.user import User
 from app.schemas.booking import AdminBookingOut, BookingOut, PaymentReviewIn
 from app.schemas.user import AdminUserOut, UserPublic
@@ -80,12 +82,25 @@ def list_all_users(
     db: Session = Depends(get_db),
 ) -> list:
     users = user_crud.list_all(db, limit=limit)
+    user_ids = [user.id for user in users]
+    available_passes: dict[int, int] = {}
+    if user_ids:
+        counts = db.execute(
+            select(ExecutionPass.user_id, func.count(ExecutionPass.id))
+            .where(
+                ExecutionPass.user_id.in_(user_ids),
+                ExecutionPass.status == ExecutionPassStatus.available,
+            )
+            .group_by(ExecutionPass.user_id)
+        ).all()
+        available_passes = {user_id: count for user_id, count in counts}
     return [
         AdminUserOut(
             **UserPublic.model_validate(user).model_dump(),
             is_active=user.is_active,
             email_verified=user.email_verified,
             has_secret=user.secret is not None,
+            available_execution_passes=available_passes.get(user.id, 0),
         )
         for user in users
     ]

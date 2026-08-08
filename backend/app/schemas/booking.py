@@ -1,6 +1,6 @@
 """抢号任务 schema。"""
 from datetime import date, datetime
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.booking import BookingStatus, PaymentStatus
 
@@ -41,17 +41,15 @@ class AdminBookingOut(BookingOut):
 
 
 class PaymentSubmittedIn(BaseModel):
-    payment_reference: str | None = None
+    payment_reference: str = Field(min_length=1, max_length=255)
 
     @field_validator("payment_reference")
     @classmethod
-    def _trim_reference(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
+    def _trim_reference(cls, value: str) -> str:
         value = value.strip()
-        if len(value) > 255:
-            raise ValueError("付款凭证备注不能超过 255 个字符")
-        return value or None
+        if not value:
+            raise ValueError("付款凭证号或备注不能为空")
+        return value
 
 
 class PaymentReviewIn(BaseModel):

@@ -36,6 +36,7 @@ class AdminUserOut(UserPublic):
     is_active: bool
     email_verified: bool
     has_secret: bool
+    available_execution_passes: int
 
 
 class UserUpdate(ProfileFields):

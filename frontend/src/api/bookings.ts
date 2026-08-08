@@ -30,7 +30,7 @@ export async function createBooking() {
   return (await api.post('/api/bookings', {})).data
 }
 
-export async function submitPayment(id: number, paymentReference?: string): Promise<Booking> {
+export async function submitPayment(id: number, paymentReference: string): Promise<Booking> {
   return (await api.post(`/api/bookings/${id}/payment-submitted`, {
     payment_reference: paymentReference || null,
   })).data

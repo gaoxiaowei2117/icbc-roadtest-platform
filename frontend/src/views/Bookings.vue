@@ -19,6 +19,7 @@ const KOFI_URL = 'https://ko-fi.com/galaxtools'
 const WECHAT_QR = `${import.meta.env.BASE_URL}donate/wechat.jpg`
 const ALIPAY_QR = `${import.meta.env.BASE_URL}donate/alipay.jpg`
 const paymentReference = ref('')
+const paymentReferenceValid = computed(() => paymentReference.value.trim().length > 0)
 
 const hasActiveBooking = computed(() =>
   bookings.value.some((b) => ['awaiting_payment', 'awaiting_review', 'pending', 'running'].includes(b.status)),
@@ -62,7 +63,7 @@ async function onCreate() {
 async function onSubmitPayment(b: Booking) {
   paymentSubmitting.value = true
   try {
-    await submitPayment(b.id, paymentReference.value)
+    await submitPayment(b.id, paymentReference.value.trim())
     paymentReference.value = ''
     message.value = tr('付款已提交，等待超级管理员审核。', 'Payment submitted. Waiting for super-admin review.')
     await refresh()
@@ -158,9 +159,10 @@ onUnmounted(() => {
       <input
         v-model="paymentReference"
         class="input"
-        :placeholder="tr('付款凭证号或备注（可选）', 'Payment reference or note (optional)')"
+        required
+        :placeholder="tr('付款凭证号或备注（必填）', 'Payment reference or note (required)')"
       />
-      <button class="btn-primary" :disabled="paymentSubmitting" @click="onSubmitPayment(paymentBooking)">
+      <button class="btn-primary" :disabled="paymentSubmitting || !paymentReferenceValid" @click="onSubmitPayment(paymentBooking)">
         {{ paymentSubmitting ? tr('提交中…', 'Submitting…') : tr('我已付款，提交审核', 'I have paid — submit for review') }}
       </button>
     </div>
