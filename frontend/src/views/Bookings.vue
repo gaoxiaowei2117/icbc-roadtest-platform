@@ -13,8 +13,8 @@ const availableCredits = ref(0)
 let refreshTimer: number | undefined
 const { tr, apiError, dateLocale } = useI18n()
 
-const WECHAT_QR = `${import.meta.env.BASE_URL}donate/wechat.jpg`
-const ALIPAY_QR = `${import.meta.env.BASE_URL}donate/alipay.jpg`
+const WECHAT_QR = `${import.meta.env.BASE_URL}donate/wechat.png`
+const ALIPAY_QR = `${import.meta.env.BASE_URL}donate/alipay.png`
 const paymentReference = ref('')
 const paymentReferenceValid = computed(() => paymentReference.value.trim().length > 0)
 
