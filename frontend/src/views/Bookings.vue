@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { cancelBooking, createBooking, listBookings, submitPayment, type Booking } from '@/api/bookings'
 import { api } from '@/api/client'
+import { SUPPORT_EMAIL } from '@/config/support'
 import { useI18n } from '@/i18n'
 
 const bookings = ref<Booking[]>([])
@@ -81,6 +82,13 @@ async function onCancel(b: Booking) {
   }
 }
 
+function supportMailto(bookingId?: number) {
+  const subject = bookingId
+    ? `Road Test booking #${bookingId} payment support`
+    : 'Road Test booking support'
+  return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`
+}
+
 function badgeClass(s: Booking['status']) {
   return {
     pending: 'badge-pending',
@@ -132,6 +140,11 @@ onUnmounted(() => {
       <h2 class="text-lg font-semibold text-amber-900">{{ tr('付款后提交审核', 'Payment required') }}</h2>
       <p class="text-sm text-amber-800">
         {{ tr('请使用下方任一种方式完成任务付款。付款完成后提交付款凭证，管理员确认后会发放一次可执行权限。', 'Pay for this execution using one of the methods below. Submit your payment reference afterward; approval grants one execution pass.') }}
+      </p>
+      <p class="text-sm text-amber-800">
+        {{ tr('付款或审核遇到问题？请联系', 'Questions about payment or review? Contact') }}
+        <a class="font-semibold underline" :href="supportMailto(paymentBooking.id)">{{ SUPPORT_EMAIL }}</a>
+        {{ tr(`，并注明注册邮箱和任务编号 #${paymentBooking.id}。`, ` and include your registered email and booking #${paymentBooking.id}.`) }}
       </p>
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="flex flex-col items-center gap-2 rounded-lg bg-white p-3">
@@ -197,13 +210,13 @@ onUnmounted(() => {
                 {{ tr('我已付款', 'I have paid') }}
               </button>
               <span v-if="b.status === 'awaiting_review'" class="text-amber-700 mr-3">
-                {{ tr('待管理员审核', 'Awaiting admin review') }}
+                {{ tr('待管理员审核，审核完成后可取消', 'Awaiting admin review; cancellation is available after review') }}
               </span>
               <span v-if="b.status === 'payment_rejected'" class="text-red-600 mr-3" :title="b.review_reason || ''">
                 {{ b.review_reason || tr('付款被拒绝', 'Payment rejected') }}
               </span>
               <button
-                v-if="['awaiting_payment', 'awaiting_review', 'pending', 'running', 'payment_rejected'].includes(b.status)"
+                v-if="['awaiting_payment', 'pending', 'running', 'payment_rejected'].includes(b.status)"
                 class="text-red-600 hover:underline"
                 @click="onCancel(b)"
               >

@@ -93,8 +93,12 @@ async function deleteUser(user: User) {
 
 async function approvePayment(booking: Booking) {
   if (!window.confirm(tr(
-    `确认已收到任务 #${booking.id} 的付款并发放一次执行权限？`,
-    `Confirm payment for booking #${booking.id} and grant one execution pass?`,
+    booking.status === 'cancelled'
+      ? `确认已收到任务 #${booking.id} 的付款，并给用户发放一次可用次数？原任务将保持取消状态。`
+      : `确认已收到任务 #${booking.id} 的付款并发放一次执行权限？`,
+    booking.status === 'cancelled'
+      ? `Confirm payment for cancelled booking #${booking.id} and grant one available execution pass?`
+      : `Confirm payment for booking #${booking.id} and grant one execution pass?`,
   ))) return
   reviewingBookingId.value = booking.id
   try {
@@ -246,12 +250,12 @@ async function rejectPayment(booking: Booking) {
               <div>{{ b.payment_status }}</div>
               <div v-if="b.payment_reference" class="text-xs text-slate-500">{{ b.payment_reference }}</div>
               <div v-if="b.review_reason" class="text-xs text-red-600">{{ b.review_reason }}</div>
-              <div v-if="b.status === 'awaiting_review'" class="flex gap-2 mt-1">
+              <div v-if="b.payment_status === 'awaiting_review'" class="flex gap-2 mt-1">
                 <button
                   class="text-green-700 hover:underline disabled:opacity-50"
                   :disabled="reviewingBookingId === b.id"
                   @click="approvePayment(b)"
-                >{{ tr('通过', 'Approve') }}</button>
+                >{{ b.status === 'cancelled' ? tr('通过并发放次数', 'Approve and grant pass') : tr('通过', 'Approve') }}</button>
                 <button
                   class="text-red-700 hover:underline disabled:opacity-50"
                   :disabled="reviewingBookingId === b.id"

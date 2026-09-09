@@ -80,6 +80,58 @@ def test_payment_reference_is_required(client, ready_user, db):
     assert response.json()["status"] == BookingStatus.awaiting_review
 
 
+def test_awaiting_review_cannot_be_cancelled(client, ready_user, db):
+    user_headers, _, _ = ready_user(email="payer@gmail.com")
+    _remove_pass(db, "payer@gmail.com")
+    bid = client.post("/api/bookings", headers=user_headers, json={}).json()["id"]
+    client.post(
+        f"/api/bookings/{bid}/payment-submitted",
+        headers=user_headers,
+        json={"payment_reference": "paid-123"},
+    )
+
+    response = client.post(f"/api/bookings/{bid}/cancel", headers=user_headers)
+
+    assert response.status_code == 409
+    assert "审核完成后" in response.json()["detail"]
+    db.expire_all()
+    assert db.get(Booking, bid).status == BookingStatus.awaiting_review
+
+
+def test_admin_approval_of_legacy_cancelled_payment_grants_available_pass(
+    client, ready_user, auth_headers, db
+):
+    user_headers, _, _ = ready_user(email="payer@gmail.com")
+    user_id = _remove_pass(db, "payer@gmail.com")
+    admin_headers = _make_admin(client, auth_headers, db)
+    bid = client.post("/api/bookings", headers=user_headers, json={}).json()["id"]
+    client.post(
+        f"/api/bookings/{bid}/payment-submitted",
+        headers=user_headers,
+        json={"payment_reference": "legacy-paid-123"},
+    )
+    # Reproduce records created before cancellation of awaiting_review was blocked.
+    legacy_booking = db.get(Booking, bid)
+    legacy_booking.status = BookingStatus.cancelled
+    db.commit()
+
+    response = client.post(
+        f"/api/admin/bookings/{bid}/approve-payment", headers=admin_headers
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == BookingStatus.cancelled
+    assert response.json()["payment_status"] == PaymentStatus.approved
+    db.expire_all()
+    execution_pass = db.query(ExecutionPass).filter_by(user_id=user_id).one()
+    assert execution_pass.status == ExecutionPassStatus.available
+    assert execution_pass.booking_id is None
+    # The next task consumes the user-level pass and does not ask for payment again.
+    next_booking = client.post("/api/bookings", headers=user_headers, json={}).json()
+    assert next_booking["status"] == BookingStatus.pending
+    assert next_booking["payment_status"] == PaymentStatus.approved
+
+
 def test_cancel_releases_pass_and_success_consumes_it(client, ready_user, db):
     user_headers, _, _ = ready_user(email="payer@gmail.com")
     user_id = db.query(User).filter_by(email="payer@gmail.com").one().id

@@ -134,21 +134,27 @@ def approve_payment(db: Session, booking: Booking, admin_id: int) -> Booking:
     locked = db.get(Booking, booking.id, with_for_update=True)
     if locked is None:
         raise ValueError("任务不存在")
-    if locked.status != BookingStatus.awaiting_review:
+    if (
+        locked.payment_status != PaymentStatus.awaiting_review
+        or locked.status not in (BookingStatus.awaiting_review, BookingStatus.cancelled)
+    ):
         raise ValueError(f"任务状态 {locked.status} 不在待审核队列")
-    # 正常情况下这里没有 available pass，因为创建任务时会优先使用它；
-    # 复用而不是重复发放可抵御人工补发/并发边界情况。
-    execution_pass = _reserve_available_pass(db, locked.user_id, locked.id, admin_id)
-    if execution_pass is None:
-        execution_pass = ExecutionPass(
-            user_id=locked.user_id,
-            booking_id=locked.id,
-            status=ExecutionPassStatus.reserved,
-            approved_by=admin_id,
-            approved_at=datetime.now(timezone.utc),
-        )
-        db.add(execution_pass)
-    locked.status = BookingStatus.pending
+    was_cancelled = locked.status == BookingStatus.cancelled
+    # 每一笔确认到账的付款都发放一个新权限。若原任务已取消，权限先保持
+    # available；否则直接预留给当前任务并进入 worker 队列。
+    db.add(ExecutionPass(
+        user_id=locked.user_id,
+        booking_id=None if was_cancelled else locked.id,
+        status=(
+            ExecutionPassStatus.available
+            if was_cancelled
+            else ExecutionPassStatus.reserved
+        ),
+        approved_by=admin_id,
+        approved_at=datetime.now(timezone.utc),
+    ))
+    if not was_cancelled:
+        locked.status = BookingStatus.pending
     locked.payment_status = PaymentStatus.approved
     locked.reviewed_by = admin_id
     locked.reviewed_at = datetime.now(timezone.utc)
@@ -164,9 +170,13 @@ def reject_payment(
     locked = db.get(Booking, booking.id, with_for_update=True)
     if locked is None:
         raise ValueError("任务不存在")
-    if locked.status != BookingStatus.awaiting_review:
+    if (
+        locked.payment_status != PaymentStatus.awaiting_review
+        or locked.status not in (BookingStatus.awaiting_review, BookingStatus.cancelled)
+    ):
         raise ValueError(f"任务状态 {locked.status} 不在待审核队列")
-    locked.status = BookingStatus.payment_rejected
+    if locked.status != BookingStatus.cancelled:
+        locked.status = BookingStatus.payment_rejected
     locked.payment_status = PaymentStatus.rejected
     locked.reviewed_by = admin_id
     locked.reviewed_at = datetime.now(timezone.utc)
@@ -227,9 +237,10 @@ def cancel(db: Session, booking: Booking) -> Booking:
     locked = db.get(Booking, booking.id, with_for_update=True)
     if locked is None:
         raise ValueError("任务不存在")
+    if locked.status == BookingStatus.awaiting_review:
+        raise ValueError("付款已提交并正在审核，审核完成后才能取消任务")
     if locked.status not in (
         BookingStatus.awaiting_payment,
-        BookingStatus.awaiting_review,
         BookingStatus.pending,
         BookingStatus.running,
         BookingStatus.payment_rejected,

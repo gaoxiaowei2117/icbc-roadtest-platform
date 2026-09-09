@@ -2,6 +2,7 @@
 import { RouterView, RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/i18n'
+import { SUPPORT_EMAIL } from '@/config/support'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -69,6 +70,9 @@ async function onLogout() {
         class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-slate-500"
       >
         <span>© {{ currentYear }} {{ tr('独立开发的小工具，与 ICBC 无任何关联。', 'An independent tool, not affiliated with ICBC.', 'Un outil indépendant, sans lien avec ICBC.', 'Una herramienta independiente, sin relación con ICBC.', '獨立開發的小工具，與 ICBC 無任何關聯。') }}</span>
+        <a :href="`mailto:${SUPPORT_EMAIL}`" class="hover:text-blue-600 hover:underline">
+          {{ tr('联系客服：', 'Contact support: ') }}{{ SUPPORT_EMAIL }}
+        </a>
       </div>
     </footer>
   </div>
