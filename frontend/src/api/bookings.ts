@@ -4,7 +4,12 @@ export interface Booking {
   id: number
   user_id: number
   user_email?: string
-  status: 'pending' | 'running' | 'done' | 'failed' | 'cancelled'
+  status: 'awaiting_payment' | 'awaiting_review' | 'payment_rejected' | 'pending' | 'running' | 'done' | 'failed' | 'cancelled'
+  payment_status: 'not_required' | 'awaiting_payment' | 'awaiting_review' | 'approved' | 'rejected'
+  payment_reference: string | null
+  payment_submitted_at: string | null
+  reviewed_at: string | null
+  review_reason: string | null
   attempt_count: number
   progress_rounds: number
   last_progress: string | null
@@ -23,6 +28,12 @@ export async function listBookings(): Promise<Booking[]> {
 
 export async function createBooking() {
   return (await api.post('/api/bookings', {})).data
+}
+
+export async function submitPayment(id: number, paymentReference: string): Promise<Booking> {
+  return (await api.post(`/api/bookings/${id}/payment-submitted`, {
+    payment_reference: paymentReference || null,
+  })).data
 }
 
 export async function cancelBooking(id: number): Promise<Booking> {

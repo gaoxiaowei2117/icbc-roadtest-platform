@@ -6,12 +6,15 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, mo
 
 _TIME_RANGE_RE = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$")
 _MAX_POS_IDS = 50
+_ICBC_SERVICE_START_MIN = 8 * 60
+_ICBC_SERVICE_END_MIN = 18 * 60
 
 
 class ProfileFields(BaseModel):
     """抢号档案字段（UserPublic 与 UserUpdate 共用形状）。"""
     icbc_license_no: str | None = None
     icbc_last_name: str | None = None
+    icbc_original_email: EmailStr | None = None
     exam_class: str | None = None
     pos_ids: list[int] | None = None
     expect_after_date: date | None = None
@@ -33,6 +36,7 @@ class AdminUserOut(UserPublic):
     is_active: bool
     email_verified: bool
     has_secret: bool
+    available_execution_passes: int
 
 
 class UserUpdate(ProfileFields):
@@ -105,8 +109,14 @@ class UserUpdate(ProfileFields):
             raise ValueError("时间区间格式必须为 HH:MM-HH:MM")
         start = (int(m.group(1)), int(m.group(2)))
         end = (int(m.group(3)), int(m.group(4)))
+        start_min = start[0] * 60 + start[1]
+        end_min = end[0] * 60 + end[1]
         if start >= end:
             raise ValueError("时间区间的起始必须早于结束")
+        if start_min >= _ICBC_SERVICE_END_MIN:
+            raise ValueError("开始时间不能晚于或等于 18:00（ICBC 预约时段通常为 08:00-18:00）")
+        if end_min <= _ICBC_SERVICE_START_MIN:
+            raise ValueError("结束时间不能早于或等于 08:00（ICBC 预约时段通常为 08:00-18:00）")
         return v
 
     @model_validator(mode="after")

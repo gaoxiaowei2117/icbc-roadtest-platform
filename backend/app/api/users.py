@@ -75,3 +75,11 @@ def get_secret_status(user: User = Depends(get_current_user)) -> SecretStatus:
     if user.secret is None:
         return SecretStatus(has_secret=False, updated_at=None)
     return SecretStatus(has_secret=True, updated_at=user.secret.updated_at)
+
+
+@router.get("/me/credits")
+def get_my_execution_credits(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, int]:
+    return {"available": booking_crud.available_pass_count(db, user.id)}

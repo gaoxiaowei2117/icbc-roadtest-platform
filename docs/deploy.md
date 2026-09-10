@@ -9,9 +9,8 @@
 | 后端服务 | `icbc-api`，监听 `127.0.0.1:8000` |
 | 数据库 | PostgreSQL 16 |
 | 前端目录 | `/var/www/icbc-platform` |
-| Nginx | 监听 9443，双 server 块（新域名 / DuckDNS） |
+| Nginx | 监听 9443，单 server 块（roadtestgo.com，default_server） |
 | 正式入口 | `https://roadtestgo.com/booking/`（Cloudflare 代理 443 → 回源 9443） |
-| 旧入口（过渡） | `https://gogoxoxo.duckdns.org:9443/booking/` |
 | 健康检查 | `https://roadtestgo.com/health` |
 | worker | 本地 Docker，`API_BASE_URL=https://roadtestgo.com` |
 

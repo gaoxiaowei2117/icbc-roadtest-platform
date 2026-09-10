@@ -7,6 +7,7 @@
 import logging
 import random
 import time
+from pathlib import Path
 
 from api_client import StaleClaimError
 from booking_engine import Result
@@ -23,6 +24,7 @@ def _icbc_from_task(task, pos_id: int) -> dict:
     return {
         "drvrLastName": task.drvr_last_name,
         "licenceNumber": task.licence_number,
+        "originalEmail": task.original_email,
         "keyword": task.keyword,
         "examClass": task.exam_class,
         "posID": pos_id,
@@ -41,6 +43,13 @@ def _build_config(task) -> dict:
     dry_run=False：都开 → 真实抢号。icbc 段在轮询时逐 posID 覆盖。
     """
     config = road.load_config(settings.road_config_path)
+    # road.py 会把 booking_status、邮箱恢复备份等运行状态写进 data_directory。
+    # 多用户 worker 必须按任务隔离，否则一个任务的 booked 状态会让后续任务
+    # 在登录 ICBC 前被误判为 already_booked。
+    base_data_directory = Path(config.get("data_directory", "./data"))
+    config["data_directory"] = str(
+        base_data_directory / "bookings" / str(task.booking_id)
+    )
     config.setdefault("gmail", {})
     config["gmail"]["email"] = settings.gmail_email
     config["gmail"]["password"] = settings.gmail_app_password
@@ -68,6 +77,9 @@ def run(task, should_continue=None, on_progress=None):
                 config["icbc"] = _icbc_from_task(task, pos_id)
                 try:
                     status = road.job(config)
+                except road.EmailSafetyError as exc:
+                    logger.error("booking #%s 邮箱安全检查失败：%s", task.booking_id, exc)
+                    return Result(success=False, error=str(exc))
                 except Exception:  # noqa: BLE001 — 单轮异常不中断循环
                     logger.exception("booking #%s 第 %d 轮 posID=%s job 异常", task.booking_id, rounds, pos_id)
                     status = None

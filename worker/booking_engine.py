@@ -24,6 +24,7 @@ class Task:
     user_id: int
     drvr_last_name: str
     licence_number: str
+    original_email: str
     keyword: str
     exam_class: str
     pos_ids: list[int]

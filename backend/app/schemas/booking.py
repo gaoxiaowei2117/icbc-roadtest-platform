@@ -1,8 +1,8 @@
 """抢号任务 schema。"""
 from datetime import date, datetime
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from app.models.booking import BookingStatus
+from app.models.booking import BookingStatus, PaymentStatus
 
 # worker result 接口只允许回报这些终态/可重试态。running 由 claim 独占管理，
 # cancelled 只能由用户取消路径写入——都不该经 worker result 写库。
@@ -19,6 +19,11 @@ class BookingOut(BaseModel):
     id: int
     user_id: int
     status: BookingStatus
+    payment_status: PaymentStatus
+    payment_reference: str | None
+    payment_submitted_at: datetime | None
+    reviewed_at: datetime | None
+    review_reason: str | None
     attempt_count: int
     progress_rounds: int
     last_progress: str | None
@@ -35,6 +40,32 @@ class AdminBookingOut(BookingOut):
     user_email: EmailStr
 
 
+class PaymentSubmittedIn(BaseModel):
+    payment_reference: str = Field(min_length=1, max_length=255)
+
+    @field_validator("payment_reference")
+    @classmethod
+    def _trim_reference(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("付款凭证号或备注不能为空")
+        return value
+
+
+class PaymentReviewIn(BaseModel):
+    reason: str | None = None
+
+    @field_validator("reason")
+    @classmethod
+    def _trim_reason(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if len(value) > 500:
+            raise ValueError("审核备注不能超过 500 个字符")
+        return value or None
+
+
 class WorkerClaimOut(BaseModel):
     """worker 拉取到的任务：含完整抢号档案，keyword 为密文（worker 私钥解）。"""
     booking_id: int
@@ -44,6 +75,7 @@ class WorkerClaimOut(BaseModel):
     user_id: int
     drvr_last_name: str
     licence_number: str
+    original_email: EmailStr
     keyword_ciphertext: str
     exam_class: str
     pos_ids: list[int]
