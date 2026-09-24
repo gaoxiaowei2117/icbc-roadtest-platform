@@ -77,7 +77,9 @@ def create_stripe_checkout(
             metadata={"booking_id": str(booking.id), "user_id": str(user.id)},
             success_url=success_url,
             cancel_url=settings.resolved_stripe_cancel_url,
-            idempotency_key=f"icbc-booking-{booking.id}",
+            # Keep a version suffix so a previously failed request made with
+            # older Checkout parameters cannot poison a corrected retry.
+            idempotency_key=f"icbc-booking-{booking.id}-checkout-v2",
         )
     except stripe.error.StripeError as exc:
         logger.exception("Stripe Checkout 创建失败 booking_id=%s", booking.id)

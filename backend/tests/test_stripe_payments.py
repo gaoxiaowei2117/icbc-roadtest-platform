@@ -33,6 +33,7 @@ def test_stripe_checkout_creates_session_for_awaiting_payment(
         assert kwargs["line_items"] == [{"price": "price_test_checkout", "quantity": 1}]
         assert kwargs["managed_payments"] == {"enabled": False}
         assert kwargs["client_reference_id"] == str(booking["id"])
+        assert kwargs["idempotency_key"] == f"icbc-booking-{booking['id']}-checkout-v2"
         return FakeSession()
 
     monkeypatch.setattr("app.api.payments.stripe.checkout.Session.create", fake_create)
