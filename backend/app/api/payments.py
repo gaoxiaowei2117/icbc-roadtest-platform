@@ -68,6 +68,10 @@ def create_stripe_checkout(
         session = stripe.checkout.Session.create(
             mode="payment",
             line_items=[{"price": settings.stripe_price_id, "quantity": 1}],
+            # This integration uses standard Stripe Checkout. The account may
+            # have Managed Payments enabled by default, which would otherwise
+            # require a product tax code on every checkout line item.
+            managed_payments={"enabled": False},
             customer_email=user.email,
             client_reference_id=str(booking.id),
             metadata={"booking_id": str(booking.id), "user_id": str(user.id)},
