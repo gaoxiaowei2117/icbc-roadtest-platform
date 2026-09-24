@@ -10,7 +10,7 @@ from app.api.payments import _process_checkout_event, _stripe_event_to_dict
 def test_stripe_event_resource_is_converted_before_processing():
     """The Stripe SDK Event resource must be converted to a plain mapping."""
     class FakeEvent:
-        def to_dict_recursive(self):
+        def to_dict(self):
             return {"id": "evt_test_resource", "type": "checkout.session.completed"}
 
     assert _stripe_event_to_dict(FakeEvent()) == {

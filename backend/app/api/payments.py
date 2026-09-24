@@ -115,7 +115,11 @@ def _event_object(event):
 
 def _stripe_event_to_dict(event):
     """Normalize stripe-python Event resources for the mapping-based handler."""
-    return event.to_dict_recursive() if hasattr(event, "to_dict_recursive") else event
+    if hasattr(event, "to_dict"):
+        return event.to_dict()
+    if hasattr(event, "to_dict_recursive"):
+        return event.to_dict_recursive()
+    return event
 
 
 def _process_checkout_event(db: Session, event: dict) -> None:
