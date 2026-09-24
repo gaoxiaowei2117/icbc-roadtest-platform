@@ -113,6 +113,11 @@ def _event_object(event):
     return data.get("object") or {}
 
 
+def _stripe_event_to_dict(event):
+    """Normalize stripe-python Event resources for the mapping-based handler."""
+    return event.to_dict_recursive() if hasattr(event, "to_dict_recursive") else event
+
+
 def _process_checkout_event(db: Session, event: dict) -> None:
     event_type = event.get("type")
     session = _event_object(event)
@@ -189,7 +194,9 @@ async def stripe_webhook(
     except (ValueError, stripe.error.SignatureVerificationError) as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Stripe Webhook 签名无效") from exc
     try:
-        _process_checkout_event(db, event)
+        # stripe-python returns an Event resource here, while the processing
+        # helper deliberately works with plain mappings for testability.
+        _process_checkout_event(db, _stripe_event_to_dict(event))
     except ValueError as exc:
         db.rollback()
         logger.warning("Stripe 事件无法处理：%s", exc)

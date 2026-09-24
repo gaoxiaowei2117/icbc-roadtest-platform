@@ -4,7 +4,20 @@ from types import SimpleNamespace
 from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.execution_pass import ExecutionPass, ExecutionPassStatus
 from app.models.payment import Payment, PaymentProvider, PaymentRecordStatus
-from app.api.payments import _process_checkout_event
+from app.api.payments import _process_checkout_event, _stripe_event_to_dict
+
+
+def test_stripe_event_resource_is_converted_before_processing():
+    """The Stripe SDK Event resource must be converted to a plain mapping."""
+    class FakeEvent:
+        def to_dict_recursive(self):
+            return {"id": "evt_test_resource", "type": "checkout.session.completed"}
+
+    assert _stripe_event_to_dict(FakeEvent()) == {
+        "id": "evt_test_resource",
+        "type": "checkout.session.completed",
+    }
+    assert _stripe_event_to_dict({"id": "evt_test_mapping"}) == {"id": "evt_test_mapping"}
 
 
 def test_stripe_checkout_creates_session_for_awaiting_payment(
