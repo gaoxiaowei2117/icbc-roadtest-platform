@@ -1,14 +1,16 @@
 """/api/admin/* admin 角色专属：查看所有任务和管理用户。"""
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_admin_user
 from app.core.database import get_db
 from app.crud import booking as booking_crud
 from app.crud import user as user_crud
-from app.models.booking import BookingStatus
+from app.models.booking import BookingStatus, PaymentStatus
+from app.models.execution_pass import ExecutionPass, ExecutionPassStatus
 from app.models.user import User
-from app.schemas.booking import AdminBookingOut, BookingOut
+from app.schemas.booking import AdminBookingOut, BookingOut, PaymentReviewIn
 from app.schemas.user import AdminUserOut, UserPublic
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -17,11 +19,14 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 @router.get("/bookings", response_model=list[AdminBookingOut])
 def list_all_bookings(
     status_filter: BookingStatus | None = None,
+    payment_status_filter: PaymentStatus | None = None,
     limit: int = Query(default=100, ge=1, le=500),
     _admin: User = Depends(get_admin_user),
     db: Session = Depends(get_db),
 ) -> list:
-    bookings = booking_crud.list_all(db, status=status_filter, limit=limit)
+    bookings = booking_crud.list_all(
+        db, status=status_filter, payment_status=payment_status_filter, limit=limit
+    )
     return [
         AdminBookingOut(
             **BookingOut.model_validate(booking).model_dump(),
@@ -31,6 +36,45 @@ def list_all_bookings(
     ]
 
 
+@router.post("/bookings/{booking_id}/approve-payment", response_model=AdminBookingOut)
+def approve_payment(
+    booking_id: int,
+    _admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    booking = booking_crud.get(db, booking_id)
+    if booking is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
+    try:
+        approved = booking_crud.approve_payment(db, booking, _admin.id)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(e))
+    return AdminBookingOut(
+        **BookingOut.model_validate(approved).model_dump(),
+        user_email=approved.user.email,
+    )
+
+
+@router.post("/bookings/{booking_id}/reject-payment", response_model=AdminBookingOut)
+def reject_payment(
+    booking_id: int,
+    payload: PaymentReviewIn,
+    _admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    booking = booking_crud.get(db, booking_id)
+    if booking is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
+    try:
+        rejected = booking_crud.reject_payment(db, booking, _admin.id, payload.reason)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(e))
+    return AdminBookingOut(
+        **BookingOut.model_validate(rejected).model_dump(),
+        user_email=rejected.user.email,
+    )
+
+
 @router.get("/users", response_model=list[AdminUserOut])
 def list_all_users(
     limit: int = Query(default=200, ge=1, le=500),
@@ -38,12 +82,25 @@ def list_all_users(
     db: Session = Depends(get_db),
 ) -> list:
     users = user_crud.list_all(db, limit=limit)
+    user_ids = [user.id for user in users]
+    available_passes: dict[int, int] = {}
+    if user_ids:
+        counts = db.execute(
+            select(ExecutionPass.user_id, func.count(ExecutionPass.id))
+            .where(
+                ExecutionPass.user_id.in_(user_ids),
+                ExecutionPass.status == ExecutionPassStatus.available,
+            )
+            .group_by(ExecutionPass.user_id)
+        ).all()
+        available_passes = {user_id: count for user_id, count in counts}
     return [
         AdminUserOut(
             **UserPublic.model_validate(user).model_dump(),
             is_active=user.is_active,
             email_verified=user.email_verified,
             has_secret=user.secret is not None,
+            available_execution_passes=available_passes.get(user.id, 0),
         )
         for user in users
     ]

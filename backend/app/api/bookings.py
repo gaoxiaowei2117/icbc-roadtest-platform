@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.crud import booking as booking_crud
 from app.crud import user as user_crud
 from app.models.user import User
-from app.schemas.booking import BookingCreate, BookingOut
+from app.schemas.booking import BookingCreate, BookingOut, PaymentSubmittedIn
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -75,5 +75,21 @@ def cancel_booking(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
     try:
         return booking_crud.cancel(db, booking)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(e))
+
+
+@router.post("/{booking_id}/payment-submitted", response_model=BookingOut)
+def submit_payment(
+    booking_id: int,
+    payload: PaymentSubmittedIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    booking = booking_crud.get(db, booking_id)
+    if booking is None or booking.user_id != user.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
+    try:
+        return booking_crud.submit_payment(db, booking, payload.payment_reference)
     except ValueError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, str(e))

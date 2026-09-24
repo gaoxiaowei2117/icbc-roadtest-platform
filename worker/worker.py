@@ -31,6 +31,7 @@ def build_task(raw: dict, keyword: str) -> Task:
         user_id=raw["user_id"],
         drvr_last_name=raw["drvr_last_name"],
         licence_number=raw["licence_number"],
+        original_email=raw["original_email"],
         keyword=keyword,
         exam_class=raw["exam_class"],
         pos_ids=raw["pos_ids"],

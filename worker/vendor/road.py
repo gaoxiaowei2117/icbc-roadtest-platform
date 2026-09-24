@@ -22,6 +22,35 @@ from pathlib import Path
 
 ICBC_VERIFICATION_EMAIL = "gaoxiaowei2117@gmail.com"
 
+
+class EmailSafetyError(RuntimeError):
+    """Refuse an ICBC email mutation when profile identity/state is unsafe."""
+
+
+def _normalized_licence(value):
+    normalized = re.sub(r'[^A-Z0-9]', '', str(value or '').upper())
+    # ICBC's web UI treats numeric licence numbers as 7–8 digits and
+    # displays numbers below 10,000,000 with a leading zero.  The webLogin
+    # JSON may therefore return 1234567 for a configured licence 01234567.
+    if normalized.isdigit():
+        return normalized.zfill(8)
+    return normalized
+
+
+def _validate_email_driver_identity(config, weblogin_data):
+    expected = _normalized_licence(config.get('icbc', {}).get('licenceNumber'))
+    actual = _normalized_licence(weblogin_data.get('licenseNumber'))
+    if not expected or not actual or expected != actual:
+        raise EmailSafetyError("ICBC 登录身份与当前驾照配置不一致，拒绝修改邮箱")
+
+
+def _configured_original_email(config):
+    original = (config.get('icbc', {}).get('originalEmail') or '').strip()
+    if not original:
+        raise EmailSafetyError("未配置 ICBC 原始邮箱，拒绝修改邮箱")
+    return original
+
+
 MB_OK = 0x0
 MB_TOPMOST = 0x00040000
 
@@ -244,69 +273,55 @@ def update_contact_email(token, weblogin_data, new_email):
 
 
 def ensure_email_synced(config, token, weblogin_data):
-    """Back up and replace an ICBC account email when it is not the receiver."""
+    """Replace the configured driver's original email with the OTP receiver."""
     if not (config.get('emailReplace', {}) or {}).get('enable'):
         return
+    _validate_email_driver_identity(config, weblogin_data)
+    original = _configured_original_email(config)
     desired = ICBC_VERIFICATION_EMAIL
 
     current = (weblogin_data.get('email') or '').strip()
     if not current:
-        logging.warning("ICBC weblogin response has no 'email' field, skipping email sync")
-        return
+        raise EmailSafetyError("ICBC 登录响应缺少邮箱，拒绝修改邮箱")
     if current.lower() == desired.lower():
         return
-
-    backup_path = get_data_file_path(config, 'icbc_email_backup.json')
-    if not backup_path.exists():
-        try:
-            with open(backup_path, 'w', encoding='utf-8') as f:
-                json.dump({
-                    "drvrId": weblogin_data.get('drvrId'),
-                    "licenseNumber": weblogin_data.get('licenseNumber'),
-                    "original_email": current,
-                    "backed_up_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }, f, indent=2)
-            logging.info(f"Backed up original ICBC email '{current}' to {backup_path}")
-        except Exception as e:
-            logging.error(f"Failed to write email backup, aborting replace: {e}")
-            return
+    if current.lower() != original.lower():
+        raise EmailSafetyError(
+            "ICBC 当前邮箱与配置的原始邮箱不一致，已拒绝临时替换；"
+            "任务结束时将按当前驾照配置尝试恢复"
+        )
 
     logging.info(f"Replacing ICBC account email: '{current}' -> '{desired}'")
     if update_contact_email(token, weblogin_data, desired):
         logging.info(f"Successfully updated ICBC account email to '{desired}'")
         weblogin_data['email'] = desired
     else:
-        logging.error("Failed to update ICBC account email")
+        raise EmailSafetyError("更新 ICBC 验证邮箱失败")
 
 
 def restore_original_email(config, token, weblogin_data):
-    """After a successful booking, restore the ICBC account email from the
-    backup file written by ensure_email_synced.
-    """
+    """Restore the authenticated driver to the original email in its profile."""
     if not (config.get('emailReplace', {}) or {}).get('enable'):
-        return
-    backup_path = get_data_file_path(config, 'icbc_email_backup.json')
-    if not backup_path.exists():
-        return
+        return True
     try:
-        with open(backup_path, 'r', encoding='utf-8') as f:
-            original = (json.load(f).get('original_email') or '').strip()
-    except Exception as e:
-        logging.error(f"Failed to read email backup, skipping restore: {e}")
-        return
-    if not original:
-        logging.warning("Email backup has no original_email, skipping restore")
-        return
+        _validate_email_driver_identity(config, weblogin_data)
+        original = _configured_original_email(config)
+    except EmailSafetyError as e:
+        logging.error(f"Refusing ICBC email restore: {e}")
+        return False
 
     current = (weblogin_data.get('email') or '').strip()
     if current.lower() == original.lower():
-        return
+        return True
 
     logging.info(f"Restoring ICBC account email: '{current}' -> '{original}'")
     if update_contact_email(token, weblogin_data, original):
         logging.info(f"Successfully restored ICBC account email to '{original}'")
+        weblogin_data['email'] = original
+        return True
     else:
         logging.error("Failed to restore ICBC account email — manual restore may be needed")
+        return False
 
 
 # Get available appointments

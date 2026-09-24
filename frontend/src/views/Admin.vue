@@ -6,7 +6,12 @@ import { getPosList, type PosEntry } from '@/api/pos'
 import type { User } from '@/stores/auth'
 import { useI18n } from '@/i18n'
 
-type AdminUser = User & { is_active: boolean; email_verified: boolean; has_secret: boolean }
+type AdminUser = User & {
+  is_active: boolean
+  email_verified: boolean
+  has_secret: boolean
+  available_execution_passes: number
+}
 
 const bookings = ref<Booking[]>([])
 const users = ref<AdminUser[]>([])
@@ -15,6 +20,7 @@ const statusFilter = ref<string>('')
 const error = ref('')
 const deletingUserId = ref<number | null>(null)
 const expandedUserId = ref<number | null>(null)
+const reviewingBookingId = ref<number | null>(null)
 const { tr, apiError, dateLocale, locale } = useI18n()
 
 async function refresh() {
@@ -84,6 +90,40 @@ async function deleteUser(user: User) {
     deletingUserId.value = null
   }
 }
+
+async function approvePayment(booking: Booking) {
+  if (!window.confirm(tr(
+    booking.status === 'cancelled'
+      ? `确认已收到任务 #${booking.id} 的付款，并给用户发放一次可用次数？原任务将保持取消状态。`
+      : `确认已收到任务 #${booking.id} 的付款并发放一次执行权限？`,
+    booking.status === 'cancelled'
+      ? `Confirm payment for cancelled booking #${booking.id} and grant one available execution pass?`
+      : `Confirm payment for booking #${booking.id} and grant one execution pass?`,
+  ))) return
+  reviewingBookingId.value = booking.id
+  try {
+    await api.post(`/api/admin/bookings/${booking.id}/approve-payment`)
+    await refresh()
+  } catch (e: any) {
+    error.value = apiError(e, '审核通过失败', 'Failed to approve payment')
+  } finally {
+    reviewingBookingId.value = null
+  }
+}
+
+async function rejectPayment(booking: Booking) {
+  const reason = window.prompt(tr('请输入拒绝原因（可选）：', 'Reason for rejection (optional):'))
+  if (reason === null) return
+  reviewingBookingId.value = booking.id
+  try {
+    await api.post(`/api/admin/bookings/${booking.id}/reject-payment`, { reason })
+    await refresh()
+  } catch (e: any) {
+    error.value = apiError(e, '拒绝付款失败', 'Failed to reject payment')
+  } finally {
+    reviewingBookingId.value = null
+  }
+}
 </script>
 
 <template>
@@ -101,6 +141,7 @@ async function deleteUser(user: User) {
             <th>{{ tr('角色', 'Role') }}</th>
             <th>{{ tr('邮箱验证', 'Email verification') }}</th>
             <th>{{ tr('状态', 'Status') }}</th>
+            <th>{{ tr('可用次数', 'Available passes') }}</th>
             <th>{{ tr('注册时间', 'Registered') }}</th>
             <th class="text-right">{{ tr('操作', 'Actions') }}</th>
           </tr>
@@ -116,6 +157,7 @@ async function deleteUser(user: User) {
               </td>
               <td>{{ user.email_verified ? tr('已验证', 'Verified') : tr('未验证', 'Not verified') }}</td>
               <td>{{ user.is_active ? tr('启用', 'Active') : tr('停用', 'Disabled') }}</td>
+              <td>{{ user.available_execution_passes }}</td>
               <td>{{ formatDateTime(user.created_at) }}</td>
               <td>
                 <div class="flex justify-end gap-2">
@@ -138,7 +180,7 @@ async function deleteUser(user: User) {
               </td>
             </tr>
             <tr v-if="expandedUserId === user.id" class="border-b bg-slate-50">
-              <td colspan="7" class="p-4">
+              <td colspan="9" class="p-4">
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <h3 class="font-medium mb-2">{{ tr('ICBC 资料', 'ICBC Profile') }}</h3>
@@ -172,6 +214,9 @@ async function deleteUser(user: User) {
         <select v-model="statusFilter" class="input max-w-xs" @change="refresh">
           <option value="">{{ tr('全部', 'All') }}</option>
           <option value="pending">pending</option>
+          <option value="awaiting_payment">awaiting_payment</option>
+          <option value="awaiting_review">awaiting_review</option>
+          <option value="payment_rejected">payment_rejected</option>
           <option value="running">running</option>
           <option value="done">done</option>
           <option value="failed">failed</option>
@@ -185,6 +230,7 @@ async function deleteUser(user: User) {
             <th class="py-2">#</th>
             <th>{{ tr('用户', 'User') }}</th>
             <th>{{ tr('状态', 'Status') }}</th>
+            <th>{{ tr('付款', 'Payment') }}</th>
             <th>{{ tr('尝试', 'Attempts') }}</th>
             <th>{{ tr('查询轮次', 'Search rounds') }}</th>
             <th>{{ tr('最近动态', 'Latest activity') }}</th>
@@ -200,6 +246,23 @@ async function deleteUser(user: User) {
               <div class="text-xs text-slate-400">ID: {{ b.user_id }}</div>
             </td>
             <td>{{ b.status }}</td>
+            <td>
+              <div>{{ b.payment_status }}</div>
+              <div v-if="b.payment_reference" class="text-xs text-slate-500">{{ b.payment_reference }}</div>
+              <div v-if="b.review_reason" class="text-xs text-red-600">{{ b.review_reason }}</div>
+              <div v-if="b.payment_status === 'awaiting_review'" class="flex gap-2 mt-1">
+                <button
+                  class="text-green-700 hover:underline disabled:opacity-50"
+                  :disabled="reviewingBookingId === b.id"
+                  @click="approvePayment(b)"
+                >{{ b.status === 'cancelled' ? tr('通过并发放次数', 'Approve and grant pass') : tr('通过', 'Approve') }}</button>
+                <button
+                  class="text-red-700 hover:underline disabled:opacity-50"
+                  :disabled="reviewingBookingId === b.id"
+                  @click="rejectPayment(b)"
+                >{{ tr('拒绝', 'Reject') }}</button>
+              </div>
+            </td>
             <td>{{ b.attempt_count }}</td>
             <td>{{ b.progress_rounds }}</td>
             <td class="text-xs truncate max-w-xs">

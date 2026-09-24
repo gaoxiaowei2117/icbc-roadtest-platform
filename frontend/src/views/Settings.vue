@@ -19,6 +19,7 @@ const WEEK = [
 const profile = reactive({
   icbc_license_no: '',
   icbc_last_name: '',
+  icbc_original_email: '',
   exam_class: '5',
   pos_id: null as number | null,
   expect_after_date: '',
@@ -29,6 +30,9 @@ const profile = reactive({
   pref_parts_of_day: [0, 1] as number[],
 })
 
+const SERVICE_START = '08:00'
+const SERVICE_END = '18:00'
+
 const secret = reactive({ keyword: '' })
 const hasSecret = ref(false)
 
@@ -37,6 +41,7 @@ onMounted(async () => {
   if (auth.user) {
     profile.icbc_license_no = auth.user.icbc_license_no || ''
     profile.icbc_last_name = auth.user.icbc_last_name || ''
+    profile.icbc_original_email = auth.user.icbc_original_email || ''
     profile.exam_class = auth.user.exam_class || '5'
     profile.pos_id = (auth.user.pos_ids || [])[0] ?? null
     profile.expect_after_date = auth.user.expect_after_date || ''
@@ -56,6 +61,7 @@ async function saveIcbcProfile() {
     const updated = await updateMe({
       icbc_license_no: profile.icbc_license_no || null,
       icbc_last_name: profile.icbc_last_name || null,
+      icbc_original_email: profile.icbc_original_email || null,
     })
     auth.user = updated
     if (secret.keyword) {
@@ -78,6 +84,20 @@ async function saveBookingSettings() {
   if (profile.time_start && profile.time_end && profile.time_end <= profile.time_start) {
     alert(tr('结束时间必须晚于开始时间', 'End time must be later than start time'))
     return
+  }
+  const hasOutsideTimeWindow = (ts: string, te: string) => ts < SERVICE_START || te > SERVICE_END
+  const allOutsideTimeWindow = (ts: string, te: string) =>
+    ts >= SERVICE_END || te <= SERVICE_START
+  if (profile.time_start && profile.time_end && allOutsideTimeWindow(profile.time_start, profile.time_end)) {
+    if (!confirm(tr(
+      '你设置的时间区间完全不在 ICBC 常规考试时间（08:00-18:00）内，任务可能一直无法匹配可用号。',
+      'The configured time range is completely outside ICBC normal booking hours (08:00-18:00), and this task may never match an appointment.',
+    ))) return
+  } else if (profile.time_start && profile.time_end && hasOutsideTimeWindow(profile.time_start, profile.time_end)) {
+    if (!confirm(tr(
+      '你设置的时间区间部分在 ICBC 常规考试时间（08:00-18:00）之外，请确认是否继续。',
+      'Part of the configured time range is outside ICBC normal booking hours (08:00-18:00). Confirm to continue.',
+    ))) return
   }
   try {
     const updated = await updateMe({
@@ -125,6 +145,23 @@ async function removeSecret() {
         <div>
           <label class="label">{{ tr('姓氏（Last Name）', 'Last name') }}</label>
           <input v-model="profile.icbc_last_name" class="input" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="label">{{ tr(
+            'ICBC 原始邮箱（任务结束后恢复）',
+            'Original ICBC email (restored after the task)',
+            'Courriel ICBC original (restauré après la tâche)',
+            'Correo original de ICBC (se restaura al finalizar)',
+            'ICBC 原始信箱（任務結束後還原）',
+          ) }}</label>
+          <input v-model="profile.icbc_original_email" type="email" class="input" />
+          <p class="mt-2 text-sm text-slate-600">{{ tr(
+            '必须填写当前驾照账户自己的邮箱；请勿填写平台登录邮箱或系统验证码邮箱。',
+            "Enter this driver's own ICBC email, not the platform login or verification email.",
+            'Saisissez le courriel ICBC propre à ce conducteur, pas celui de la plateforme ou de vérification.',
+            'Ingresa el correo ICBC propio de este conductor, no el de la plataforma ni el de verificación.',
+            '請填寫目前駕照帳戶自己的信箱；請勿填寫平台登入或系統驗證信箱。',
+          ) }}</p>
         </div>
         <div class="md:col-span-2">
           <label class="label">keyword</label>

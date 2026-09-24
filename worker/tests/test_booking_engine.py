@@ -5,6 +5,7 @@ from booking_engine import Result, Task
 
 TASK = Task(
     booking_id=9, user_id=1, drvr_last_name="GAO", licence_number="1234567",
+    original_email="driver@example.com",
     keyword="kw", exam_class="5", pos_ids=[1],
     expect_after_date="2026-07-01", expect_before_date="2026-08-01",
     expect_time_range="10:00-17:00", pref_days_of_week=[0], pref_parts_of_day=[0],

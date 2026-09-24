@@ -44,6 +44,8 @@ onMounted(async () => {
         <dd>{{ auth.user?.icbc_license_no || tr('— 未填写', '— Not provided') }}</dd>
         <dt class="text-slate-500">{{ tr('姓氏', 'Last name') }}</dt>
         <dd>{{ auth.user?.icbc_last_name || tr('— 未填写', '— Not provided') }}</dd>
+        <dt class="text-slate-500">{{ tr('ICBC 原始邮箱', 'Original ICBC email') }}</dt>
+        <dd>{{ auth.user?.icbc_original_email || tr('— 未填写', '— Not provided') }}</dd>
         <dt class="text-slate-500">{{ tr('考场类别', 'Exam class') }}</dt>
         <dd>{{ auth.user?.exam_class || tr('— 未填写', '— Not provided') }}</dd>
         <dt class="text-slate-500">{{ tr('预选考点', 'Locations') }}</dt>
