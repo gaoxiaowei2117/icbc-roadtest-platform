@@ -1,8 +1,49 @@
 """Stripe configuration and payment entitlement integration tests."""
+from types import SimpleNamespace
+
 from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.execution_pass import ExecutionPass, ExecutionPassStatus
 from app.models.payment import Payment, PaymentProvider, PaymentRecordStatus
 from app.api.payments import _process_checkout_event
+
+
+def test_stripe_checkout_creates_session_for_awaiting_payment(
+    client, ready_user, db, monkeypatch
+):
+    headers, *_ = ready_user(email="checkout-payer@gmail.com")
+    db.query(ExecutionPass).delete()
+    db.commit()
+    booking = client.post("/api/bookings", headers=headers, json={}).json()
+    assert booking["status"] == BookingStatus.awaiting_payment
+
+    settings = SimpleNamespace(
+        stripe_enabled=True,
+        stripe_secret_key="sk_test_checkout",
+        stripe_price_id="price_test_checkout",
+        resolved_stripe_success_url="https://example.test/success",
+        resolved_stripe_cancel_url="https://example.test/cancel",
+    )
+    monkeypatch.setattr("app.api.payments._stripe_settings", lambda: settings)
+
+    class FakeSession:
+        id = "cs_test_checkout"
+        url = "https://checkout.stripe.test/cs_test_checkout"
+
+    def fake_create(**kwargs):
+        assert kwargs["line_items"] == [{"price": "price_test_checkout", "quantity": 1}]
+        assert kwargs["client_reference_id"] == str(booking["id"])
+        return FakeSession()
+
+    monkeypatch.setattr("app.api.payments.stripe.checkout.Session.create", fake_create)
+    response = client.post(
+        f"/api/payments/stripe/checkout/{booking['id']}", headers=headers
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "url": "https://checkout.stripe.test/cs_test_checkout",
+        "session_id": "cs_test_checkout",
+    }
 
 
 def test_stripe_status_is_disabled_without_production_config(client, ready_user):

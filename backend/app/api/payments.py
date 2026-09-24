@@ -12,7 +12,7 @@ from app.api.deps import get_current_user
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.crud import booking as booking_crud
-from app.models.booking import BookingStatus, PaymentStatus
+from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.payment import Payment, PaymentProvider, PaymentRecordStatus
 from app.models.user import User
 from app.schemas.payment import StripeCheckoutOut, StripeStatusOut
@@ -42,7 +42,7 @@ def create_stripe_checkout(
     db: Session = Depends(get_db),
 ) -> StripeCheckoutOut:
     settings = _stripe_settings()
-    booking = db.get(booking_id)
+    booking = db.get(Booking, booking_id)
     if booking is None or booking.user_id != user.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "任务不存在")
     if booking.status != BookingStatus.awaiting_payment or booking.payment_status != PaymentStatus.awaiting_payment:
