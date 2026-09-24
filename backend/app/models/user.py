@@ -48,3 +48,6 @@ class User(Base):
         "ExecutionPass", back_populates="user", cascade="all, delete-orphan",
         foreign_keys="ExecutionPass.user_id",
     )
+    payments: Mapped[list["Payment"]] = relationship(  # noqa: F821
+        "Payment", back_populates="user", cascade="all, delete-orphan"
+    )

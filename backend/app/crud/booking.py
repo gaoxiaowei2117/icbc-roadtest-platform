@@ -113,6 +113,42 @@ def create(db: Session, user_id: int, **fields) -> Booking:
     return booking
 
 
+def grant_paid_entitlement(
+    db: Session, booking: Booking, source: str = "stripe"
+) -> Booking:
+    """Grant one paid execution pass without committing the surrounding transaction.
+
+    Stripe webhooks call this while the payment row and booking row are locked in
+    the same transaction. Repeated delivery is harmless once the booking is approved.
+    """
+    if booking.payment_status == PaymentStatus.approved:
+        return booking
+    if booking.payment_status != PaymentStatus.awaiting_payment:
+        raise ValueError(f"任务付款状态 {booking.payment_status} 不可自动确认")
+    if booking.status not in (BookingStatus.awaiting_payment, BookingStatus.cancelled):
+        raise ValueError(f"任务状态 {booking.status} 不可自动确认")
+    was_cancelled = booking.status == BookingStatus.cancelled
+    db.add(
+        ExecutionPass(
+            user_id=booking.user_id,
+            booking_id=None if was_cancelled else booking.id,
+            status=(
+                ExecutionPassStatus.available
+                if was_cancelled
+                else ExecutionPassStatus.reserved
+            ),
+            approved_at=datetime.now(timezone.utc),
+        )
+    )
+    if not was_cancelled:
+        booking.status = BookingStatus.pending
+    booking.payment_status = PaymentStatus.approved
+    booking.payment_submitted_at = booking.payment_submitted_at or datetime.now(timezone.utc)
+    booking.reviewed_at = datetime.now(timezone.utc)
+    booking.review_reason = f"{source} payment confirmed automatically"
+    return booking
+
+
 def submit_payment(
     db: Session, booking: Booking, payment_reference: str | None = None
 ) -> Booking:

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { cancelBooking, createBooking, listBookings, submitPayment, type Booking } from '@/api/bookings'
+import { cancelBooking, createBooking, createStripeCheckout, getStripeStatus, listBookings, submitPayment, type Booking } from '@/api/bookings'
 import { api } from '@/api/client'
 import { SUPPORT_EMAIL } from '@/config/support'
 import { useI18n } from '@/i18n'
@@ -10,6 +10,8 @@ const error = ref('')
 const message = ref('')
 const loading = ref(false)
 const paymentSubmitting = ref(false)
+const stripeSubmitting = ref(false)
+const stripeEnabled = ref(false)
 const availableCredits = ref(0)
 let refreshTimer: number | undefined
 const { tr, apiError, dateLocale } = useI18n()
@@ -27,17 +29,30 @@ const paymentBooking = computed(() => bookings.value.find((b) => b.status === 'a
 async function refresh() {
   if (!refreshTimer) loading.value = true
   try {
-    const [bookingList, credits] = await Promise.all([
+    const [bookingList, credits, stripe] = await Promise.all([
       listBookings(),
       api.get<{ available: number }>('/api/users/me/credits'),
+      getStripeStatus(),
     ])
     bookings.value = bookingList
     availableCredits.value = credits.data.available
+    stripeEnabled.value = stripe.enabled
     syncAutoRefresh()
   } catch (e: any) {
     error.value = apiError(e, '加载失败', 'Failed to load bookings')
   } finally {
     loading.value = false
+  }
+}
+
+async function onStripeCheckout(b: Booking) {
+  stripeSubmitting.value = true
+  try {
+    const checkout = await createStripeCheckout(b.id)
+    window.location.assign(checkout.url)
+  } catch (e: any) {
+    error.value = apiError(e, 'Stripe 付款页面创建失败', 'Failed to create Stripe Checkout')
+    stripeSubmitting.value = false
   }
 }
 
@@ -139,12 +154,23 @@ onUnmounted(() => {
     <div v-if="paymentBooking" class="card border-amber-200 bg-amber-50 space-y-3">
       <h2 class="text-lg font-semibold text-amber-900">{{ tr('付款后提交审核', 'Payment required') }}</h2>
       <p class="text-sm text-amber-800">
-        {{ tr('请使用下方任一种方式完成任务付款。付款完成后提交付款凭证，管理员确认后会发放一次可执行权限。', 'Pay for this execution using one of the methods below. Submit your payment reference afterward; approval grants one execution pass.') }}
+        {{ tr('可以使用 Stripe 在线付款自动开通权限；也可以扫码付款，填写凭证后由管理员人工确认。', 'Pay online with Stripe for automatic entitlement, or use a QR code and submit the payment reference for manual review.') }}
       </p>
       <p class="text-sm text-amber-800">
         {{ tr('付款或审核遇到问题？请联系', 'Questions about payment or review? Contact') }}
         <a class="font-semibold underline" :href="supportMailto(paymentBooking.id)">{{ SUPPORT_EMAIL }}</a>
         {{ tr(`，并注明注册邮箱和任务编号 #${paymentBooking.id}。`, ` and include your registered email and booking #${paymentBooking.id}.`) }}
+      </p>
+      <button
+        v-if="stripeEnabled"
+        class="btn-primary"
+        :disabled="stripeSubmitting"
+        @click="onStripeCheckout(paymentBooking)"
+      >
+        {{ stripeSubmitting ? tr('正在打开 Stripe…', 'Opening Stripe…') : tr('使用 Stripe 在线付款', 'Pay online with Stripe') }}
+      </button>
+      <p v-if="stripeEnabled" class="text-xs text-amber-700">
+        {{ tr('Stripe 付款成功后会由系统自动确认并开通一次执行权限。', 'A successful Stripe payment is confirmed automatically and grants one execution pass.') }}
       </p>
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="flex flex-col items-center gap-2 rounded-lg bg-white p-3">

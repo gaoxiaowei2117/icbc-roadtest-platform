@@ -36,6 +36,14 @@ export async function submitPayment(id: number, paymentReference: string): Promi
   })).data
 }
 
+export async function getStripeStatus(): Promise<{ enabled: boolean }> {
+  return (await api.get('/api/payments/stripe/status')).data
+}
+
+export async function createStripeCheckout(id: number): Promise<{ url: string; session_id: string }> {
+  return (await api.post(`/api/payments/stripe/checkout/${id}`)).data
+}
+
 export async function cancelBooking(id: number): Promise<Booking> {
   return (await api.post(`/api/bookings/${id}/cancel`)).data
 }

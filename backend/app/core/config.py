@@ -41,6 +41,29 @@ class Settings(BaseSettings):
     bootstrap_admin_email: str = ""
     bootstrap_admin_password: str = ""
 
+    # Stripe Checkout is disabled until all three production values are set.
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_id: str = ""
+    stripe_success_url: str = ""
+    stripe_cancel_url: str = ""
+
+    @property
+    def stripe_enabled(self) -> bool:
+        return bool(self.stripe_secret_key and self.stripe_webhook_secret and self.stripe_price_id)
+
+    @property
+    def resolved_stripe_success_url(self) -> str:
+        return self.stripe_success_url or (
+            f"{self.app_base_url}{self.frontend_base_path}/bookings?stripe=success"
+        )
+
+    @property
+    def resolved_stripe_cancel_url(self) -> str:
+        return self.stripe_cancel_url or (
+            f"{self.app_base_url}{self.frontend_base_path}/bookings?stripe=cancelled"
+        )
+
     # 任务卡死 reaper（T2）：扫描间隔 + running 超时阈值
     reaper_interval_seconds: int = 60
     running_timeout_minutes: int = 15

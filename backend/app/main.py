@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api import admin, auth, bookings, pos, users, worker
+from app.api import admin, auth, bookings, payments, pos, users, worker
 from app.core.config import get_settings
 from app.core.database import SessionLocal
 from app.core.ratelimit import limiter
@@ -112,6 +112,7 @@ def health() -> dict:
 app.include_router(auth.router, prefix=settings.api_v1_prefix)
 app.include_router(users.router, prefix=settings.api_v1_prefix)
 app.include_router(bookings.router, prefix=settings.api_v1_prefix)
+app.include_router(payments.router, prefix=settings.api_v1_prefix)
 app.include_router(worker.router, prefix=settings.api_v1_prefix)
 app.include_router(admin.router, prefix=settings.api_v1_prefix)
 app.include_router(pos.router, prefix=settings.api_v1_prefix)
