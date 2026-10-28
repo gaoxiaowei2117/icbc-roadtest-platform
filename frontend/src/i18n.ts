@@ -4,7 +4,7 @@ export type Locale = 'zh' | 'zh-Hant' | 'en' | 'fr' | 'es'
 
 const supported: Locale[] = ['zh', 'zh-Hant', 'en', 'fr', 'es']
 const saved = localStorage.getItem('icbc.locale') as Locale | null
-const initial: Locale = saved && supported.includes(saved) ? saved : 'zh'
+const initial: Locale = saved && supported.includes(saved) ? saved : 'en'
 
 const traditional: Record<string, string> = {
   'ICBC Admin': 'ICBC 管理後台', 'ICBC Road Test Booking': 'ICBC 路考預約',

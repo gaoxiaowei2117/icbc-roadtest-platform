@@ -4,6 +4,7 @@ import { cancelBooking, createBooking, createStripeCheckout, getStripeStatus, li
 import { api } from '@/api/client'
 import { SUPPORT_EMAIL } from '@/config/support'
 import { useI18n } from '@/i18n'
+import { translateActivity } from '@/activity'
 
 const bookings = ref<Booking[]>([])
 const error = ref('')
@@ -222,8 +223,8 @@ onUnmounted(() => {
             <td>{{ b.attempt_count }}</td>
             <td>{{ b.progress_rounds }}</td>
             <td class="text-xs max-w-sm">
-              <span v-if="b.last_error" class="text-red-600">{{ b.last_error }}</span>
-              <span v-else class="text-slate-600">{{ b.last_progress || '—' }}</span>
+              <span v-if="b.last_error" class="text-red-600">{{ translateActivity(b.last_error, tr) }}</span>
+              <span v-else class="text-slate-600">{{ translateActivity(b.last_progress, tr) || '—' }}</span>
             </td>
             <td class="text-xs text-slate-500">{{ formatDateTime(b.last_progress_at || b.updated_at) }}</td>
             <td>{{ new Date(b.created_at).toLocaleString(dateLocale) }}</td>

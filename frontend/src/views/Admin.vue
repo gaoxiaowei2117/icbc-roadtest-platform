@@ -5,6 +5,7 @@ import type { Booking } from '@/api/bookings'
 import { getPosList, type PosEntry } from '@/api/pos'
 import type { User } from '@/stores/auth'
 import { useI18n } from '@/i18n'
+import { translateActivity } from '@/activity'
 
 type AdminUser = User & {
   is_active: boolean
@@ -266,8 +267,8 @@ async function rejectPayment(booking: Booking) {
             <td>{{ b.attempt_count }}</td>
             <td>{{ b.progress_rounds }}</td>
             <td class="text-xs truncate max-w-xs">
-              <span v-if="b.last_error" class="text-red-600">{{ b.last_error }}</span>
-              <span v-else class="text-slate-600">{{ b.last_progress || '—' }}</span>
+              <span v-if="b.last_error" class="text-red-600">{{ translateActivity(b.last_error, tr) }}</span>
+              <span v-else class="text-slate-600">{{ translateActivity(b.last_progress, tr) || '—' }}</span>
             </td>
             <td class="text-xs text-slate-500">{{ formatDateTime(b.last_progress_at || b.updated_at) }}</td>
             <td>{{ new Date(b.created_at).toLocaleString(dateLocale) }}</td>
