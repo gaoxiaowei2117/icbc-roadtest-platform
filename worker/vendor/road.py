@@ -205,6 +205,7 @@ def generate_headers():
 
 # Get the web login response
 def get_weblogin(config):
+    config['_login_http_status'] = None
     login_url = "https://onlinebusiness.icbc.com/deas-api/v1/webLogin/webLogin"
     headers = generate_headers()
     payload = {
@@ -215,6 +216,7 @@ def get_weblogin(config):
 
     try:
         response = requests.put(login_url, data=json.dumps(payload), headers=headers, timeout=30)
+        config['_login_http_status'] = response.status_code
 
         if response.status_code == 200:
             # Extract drvrId from response and update config
@@ -326,6 +328,7 @@ def restore_original_email(config, token, weblogin_data):
 
 # Get available appointments
 def get_appointments(config, token):
+    config['_query_http_status'] = None
     appointment_url = "https://onlinebusiness.icbc.com/deas-api/v1/web/getAvailableAppointments"
     headers = generate_headers()
     headers['Authorization'] = token
@@ -333,7 +336,7 @@ def get_appointments(config, token):
     payload = {
         "aPosID": config['icbc']['posID'],
         "examType": str(config['icbc']['examClass']) + "-R-1",
-        "examDate": datetime.now().strftime("%Y-%m-%d"),
+        "examDate": datetime.now(ZoneInfo("America/Vancouver")).strftime("%Y-%m-%d"),
         "ignoreReserveTime": "false",
         "prfDaysOfWeek": config['icbc']['prfDaysOfWeek'],
         "prfPartsOfDay": config['icbc']['prfPartsOfDay'],
@@ -345,6 +348,7 @@ def get_appointments(config, token):
     # logging.info(f"get_appointments payload: {payload}")
 
     response = requests.post(appointment_url, data=json.dumps(payload), headers=headers)
+    config['_query_http_status'] = response.status_code
 
     if response.status_code == 200:
         appointments = response.json()[:10]
@@ -1538,7 +1542,7 @@ def is_within_booking_time_window(config):
         start_time = datetime.strptime(start_str.strip(), "%H:%M").time()
         end_time = datetime.strptime(end_str.strip(), "%H:%M").time()
         
-        now = datetime.now().time()
+        now = datetime.now(ZoneInfo("America/Vancouver")).time()
         if start_time <= end_time:
             return start_time <= now <= end_time
         else:  # Time window crosses midnight
@@ -1552,7 +1556,7 @@ def is_within_booking_time_window(config):
 def save_booking_status(config, status, appointment_info=None):
     status_data = {
         "status": status,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": datetime.now(ZoneInfo("America/Vancouver")).isoformat(timespec="seconds"),
         "appointment": appointment_info
     }
     
@@ -1586,6 +1590,8 @@ def check_if_already_booked(config):
     return False
 
 def job(config):
+    config['_query_http_status'] = None
+    config['_login_http_status'] = None
     # Check if already successfully booked
     if check_if_already_booked(config):
         return "already_booked"
@@ -1602,6 +1608,8 @@ def job(config):
     response = get_weblogin(config)
     if not response:
         logging.error("No response received. Exiting.")
+        if config.get('_login_http_status') == 403:
+            return "access_limited"
         return "token_failed"
     
     token = response.headers.get("Authorization", "")
@@ -1621,6 +1629,10 @@ def job(config):
     
     # Get available appointments
     new_appointments = get_appointments(config, token)
+    if config.get('_query_http_status') == 403:
+        return "access_limited"
+    if config.get('_query_http_status') not in (None, 200):
+        return "query_failed"
     if not new_appointments:
         logging.info("No appointments available")
         return "no_appointments"

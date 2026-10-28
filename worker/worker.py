@@ -5,6 +5,8 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from api_client import APIClient, StaleClaimError
 from booking_engine import BookingEngineError, Result, Task, run
@@ -14,14 +16,22 @@ from crypto import decrypt_secret
 logger = logging.getLogger("worker")
 
 
+class VancouverFormatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):
+        timestamp = datetime.fromtimestamp(record.created, ZoneInfo("America/Vancouver"))
+        return timestamp.strftime(datefmt) if datefmt else timestamp.isoformat(timespec="milliseconds")
+
+
 def _setup_logging() -> None:
+    handlers = [
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(settings.log_file, encoding="utf-8"),
+    ]
+    for handler in handlers:
+        handler.setFormatter(VancouverFormatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
     logging.basicConfig(
         level=settings.log_level,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(settings.log_file, encoding="utf-8"),
-        ],
+        handlers=handlers,
     )
 
 

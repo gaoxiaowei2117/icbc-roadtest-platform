@@ -8,6 +8,7 @@ import logging
 import random
 import time
 from pathlib import Path
+from dataclasses import dataclass
 
 from api_client import StaleClaimError
 from booking_engine import Result
@@ -17,6 +18,27 @@ from vendor import road
 logger = logging.getLogger("worker.road_adapter")
 
 _SUCCESS_STATES = {"booking_success", "already_booked"}
+
+
+@dataclass
+class _PollState:
+    consecutive_403: int = 0
+    limited: bool = False
+    next_at: float = 0.0
+
+    def observe(self, status, query_succeeded):
+        if status == "access_limited":
+            self.consecutive_403 += 1
+            if self.consecutive_403 >= 3:
+                self.limited = True
+        else:
+            self.consecutive_403 = 0
+            if query_succeeded:
+                self.limited = False
+
+
+# 保留同一任务在 600 秒自动重排前后的状态和剩余等待时间。
+_poll_states: dict[int, _PollState] = {}
 
 
 def _icbc_from_task(task, pos_id: int) -> dict:
@@ -64,6 +86,8 @@ def run(task, should_continue=None, on_progress=None):
     pos_ids = task.pos_ids or []
     deadline = time.monotonic() + settings.booking_timeout_seconds
     rounds = 0
+    state = _poll_states.setdefault(task.booking_id, _PollState())
+    requeue = False
     try:
         while time.monotonic() < deadline:
             if should_continue is not None and not should_continue():
@@ -71,10 +95,18 @@ def run(task, should_continue=None, on_progress=None):
                 return Result(success=False, cancelled=True, error="任务已取消")
             rounds += 1
             for pos_id in pos_ids:
+                while time.monotonic() < min(state.next_at, deadline):
+                    if should_continue is not None and not should_continue():
+                        return Result(success=False, cancelled=True, error="任务已取消")
+                    time.sleep(max(0.0, min(5.0, state.next_at - time.monotonic(),
+                                           deadline - time.monotonic())))
+                if time.monotonic() >= deadline:
+                    break
                 if should_continue is not None and not should_continue():
                     logger.info("booking #%s 已取消，停止本轮抢号", task.booking_id)
                     return Result(success=False, cancelled=True, error="任务已取消")
                 config["icbc"] = _icbc_from_task(task, pos_id)
+                config['_query_http_status'] = None
                 try:
                     status = road.job(config)
                 except road.EmailSafetyError as exc:
@@ -83,6 +115,14 @@ def run(task, should_continue=None, on_progress=None):
                 except Exception:  # noqa: BLE001 — 单轮异常不中断循环
                     logger.exception("booking #%s 第 %d 轮 posID=%s job 异常", task.booking_id, rounds, pos_id)
                     status = None
+                was_limited = state.limited
+                state.observe(status, status is not None and config.get('_query_http_status') == 200)
+                if state.limited != was_limited:
+                    logger.info("booking #%s %s", task.booking_id,
+                                "连续 3 次 403，查询间隔调整为 112–120s" if state.limited
+                                else "查号恢复，恢复正常查询间隔")
+                state.next_at = (time.monotonic() + random.uniform(112, 120)
+                                 if state.limited else 0.0)
                 logger.info("booking #%s 第 %d 轮 posID=%s：job 返回 %s", task.booking_id, rounds, pos_id, status)
                 _report_progress(
                     on_progress,
@@ -96,9 +136,11 @@ def run(task, should_continue=None, on_progress=None):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
-            delay = _next_poll_delay()
+            if not state.limited:
+                state.next_at = time.monotonic() + _next_poll_delay()
+            delay = max(0.0, state.next_at - time.monotonic())
             logger.info("booking #%s 下一轮将在 %.1fs 后开始", task.booking_id, min(delay, remaining))
-            time.sleep(min(delay, remaining))
+        requeue = True
         return Result(
             success=False,
             error=f"到达时限（{settings.booking_timeout_seconds}s）仍未抢到号，自动重排继续抢",
@@ -106,6 +148,8 @@ def run(task, should_continue=None, on_progress=None):
         )
     finally:
         _best_effort_restore(config)
+        if not requeue:
+            _poll_states.pop(task.booking_id, None)
 
 
 def _next_poll_delay() -> float:
