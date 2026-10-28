@@ -195,8 +195,8 @@ ssh mycloud 'sudo install -m 0644 /tmp/nginx-icbc.conf /etc/nginx/sites-availabl
 ```bash
 ssh mycloud 'systemctl is-active icbc-api nginx postgresql'
 ssh mycloud 'cd /opt/icbc-platform/backend && sudo -u icbc bash -c "set -a; source /opt/icbc-platform/.env; set +a; .venv/bin/alembic current"'
-curl -fsS https://gogoxoxo.duckdns.org:9443/health
-curl -fsSI https://gogoxoxo.duckdns.org:9443/booking/
+curl -fsS https://roadtestgo.com/health
+curl -fsSI https://roadtestgo.com/booking/
 ```
 
 必须确认 Alembic 位于 `head`、三个服务均为 `active`、健康检查返回 `{"status":"ok"}`、页面返回 HTTP 200，才能认为发布完成。
@@ -212,7 +212,7 @@ cp worker/config.example.yml worker/config.yml
 
 `worker/.env` 的关键配置：
 
-- `API_BASE_URL=https://gogoxoxo.duckdns.org:9443`
+- `API_BASE_URL=https://roadtestgo.com`
 - `WORKER_API_KEY` 与云端一致
 - `SECRET_PRIVATE_KEY` 与云端公钥成对
 - `ROAD_CONFIG_PATH=/app/config.yml`
@@ -269,7 +269,7 @@ docker compose -f docker-compose.worker.yml logs --since=30m --tail=500 worker
 - 检查容器是否为 `Up`，并查看 claim 是否返回 401/403/网络错误。
 - 检查 `WORKER_API_KEY` 是否与云端一致。
 - 检查页面是否存在 `pending` 任务。
-- 检查本地能否访问 `https://gogoxoxo.duckdns.org:9443/health`。
+- 检查本地能否访问 `https://roadtestgo.com/health`。
 
 **Gmail `AUTHENTICATIONFAILED`**
 

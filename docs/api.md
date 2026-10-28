@@ -1,6 +1,6 @@
 # API 文档
 
-Base URL：`https://gogoxoxo.duckdns.org:9443/api`
+Base URL：`https://roadtestgo.com/api`
 
 ## 鉴权
 除 `/auth/*` 和 `/health` 外都需要 `Authorization: Bearer <access_token>` 头。

@@ -2,7 +2,7 @@
 
 ## 1. 登录入口
 
-打开 `https://gogoxoxo.duckdns.org:9443/booking/`。
+打开 `https://roadtestgo.com/booking/`。
 
 新用户先注册，输入邮箱收到的 6 位验证码完成验证，再登录系统。验证码 10 分钟内有效；没有收到时可在验证页面重新发送，并检查垃圾邮件目录。
 

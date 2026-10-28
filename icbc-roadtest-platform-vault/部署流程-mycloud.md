@@ -17,7 +17,7 @@ aliases:
 整理自本轮三次实际发布（PR #4 #5 #6）。权威步骤见仓库 `docs/deploy.md`，这里记**要点与踩坑**。
 
 > [!info] 环境速记
-> SSH 别名 `mycloud`；云端 `/opt/icbc-platform`；后端 systemd 服务 `icbc-api`（127.0.0.1:8000）；前端静态目录 `/var/www/icbc-platform`；nginx HTTPS 9443；worker 跑在**本地 Docker**，不在云端。`/opt` 不是 git 工作区，用 rsync 发布。
+> SSH 别名 `mycloud`；云端 `/opt/icbc-platform`；后端 systemd 服务 `icbc-api`（127.0.0.1:8000）；前端静态目录 `/var/www/icbc-platform`；nginx HTTPS 9443；正式入口 `https://roadtestgo.com/booking/`（Cloudflare 代理 443 → 回源 9443，DNS `@` → `43.136.116.117`，9443 只放通 Cloudflare IP 段，直连源站被拒）；worker 跑在**本地 Docker**，不在云端。`/opt` 不是 git 工作区，用 rsync 发布。
 
 ## 纯前端发布
 
@@ -58,8 +58,8 @@ PR #4/#5 改了 worker，且 `attempt` 为**必填**字段 → 后端与 worker 
 
 ```bash
 ssh mycloud 'systemctl is-active icbc-api nginx postgresql'
-curl -fsS https://gogoxoxo.duckdns.org:9443/health
-curl -fsSI https://gogoxoxo.duckdns.org:9443/booking/ | head -1
+curl -fsS https://roadtestgo.com/health
+curl -fsSI https://roadtestgo.com/booking/ | head -1
 ```
 
 ## 踩坑
@@ -70,6 +70,9 @@ curl -fsSI https://gogoxoxo.duckdns.org:9443/booking/ | head -1
 
 > [!tip] nginx 配置激活
 > 改了 `deploy/nginx-icbc.conf` 后：`scp` 到 `/tmp` → `sudo install` 到 sites-available → `sudo nginx -t` → `sudo systemctl reload nginx`。务必先 `nginx -t`。
+
+> [!note] 域名迁移（2026-10）
+> 旧入口 `gogoxoxo.duckdns.org:9443` 已退役，改为 `roadtestgo.com`（Cloudflare Registrar + DNS，SSL Full (Strict) + Origin CA 证书）。worker 的 `API_BASE_URL` 也已改为 `https://roadtestgo.com`。详见仓库 `docs/deploy.md` 第 1 节。
 
 ## 关联
 
