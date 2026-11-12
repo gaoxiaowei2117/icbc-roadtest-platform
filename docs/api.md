@@ -10,8 +10,9 @@ Base URL：`https://roadtestgo.com/api`
 
 ### POST /auth/register
 ```json
-{ "email": "user@example.com", "password": "********" }
+{ "email": "user@example.com", "password": "********", "site": "booking" }
 ```
+`site` 可选，`booking`（默认）或 `routes`（在 `https://roadtestgo.com/` 路线包站注册）；只影响验证码邮件的标题和品牌。`POST /auth/resend-code` 也接受同样的 `site`。
 返回 `201`：
 ```json
 { "message": "验证码已发送到邮箱，请查收并验证" }
@@ -106,12 +107,23 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
   "price_cents": 1499,
   "currency": "cad",
   "route_count": 4,
-  "routes": [{ "title": "路线 1", "segment_count": 2 }],
+  "routes": [{
+    "title": "路线 1",
+    "segment_count": 2,
+    "segments": [
+      { "label": "第 1 段", "from": "centre", "to": "Sussex Ave" },
+      { "label": "第 2 段", "from": "Sussex Ave", "to": "centre" }
+    ],
+    "preview": "route-previews/burnaby-4399/route1.jpg",
+    "note": null,
+    "note_zh": null
+  }],
   "checkout_enabled": false,
   "purchased": null
 }]
 ```
 - `purchased`：匿名请求为 `null`；登录用户为 `true/false`（管理员收回后为 `false`）。
+- `segments[].from/to`：分段起止点（英文街道名；`centre` 表示考场，由前端翻译）。`preview` 是相对于前端站点根路径的概览图，`note`/`note_zh` 是可选说明。这些字段都公开，不含链接。
 - `checkout_enabled`：Stripe 密钥、Webhook 密钥和该包的 Price ID 都配置后才为 `true`；否则前端显示“即将开放 / 联系我们”。
 
 ### GET /route-packs/{slug}
@@ -127,10 +139,11 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 
 ### POST /route-packs/{slug}/checkout
 需登录。创建一次性付款（`mode=payment`）的 Stripe Checkout，返回 `{ "url", "session_id" }`，前端跳转到 `url`。
+请求体可选：`{ "site": "booking" | "routes" }`（默认 `booking`），决定付款后回到哪个站点；其它值返回 422。
 - 未配置返回 `503`；已购买返回 `409`；未知 slug 返回 `404`；Stripe 出错返回 `502`。
-- 23 小时内未完成的同一包会话会被复用，不会重复创建。
+- 23 小时内未完成的同一包、同一站点的会话会被复用，不会重复创建。
 - Session metadata：`{ "kind": "route_pack", "pack_slug": "...", "user_id": "..." }`；PaymentIntent 带同样的 metadata。
-- 成功/取消后回到 `{APP_BASE_URL}{FRONTEND_BASE_PATH}/routes?pack=<slug>&checkout=success|cancelled`。
+- 成功/取消后回到 `{APP_BASE_URL}/?pack=<slug>&checkout=success|cancelled`（`site=routes`）或 `{APP_BASE_URL}{FRONTEND_BASE_PATH}/routes?pack=<slug>&checkout=…`（`site=booking`）。
 
 ## 付款（Stripe）
 

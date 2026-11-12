@@ -145,7 +145,7 @@ ssh mycloud 'rm -rf /tmp/icbc-platform-release && mkdir -p /tmp/icbc-platform-re
 rsync -az --delete \
   --exclude='.git/' --exclude='.env' --exclude='backend/.venv/' \
   --exclude='worker/.venv/' \
-  --exclude='frontend/node_modules/' --exclude='frontend/dist/' \
+  --exclude='frontend/node_modules/' --exclude='frontend/dist/' --exclude='frontend/dist-routes/' \
   --exclude='worker/.env' --exclude='worker/config.yml' \
   --exclude='*.log' \
   ./ mycloud:/tmp/icbc-platform-release/
@@ -177,11 +177,22 @@ ssh mycloud 'sudo install -m 0644 /tmp/icbc-api.service /etc/systemd/system/icbc
 
 ### 3.5 发布前端
 
+同一份前端代码构建两个站点，分别发布：
+
+| 构建 | 命令 | 产物 | 服务器目录 | 访问路径 |
+|---|---|---|---|---|
+| 抢号服务 | `npm --prefix frontend run build` | `frontend/dist/` | `/var/www/icbc-platform/` | `https://roadtestgo.com/booking/` |
+| 路线包站 | `npm --prefix frontend run build:routes` | `frontend/dist-routes/` | `/var/www/roadtestgo-routes/` | `https://roadtestgo.com/` |
+
 ```bash
-npm --prefix frontend run build
+npm --prefix frontend run build:all     # 类型检查 + 两个构建
 rsync -az --delete --rsync-path='sudo rsync' frontend/dist/ mycloud:/var/www/icbc-platform/
-ssh mycloud 'sudo chown -R www-data:www-data /var/www/icbc-platform'
+ssh mycloud 'sudo mkdir -p /var/www/roadtestgo-routes'
+rsync -az --delete --rsync-path='sudo rsync' frontend/dist-routes/ mycloud:/var/www/roadtestgo-routes/
+ssh mycloud 'sudo chown -R www-data:www-data /var/www/icbc-platform /var/www/roadtestgo-routes'
 ```
+
+首次上线路线包站时，要先把 `dist-routes/` 发布到 `/var/www/roadtestgo-routes/`，**再**更新 Nginx 配置（下面），否则根路径会短暂 404。两个站点同源，登录状态（localStorage）共用。
 
 如果修改了 Nginx 配置：
 
@@ -197,13 +208,22 @@ ssh mycloud 'systemctl is-active icbc-api nginx postgresql'
 ssh mycloud 'cd /opt/icbc-platform/backend && sudo -u icbc bash -c "set -a; source /opt/icbc-platform/.env; set +a; .venv/bin/alembic current"'
 curl -fsS https://roadtestgo.com/health
 curl -fsSI https://roadtestgo.com/booking/
+curl -fsS https://roadtestgo.com/ | grep -o '<title>[^<]*</title>'   # 路考练习路线 · roadtestgo …
+curl -fsSI https://roadtestgo.com/route-previews/burnaby-4399/route1.jpg
 ```
 
-必须确认 Alembic 位于 `head`、三个服务均为 `active`、健康检查返回 `{"status":"ok"}`、页面返回 HTTP 200，才能认为发布完成。
+必须确认 Alembic 位于 `head`、三个服务均为 `active`、健康检查返回 `{"status":"ok"}`、两个站点页面都返回 HTTP 200，才能认为发布完成。
 
 ### 3.7 路线包（练习路线）
 
-页面：`https://roadtestgo.com/booking/routes`（无需登录即可查看，购买和打开链接需要登录）。
+页面（无需登录即可查看，购买和打开链接需要登录）：
+
+- `https://roadtestgo.com/`：路线包站（独立构建 `dist-routes/`，只有路线包、登录、注册、邮箱验证；品牌为“路考练习路线 · roadtestgo”，没有抢号服务的导航）。
+- `https://roadtestgo.com/booking/routes`：抢号服务内的同一页面。
+
+Stripe 付款完成/取消后回到发起购买的站点：前端在 checkout 请求里带 `site`（`routes` 或 `booking`），后端映射为固定地址 `{APP_BASE_URL}/?pack=…` 或 `{APP_BASE_URL}{FRONTEND_BASE_PATH}/routes?pack=…`，不接受客户端传入的 URL。在根站注册的用户收到的验证码邮件标题为“路考练习路线 · roadtestgo”，不再提抢号平台。
+
+路线概览图放在 `frontend/public/route-previews/<slug>/`（两个构建都会带上），数据文件里每条路线用 `preview` 引用相对路径。
 
 **环境变量**（写入云端 `.env`，改完重启 `icbc-api`）：
 
@@ -229,9 +249,14 @@ curl -fsSI https://roadtestgo.com/booking/
   "currency": "cad",
   "stripe_price_id": "",
   "routes": [
-    { "title": "路线 1", "segments": [
-      { "label": "第 1 段", "url": "https://www.google.com/maps/dir/?api=1&origin=...&destination=...&waypoints=...&travelmode=driving" }
-    ] }
+    { "title": "路线 1",
+      "preview": "route-previews/richmond-5300/route1.jpg",
+      "note": "Optional English note shown under the route",
+      "note_zh": "可选的中文说明",
+      "segments": [
+        { "label": "第 1 段", "from": "centre", "to": "Garden City Rd",
+          "url": "https://www.google.com/maps/dir/?api=1&origin=...&destination=...&waypoints=...&travelmode=driving" }
+      ] }
   ]
 }
 ```
@@ -239,7 +264,9 @@ curl -fsSI https://roadtestgo.com/booking/
 - `slug` 一经售出不要再改（购买记录按 slug 关联）。只能用小写字母、数字、连字符。
 - 每条路线 1–3 段，每段 `url` 必须是 `https://` 链接；Google 地图 App 链接最多 9 个途经点，超过就拆段。
 - `price_cents` / `currency` / `stripe_price_id` 可选，留空则用上面的环境变量；某个包要不同价格时，在 Stripe 建对应 Price 并同时填这两个字段。
-- 标题写成 `路线 N`、分段写成 `第 N 段` / `全程` 时，英文界面会自动显示为 Route N / Part N / Full route。
+- 标题写成 `路线 N`（可加 `· 上高速线`）、分段写成 `第 N 段` / `全程` 时，英文界面会自动显示为 Route N / Part N / Full route。
+- `from` / `to`：分段起止点，公开显示（未购买也能看到，不含链接）。街道名写英文；考场写 `centre`，界面会翻译成“考场 / Test centre”。
+- `preview`：概览图相对路径（图片放进 `frontend/public/route-previews/<slug>/` 并重新构建、发布两个前端）；`note` / `note_zh`：可选说明，显示在路线下方。
 - 仓库里的 `route_packs.json` 只有占位链接。真实链接如不想进 Git，可放到应用目录外（例如 `/etc/icbc-platform/route_packs.json`，属主 `icbc`，权限 `0640`），并设置 `ROUTE_PACKS_FILE`。注意不要放在 `/opt/icbc-platform/` 下，3.3 的 `rsync --delete` 会删掉它。
 
 ## 4. 本地 Docker worker

@@ -30,12 +30,17 @@ cd "$APP_DIR/backend"
 sudo -u "$APP_USER" bash -c "set -a; source $APP_DIR/.env; set +a; $APP_DIR/backend/.venv/bin/alembic upgrade head"
 
 echo "==> 6. 前端构建产物放到 nginx 目录"
-mkdir -p /var/www/icbc-platform
+# dist/        → /booking/（抢号服务）     npm --prefix frontend run build
+# dist-routes/ → /（路线包站）            npm --prefix frontend run build:routes
+mkdir -p /var/www/icbc-platform /var/www/roadtestgo-routes
 cp -r "$APP_DIR/frontend/dist/." /var/www/icbc-platform/
-chown -R www-data:www-data /var/www/icbc-platform
+cp -r "$APP_DIR/frontend/dist-routes/." /var/www/roadtestgo-routes/
+chown -R www-data:www-data /var/www/icbc-platform /var/www/roadtestgo-routes
 
 echo "==> 7. nginx 配置"
 cp "$APP_DIR/deploy/nginx-icbc.conf" /etc/nginx/sites-available/icbc-platform
+mkdir -p /etc/nginx/snippets
+cp "$APP_DIR/deploy/nginx-icbc-common.conf" /etc/nginx/snippets/icbc-common.conf
 ln -sf /etc/nginx/sites-available/icbc-platform /etc/nginx/sites-enabled/icbc-platform
 nginx -t
 systemctl reload nginx

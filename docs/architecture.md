@@ -12,7 +12,8 @@
    │  HTTPS
    ▼
 Nginx (9443)
-   ├─ /booking/*  →  静态 SPA
+   ├─ /           →  路线包站静态 SPA（frontend --mode routes → dist-routes/）
+   ├─ /booking/*  →  抢号服务静态 SPA（frontend → dist/）
    └─ /api/*      →  FastAPI (8000)
                        │
                        ▼

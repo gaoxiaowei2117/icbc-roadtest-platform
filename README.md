@@ -8,7 +8,8 @@
 - 通信：worker → VPS 出站 HTTPS，本地无需公网 IP
 
 ## 端口与 URL
-- 前端：`https://roadtestgo.com/booking/`
+- 路线包站（练习路线，Google 地图导航链接）：`https://roadtestgo.com/`
+- 抢号服务前端：`https://roadtestgo.com/booking/`
 - API：`https://roadtestgo.com/api/`
 - worker 心跳：5s 轮询 `/api/worker/claim`
 - worker 容器：不需要暴露端口，只需要能出站访问 API
