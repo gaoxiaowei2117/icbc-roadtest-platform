@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:routes": "vite --mode routes",
     "build": "vue-tsc --noEmit && vite build",
+    "build:routes": "vue-tsc --noEmit && vite build --mode routes",
+    "build:all": "vue-tsc --noEmit && vite build && vite build --mode routes",
     "preview": "vite preview"
   },
   "dependencies": {

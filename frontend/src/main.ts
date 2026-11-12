@@ -1,7 +1,8 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import App from './App.vue'
-import router from './router'
+// `@site` is src/sites/booking.ts or src/sites/routes.ts depending on the build mode
+// (see vite.config.ts), so each build only bundles its own layout and router.
+import { App, router } from '@site'
 import './style.css'
 
 const app = createApp(App)

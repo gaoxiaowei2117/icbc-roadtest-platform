@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 import { ref, computed } from 'vue'
+import { SITE } from '@/site'
 
 export interface User {
   id: number
@@ -69,7 +70,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(email: string, password: string) {
-    await axios.post('/api/auth/register', { email, password })
+    await axios.post('/api/auth/register', { email, password, site: SITE })
   }
 
   async function verifyEmail(email: string, code: string) {
@@ -79,7 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function resendCode(email: string) {
-    await axios.post('/api/auth/resend-code', { email })
+    await axios.post('/api/auth/resend-code', { email, site: SITE })
   }
 
   async function fetchMe() {

@@ -9,6 +9,7 @@ venv/
 *.db
 node_modules/
 dist/
+dist-routes/
 build/
 .idea/
 .vscode/

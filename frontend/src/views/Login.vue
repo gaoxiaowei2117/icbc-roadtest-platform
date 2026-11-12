@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { redirectQuery, safeRedirect } from '@/router/redirect'
+import { homePath } from '@/site'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/i18n'
 
@@ -19,7 +20,7 @@ async function onSubmit() {
   loading.value = true
   try {
     await auth.login(email.value, password.value)
-    router.push(safeRedirect(route.query) || (auth.user?.is_admin ? '/admin' : '/dashboard'))
+    router.push(safeRedirect(route.query) || homePath(auth.user?.is_admin))
   } catch (e: any) {
     if (e.response?.status === 403) {
       if (confirm(tr('邮箱未验证，是否前往验证？', 'Email is not verified. Go to verification?'))) {

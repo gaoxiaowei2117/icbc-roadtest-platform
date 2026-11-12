@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { redirectQuery, safeRedirect } from '@/router/redirect'
+import { homePath } from '@/site'
 import { useI18n } from '@/i18n'
 
 const route = useRoute()
@@ -23,7 +24,7 @@ async function onVerify() {
   try {
     await auth.verifyEmail(email.value, code.value)
     alert(tr('验证成功', 'Email verified'))
-    router.push(safeRedirect(route.query) || '/dashboard')
+    router.push(safeRedirect(route.query) || homePath(auth.user?.is_admin))
   } catch (e: any) {
     alert(tr('验证失败：', 'Verification failed: ') + apiError(e, '未知错误', 'Unknown error'))
   }
