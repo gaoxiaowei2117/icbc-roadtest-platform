@@ -5,6 +5,13 @@ export interface RoutePack {
   slug: string
   name: string
   name_zh: string | null
+  /** ISO 3166-1 alpha-2, e.g. "CA" */
+  country: string
+  /** ISO 3166-2 subdivision without the country prefix, e.g. "BC" */
+  region: string
+  city: string
+  city_zh: string | null
+  /** Street address */
   centre: string
   price_cents: number
   currency: string
@@ -31,8 +38,28 @@ export interface RoutePackLinks {
   routes: { title: string; segments: { label: string; url: string }[] }[]
 }
 
-export async function listRoutePacks(): Promise<RoutePack[]> {
-  return (await api.get('/api/route-packs')).data
+export interface RoutePackFilters {
+  country?: string
+  region?: string
+  q?: string
+}
+
+export interface RoutePackFacets {
+  total: number
+  countries: { code: string; count: number; regions: { code: string; count: number }[] }[]
+}
+
+export async function listRoutePacks(filters: RoutePackFilters = {}): Promise<RoutePack[]> {
+  const params = Object.fromEntries(Object.entries(filters).filter(([, v]) => v))
+  return (await api.get('/api/route-packs', { params })).data
+}
+
+export async function getRoutePack(slug: string): Promise<RoutePack> {
+  return (await api.get(`/api/route-packs/${encodeURIComponent(slug)}`)).data
+}
+
+export async function getRoutePackFacets(): Promise<RoutePackFacets> {
+  return (await api.get('/api/route-packs/facets')).data
 }
 
 /** Only succeeds for users who bought the pack; the links are never part of the page itself. */
