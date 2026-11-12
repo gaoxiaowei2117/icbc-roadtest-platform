@@ -1,16 +1,20 @@
-"""/api/admin/* admin 角色专属：查看所有任务和管理用户。"""
+"""/api/admin/* admin 角色专属：查看所有任务、管理用户和路线包授权。"""
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_admin_user
 from app.core.database import get_db
+from app.core import route_packs as route_pack_catalog
 from app.crud import booking as booking_crud
+from app.crud import route_pack as route_pack_crud
 from app.crud import user as user_crud
 from app.models.booking import BookingStatus, PaymentStatus
 from app.models.execution_pass import ExecutionPass, ExecutionPassStatus
 from app.models.user import User
 from app.schemas.booking import AdminBookingOut, BookingOut, PaymentReviewIn
+from app.models.route_pack import RoutePackPurchase, RoutePackPurchaseSource
+from app.schemas.route_pack import RoutePackGrantIn, RoutePackPurchaseOut
 from app.schemas.user import AdminUserOut, UserPublic
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -119,3 +123,59 @@ def delete_user(
         raise HTTPException(status.HTTP_409_CONFLICT, "不能删除管理员账号")
     user_crud.delete(db, user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+def _purchase_out(purchase: RoutePackPurchase) -> RoutePackPurchaseOut:
+    return RoutePackPurchaseOut(
+        **RoutePackPurchaseOut.model_validate(purchase).model_dump(exclude={"user_email"}),
+        user_email=purchase.user.email if purchase.user else None,
+    )
+
+
+@router.get("/route-packs/purchases", response_model=list[RoutePackPurchaseOut])
+def list_route_pack_purchases(
+    limit: int = Query(default=200, ge=1, le=500),
+    _admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+) -> list:
+    return [_purchase_out(p) for p in route_pack_crud.list_all(db, limit=limit)]
+
+
+@router.post("/route-packs/{slug}/grant", response_model=RoutePackPurchaseOut)
+def grant_route_pack(
+    slug: str,
+    payload: RoutePackGrantIn,
+    _admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """手动开通路线包（线下收款或测试用）；重复开通无副作用。"""
+    if route_pack_catalog.get_pack(slug) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "路线包不存在")
+    user = user_crud.get_by_email(db, payload.email.lower())
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "用户不存在")
+    purchase = route_pack_crud.grant(
+        db, user.id, slug, source=RoutePackPurchaseSource.manual, granted_by=_admin.id
+    )
+    db.commit()
+    db.refresh(purchase)
+    return _purchase_out(purchase)
+
+
+@router.post("/route-packs/{slug}/revoke", response_model=RoutePackPurchaseOut)
+def revoke_route_pack(
+    slug: str,
+    payload: RoutePackGrantIn,
+    _admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """收回路线包访问权（例如 Stripe 退款后）。不会自动退款。"""
+    user = user_crud.get_by_email(db, payload.email.lower())
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "用户不存在")
+    purchase = route_pack_crud.revoke(db, user.id, slug)
+    if purchase is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "该用户没有这个路线包")
+    db.commit()
+    db.refresh(purchase)
+    return _purchase_out(purchase)
