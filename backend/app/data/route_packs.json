@@ -11,7 +11,7 @@
       "routes": [
         {
           "title": "路线 1",
-          "preview": "route-previews/burnaby-4399/route1.jpg",
+          "preview": "route-previews/burnaby-4399/route1-v2.jpg",
           "segments": [
             {
               "label": "第 1 段",
@@ -29,7 +29,7 @@
         },
         {
           "title": "路线 2",
-          "preview": "route-previews/burnaby-4399/route2.jpg",
+          "preview": "route-previews/burnaby-4399/route2-v2.jpg",
           "segments": [
             {
               "label": "第 1 段",
@@ -47,7 +47,7 @@
         },
         {
           "title": "路线 3",
-          "preview": "route-previews/burnaby-4399/route3.jpg",
+          "preview": "route-previews/burnaby-4399/route3-v2.jpg",
           "note": "In Google Maps this route skips a short Carleton Ave → Fir St loop; follow the overview map for that part.",
           "note_zh": "Google 地图导航在 Carleton Ave → Fir St 一小段与考试路线不同，这段请按地图概览图行驶。",
           "segments": [

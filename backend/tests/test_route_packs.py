@@ -108,7 +108,7 @@ def test_anonymous_listing_has_no_links_and_no_purchase_flag(client):
             {"label": "第 1 段", "from": "centre", "to": "Sussex Ave"},
             {"label": "第 2 段", "from": "Sussex Ave", "to": "centre"},
         ],
-        "preview": "route-previews/burnaby-4399/route1.jpg",
+        "preview": "route-previews/burnaby-4399/route1-v2.jpg",
         "note": None,
         "note_zh": None,
     }
