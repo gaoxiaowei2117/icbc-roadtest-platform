@@ -139,6 +139,18 @@ function segmentText(seg: RouteSummary['segments'][number]) {
   return `${label}${tr('：', ': ', ' : ', ': ', '：')}${place(seg.from)} → ${place(seg.to)}`
 }
 
+/** Footnote under the routes: the "open parts in order" hint only when some route is split. */
+function routeHint(pack: RoutePack) {
+  const hints: string[] = []
+  if (pack.routes.some((r) => r.segments.length > 1)) {
+    hints.push(tr('分成几段的路线请按顺序依次打开。', 'Routes split into parts should be opened in order.'))
+  }
+  if (pack.routes.some((r) => r.preview)) {
+    hints.push(tr('点击概览图可放大。', 'Tap an overview map to enlarge it.'))
+  }
+  return hints.join(tr('', ' '))
+}
+
 function routeNote(r: RouteSummary) {
   return (locale.value.startsWith('zh') ? r.note_zh || r.note : r.note || r.note_zh) || ''
 }
@@ -283,10 +295,7 @@ function contactMailto(pack: RoutePack) {
           </div>
         </div>
       </div>
-      <p class="text-xs text-slate-500">{{ tr(
-        '长路线因 Google 地图途经点数量限制被分成几段，请按顺序依次打开。',
-        'Long routes are split into parts because Google Maps limits the number of stops; open them in order.',
-      ) }}<template v-if="pack.routes.some((r) => r.preview)">{{ tr('点击概览图可放大。', ' Tap an overview map to enlarge it.') }}</template></p>
+      <p v-if="routeHint(pack)" class="text-xs text-slate-500">{{ routeHint(pack) }}</p>
     </div>
 
     <div

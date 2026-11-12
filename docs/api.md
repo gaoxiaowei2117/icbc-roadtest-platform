@@ -94,7 +94,7 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 
 ## 路线包（练习路线）
 
-按考场售卖的练习路线包：每个包有若干路线，每条路线 1–3 段（Google 地图 App 链接最多 9 个途经点，长路线拆段），每段一个 Google 地图导航链接。包定义在后端数据文件（默认 `backend/app/data/route_packs.json`，见部署文档）。**链接只会通过 `/links` 返回给已购买的用户。**
+按考场售卖的练习路线包：每个包有若干路线，每条路线通常一段（`全程`），最多 3 段，每段一个 Google 地图导航链接。包定义在后端数据文件（生产为 `ROUTE_PACKS_FILE` 指向的服务器私有文件；仓库内 `backend/app/data/route_packs.json` 只有占位链接，见部署文档）。**链接只会通过 `/links` 返回给已购买的用户。**
 
 ### GET /route-packs?country=&region=&q=
 公开。返回路线包（不含链接）。查询参数都可选，不带参数返回全部（与之前一致）：

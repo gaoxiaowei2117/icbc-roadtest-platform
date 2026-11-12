@@ -43,7 +43,7 @@ ssh mycloud 'sudo mkdir -p /opt/icbc-platform && sudo chown $USER:$USER /opt/icb
 rsync -az --exclude='.git/' --exclude='.env' --exclude='backend/.venv/' \
   --exclude='worker/.venv/' \
   --exclude='frontend/node_modules/' --exclude='worker/.env' \
-  --exclude='worker/config.yml' ./ mycloud:/opt/icbc-platform/
+  --exclude='worker/config.yml' --exclude='private/' ./ mycloud:/opt/icbc-platform/
 ```
 
 ### 2.2 生成密钥
@@ -147,7 +147,7 @@ rsync -az --delete \
   --exclude='worker/.venv/' \
   --exclude='frontend/node_modules/' --exclude='frontend/dist/' --exclude='frontend/dist-routes/' \
   --exclude='worker/.env' --exclude='worker/config.yml' \
-  --exclude='*.log' \
+  --exclude='*.log' --exclude='private/' \
   ./ mycloud:/tmp/icbc-platform-release/
 
 ssh mycloud "sudo rsync -a --delete --chown=icbc:icbc \
@@ -233,7 +233,7 @@ Stripe 付款完成/取消后回到发起购买的站点：前端在 checkout �
 | `STRIPE_ROUTE_PACK_PRICE_ID` | 路线包默认 Stripe Price ID（一次性 CAD 14.99）。不配置则页面显示“在线购买即将开放 / 联系我们”，checkout 返回 503 |
 | `ROUTE_PACK_PRICE_CENTS` | 页面显示价格，默认 `1499`；必须与 Stripe Price 金额一致（实际扣款以 Stripe Price 为准） |
 | `ROUTE_PACK_CURRENCY` | 默认 `cad` |
-| `ROUTE_PACKS_FILE` | 可选，路线包数据文件的绝对路径；默认 `backend/app/data/route_packs.json` |
+| `ROUTE_PACKS_FILE` | **生产必填**：真实路线包数据文件的绝对路径，固定为 `/etc/icbc-platform/route_packs.json`。不设置时回退到仓库内只含占位链接的 `backend/app/data/route_packs.json`，买家会拿到无效链接 |
 
 **配置 Stripe**：在 Stripe Dashboard 创建产品“路线包”和一次性价格 CAD 14.99，把 `price_...` 填入 `STRIPE_ROUTE_PACK_PRICE_ID`。Webhook 复用现有端点 `https://roadtestgo.com/api/payments/stripe/webhook`，已订阅的 `checkout.session.*` 事件即可，无需新端点。Stripe 未上线前，用管理后台“路线包授权”卡片（或 `POST /api/admin/route-packs/{slug}/grant`）手动开通。
 
@@ -272,12 +272,22 @@ Stripe 付款完成/取消后回到发起购买的站点：前端在 checkout �
 - 页面按 国家 → 省/州 → 考场 浏览，并支持搜索（名称、城市、地址、slug）。新国家/地区的显示名称在 `frontend/src/regions.ts` 里加（加拿大、美国已齐全），没加的显示代码；加了要重新构建前端。
 - 考场详情的分享链接：`https://roadtestgo.com/?centre=<slug>`（抢号服务内为 `/booking/routes?centre=<slug>`），可以放进 YouTube 简介。只有一个考场时，根路径直接显示它的详情。
 - 本地预览多考场界面：`ROUTE_PACKS_FILE=backend/tests/fixtures/route_packs_multi.json`（5 个假考场，占位链接）启动后端。不要把假考场写进正式数据文件。
-- 每条路线 1–3 段，每段 `url` 必须是 `https://` 链接；Google 地图 App 链接最多 9 个途经点，超过就拆段。
+- 每条路线默认一段，`label` 写 `全程`、不填 `from`/`to`（Google 地图链接实测可带 9 个以上途经点，不必拆段）。确需拆段时最多 3 段，按 `第 N 段` 命名并填 `from`/`to`，页面会提示按顺序打开。每段 `url` 必须是 `https://` 链接。
 - `price_cents` / `currency` / `stripe_price_id` 可选，留空则用上面的环境变量；某个包要不同价格时，在 Stripe 建对应 Price 并同时填这两个字段。
 - 标题写成 `路线 N`（可加 `· 上高速线`）、分段写成 `第 N 段` / `全程` 时，英文界面会自动显示为 Route N / Part N / Full route。
 - `from` / `to`：分段起止点，公开显示（未购买也能看到，不含链接）。街道名写英文；考场写 `centre`，界面会翻译成“考场 / Test centre”。
 - `preview`：概览图相对路径（图片放进 `frontend/public/route-previews/<slug>/` 并重新构建、发布两个前端）；`note` / `note_zh`：可选说明，显示在路线下方。
-- 仓库里的 `route_packs.json` 只有占位链接。真实链接如不想进 Git，可放到应用目录外（例如 `/etc/icbc-platform/route_packs.json`，属主 `icbc`，权限 `0640`），并设置 `ROUTE_PACKS_FILE`。注意不要放在 `/opt/icbc-platform/` 下，3.3 的 `rsync --delete` 会删掉它。
+- **真实链接不进 Git**（仓库是公开过的，链接就是付费内容）。仓库里的 `backend/app/data/route_packs.json` 只放占位链接（起终点都是考场），用于测试和本地开发；结构、标题、`from`/`to`、概览图等公开字段与真实数据保持一致。
+  - 本地真实数据：`private/route_packs.json`（已在 `.gitignore`，3.3 的 rsync 也排除了 `private/`）。新增考场或改路线时**改这份**，公开字段改动再同步到仓库那份（链接保持占位）。
+  - 服务器真实数据：`/etc/icbc-platform/route_packs.json`（属主 `root:icbc`，权限 `0640`），`.env` 里设 `ROUTE_PACKS_FILE=/etc/icbc-platform/route_packs.json`。不要放在 `/opt/icbc-platform/` 下，3.3 的 `rsync --delete` 会删掉它。
+  - 更新真实数据：
+
+    ```bash
+    scp private/route_packs.json mycloud:/tmp/route_packs.json
+    ssh mycloud 'sudo install -D -o root -g icbc -m 0640 /tmp/route_packs.json /etc/icbc-platform/route_packs.json && rm /tmp/route_packs.json && sudo systemctl restart icbc-api && systemctl is-active icbc-api'
+    ```
+
+  - 发布后抽查：用已购买（或管理员）账号打开任一路线链接，确认不是只有考场一个点的占位链接。
 
 ## 4. 本地 Docker worker
 

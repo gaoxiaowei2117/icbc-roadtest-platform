@@ -20,3 +20,6 @@ htmlcov/
 *.egg-info/
 .codex-mcp/
 worker/config.yml
+
+# 真实路线包链接等不进 Git 的私有数据（服务器上放 /etc/icbc-platform/）
+private/

@@ -18,16 +18,8 @@
           "preview": "route-previews/burnaby-4399/route1-v2.jpg",
           "segments": [
             {
-              "label": "第 1 段",
-              "from": "centre",
-              "to": "Sussex Ave",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.233201,-122.997819&waypoints=49.243952,-122.999123%7C49.243791,-122.998170%7C49.241695,-122.998412%7C49.242625,-123.003421%7C49.235625,-123.003358%7C49.235418,-122.994670%7C49.233412,-122.994639"
-            },
-            {
-              "label": "第 2 段",
-              "from": "Sussex Ave",
-              "to": "centre",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.233201,-122.997819&destination=49.244979,-122.999504&waypoints=49.232411,-122.997500%7C49.232668,-122.994226%7C49.235184,-122.994234%7C49.235388,-123.003077%7C49.242888,-123.002808%7C49.242005,-122.998011%7C49.245224,-122.998664"
+              "label": "全程",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.244979,-122.999504"
             }
           ],
           "preview_en": "route-previews/burnaby-4399/en/route1.jpg"
@@ -37,16 +29,8 @@
           "preview": "route-previews/burnaby-4399/route2-v2.jpg",
           "segments": [
             {
-              "label": "第 1 段",
-              "from": "centre",
-              "to": "Price Cres",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.238101,-123.007208&waypoints=49.243952,-122.999123%7C49.243791,-122.998170%7C49.241695,-122.998412%7C49.243014,-123.004143%7C49.242772,-123.013494%7C49.241264,-123.013218%7C49.240835,-123.010561%7C49.239938,-123.008195%7C49.238475,-123.006615"
-            },
-            {
-              "label": "第 2 段",
-              "from": "Price Cres",
-              "to": "centre",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.238101,-123.007208&destination=49.244979,-122.999504&waypoints=49.238421,-123.010085%7C49.236941,-123.010657%7C49.237324,-123.003386%7C49.242888,-123.002808%7C49.242005,-122.998011%7C49.245185,-122.998276"
+              "label": "全程",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.244979,-122.999504"
             }
           ],
           "preview_en": "route-previews/burnaby-4399/en/route2.jpg"
@@ -56,22 +40,8 @@
           "preview": "route-previews/burnaby-4399/route3-v2.jpg",
           "segments": [
             {
-              "label": "第 1 段",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.246023,-123.019850&waypoints=49.243952,-122.999123%7C49.243791,-122.998170%7C49.241695,-122.998412%7C49.243014,-123.004143%7C49.243127,-123.012550%7C49.245103,-123.012826%7C49.245116,-123.016131%7C49.245217,-123.019414",
-              "from": "centre",
-              "to": "Smith Ave"
-            },
-            {
-              "label": "第 2 段",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.246023,-123.019850&destination=49.242902,-123.003030&waypoints=49.254693,-123.019572%7C49.254835,-123.013962%7C49.256475,-123.013964%7C49.257195,-123.013726%7C49.257065,-123.011997%7C49.254580,-123.010669%7C49.254422,-123.004443",
-              "from": "Smith Ave",
-              "to": "Deer Lake Pkwy"
-            },
-            {
-              "label": "第 3 段",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.242902,-123.003030&destination=49.244979,-122.999504&waypoints=49.241612,-122.997986%7C49.245185,-122.998319",
-              "from": "Deer Lake Pkwy",
-              "to": "centre"
+              "label": "全程",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.244979,-122.999504"
             }
           ],
           "preview_en": "route-previews/burnaby-4399/en/route3.jpg"
@@ -81,22 +51,8 @@
           "preview": "route-previews/burnaby-4399/route4.jpg",
           "segments": [
             {
-              "label": "第 1 段",
-              "from": "centre",
-              "to": "Smith Ave",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244640,-122.999491&destination=49.238062,-123.019360&waypoints=49.243650,-122.998170%7C49.241708,-122.998660%7C49.242763,-123.003420%7C49.238567,-123.003899%7C49.237734,-123.006106%7C49.236934,-123.006295%7C49.237317,-123.019889"
-            },
-            {
-              "label": "第 2 段",
-              "from": "Smith Ave",
-              "to": "Exit 32 (Laurel St)",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.238062,-123.019360&destination=49.253077,-122.976504&waypoints=49.238363,-123.015856%7C49.238397,-123.015333%7C49.238727,-123.013509%7C49.242968,-123.012956%7C49.243169,-123.003245%7C49.255919,-123.003987"
-            },
-            {
-              "label": "第 3 段",
-              "from": "Laurel St",
-              "to": "centre",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.253077,-122.976504&destination=49.244640,-122.999491&waypoints=49.245755,-122.974934%7C49.249282,-122.980815%7C49.253559,-122.982319%7C49.253824,-122.989028%7C49.254356,-122.989363%7C49.254325,-122.993572%7C49.245203,-122.998527"
+              "label": "全程",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.244979,-122.999504"
             }
           ],
           "preview_en": "route-previews/burnaby-4399/en/route4.jpg"

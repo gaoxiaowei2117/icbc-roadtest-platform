@@ -118,11 +118,8 @@ def test_anonymous_listing_has_no_links_and_no_purchase_flag(client):
     assert pack["route_count"] == 4
     assert pack["routes"][0] == {
         "title": "路线 1",
-        "segment_count": 2,
-        "segments": [
-            {"label": "第 1 段", "from": "centre", "to": "Sussex Ave"},
-            {"label": "第 2 段", "from": "Sussex Ave", "to": "centre"},
-        ],
+        "segment_count": 1,
+        "segments": [{"label": "全程", "from": None, "to": None}],
         "preview": "route-previews/burnaby-4399/route1-v2.jpg",
         "preview_en": "route-previews/burnaby-4399/en/route1.jpg",
         "note": None,
@@ -132,17 +129,11 @@ def test_anonymous_listing_has_no_links_and_no_purchase_flag(client):
     assert "google.com/maps" not in response.text
 
 
-def test_public_listing_includes_segment_ends_and_route_note(client):
+def test_public_listing_has_one_full_route_link_per_route(client):
     pack = client.get(f"/api/route-packs/{SLUG}").json()
-    highway = pack["routes"][3]
-    assert [(s["from"], s["to"]) for s in highway["segments"]] == [
-        ("centre", "Smith Ave"), ("Smith Ave", "Exit 32 (Laurel St)"), ("Laurel St", "centre"),
-    ]
-    # Route 3 keeps every turn (incl. Carleton -> Fir) in three parts, so it needs no note any more.
-    assert [(s["from"], s["to"]) for s in pack["routes"][2]["segments"]] == [
-        ("centre", "Smith Ave"), ("Smith Ave", "Deer Lake Pkwy"), ("Deer Lake Pkwy", "centre"),
-    ]
-    assert pack["routes"][2]["note"] is None
+    # Google Maps takes more than 9 waypoints, so every route is a single full-route link.
+    assert [r["segments"] for r in pack["routes"]] == [[{"label": "全程", "from": None, "to": None}]] * 4
+    assert all(r["note"] is None for r in pack["routes"])
     assert all(r["preview"] for r in pack["routes"])
     assert all(r["preview_en"].startswith("route-previews/burnaby-4399/en/") for r in pack["routes"])
 
@@ -185,7 +176,7 @@ def test_links_forbidden_before_purchase_and_allowed_after(client, auth_headers,
     assert body["slug"] == SLUG
     assert [r["title"] for r in body["routes"]] == ["路线 1", "路线 2", "路线 3", "路线 4 · 上高速线"]
     first = body["routes"][0]["segments"][0]
-    assert first["label"] == "第 1 段"
+    assert first["label"] == "全程"
     assert first["url"].startswith("https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=")
 
 

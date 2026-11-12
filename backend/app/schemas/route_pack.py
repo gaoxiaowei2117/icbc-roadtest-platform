@@ -41,7 +41,7 @@ class RouteDef(BaseModel):
     # Optional public note shown under the route (English / Chinese).
     note: str | None = Field(default=None, max_length=500)
     note_zh: str | None = Field(default=None, max_length=500)
-    # Google Maps app links carry at most 9 waypoints, so long routes are split.
+    # Normally one "全程" segment per route; up to 3 if a route ever has to be split.
     segments: list[RouteSegmentDef] = Field(min_length=1, max_length=3)
 
     @field_validator("preview", "preview_en")
