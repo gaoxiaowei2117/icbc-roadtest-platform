@@ -2,159 +2,49 @@
 import { onMounted, ref } from 'vue'
 import { api } from '@/api/client'
 import type { Booking } from '@/api/bookings'
-import { getPosList, type PosEntry } from '@/api/pos'
-import { listRoutePacks, type RoutePack } from '@/api/routePacks'
-import type { User } from '@/stores/auth'
+import AdminUsersCard from '@/components/admin/AdminUsersCard.vue'
+import AdminRoutePackAccessCard from '@/components/admin/AdminRoutePackAccessCard.vue'
+import AdminRouteOpensCard from '@/components/admin/AdminRouteOpensCard.vue'
 import { useI18n } from '@/i18n'
 import { translateActivity } from '@/activity'
 
-type AdminUser = User & {
-  is_active: boolean
-  email_verified: boolean
-  has_secret: boolean
-  available_execution_passes: number
-  route_packs?: string[]
-  route_opens?: number
-  route_opens_last_at?: string | null
-  route_open_ips_24h?: number
-}
-
-/** Distinct IPs in 24 h at or above this: the account may be shared (shown, not blocked). */
-const SHARED_IP_WARN = 5
-
-type RoutePackOpen = {
-  id: number
-  user_email: string | null
-  pack_slug: string
-  route_title: string | null
-  route_index: number
-  ip: string | null
-  user_agent: string | null
-  created_at: string
-  redirected_at: string | null
-}
-const routePackOpens = ref<RoutePackOpen[]>([])
-
+// Users, route-pack access and route opens live in their own cards (shared with
+// the route-pack site's admin tab); this view owns the bookings table.
 const bookings = ref<Booking[]>([])
-const users = ref<AdminUser[]>([])
-const posList = ref<PosEntry[]>([])
 const statusFilter = ref<string>('')
 const error = ref('')
-const deletingUserId = ref<number | null>(null)
-const expandedUserId = ref<number | null>(null)
 const reviewingBookingId = ref<number | null>(null)
-
-type RoutePackPurchase = {
-  id: number
-  user_email: string | null
-  pack_slug: string
-  status: 'active' | 'revoked'
-  source: 'stripe' | 'manual'
-  created_at: string
-  revoked_at: string | null
-}
-const routePacks = ref<RoutePack[]>([])
-const routePackPurchases = ref<RoutePackPurchase[]>([])
-const grantSlug = ref('')
-const grantEmail = ref('')
-const granting = ref(false)
-const { tr, apiError, dateLocale, locale } = useI18n()
+const usersCard = ref<InstanceType<typeof AdminUsersCard> | null>(null)
+const accessCard = ref<InstanceType<typeof AdminRoutePackAccessCard> | null>(null)
+const { tr, apiError, dateLocale } = useI18n()
 
 async function refresh() {
   try {
     error.value = ''
     const params: Record<string, string> = { limit: '200' }
     if (statusFilter.value) params.status_filter = statusFilter.value
-    const [bookingsResponse, usersResponse, positions] = await Promise.all([
-      api.get('/api/admin/bookings', { params }),
-      api.get('/api/admin/users', { params: { limit: 200 } }),
-      getPosList(),
-    ])
-    bookings.value = bookingsResponse.data
-    users.value = usersResponse.data
-    posList.value = positions
-    await refreshRoutePacks()
+    bookings.value = (await api.get('/api/admin/bookings', { params })).data
   } catch (e: any) {
     error.value = apiError(e, '加载失败', 'Failed to load admin data')
   }
 }
 
-async function refreshRoutePacks() {
-  const [packs, purchases, opens] = await Promise.all([
-    listRoutePacks(),
-    api.get('/api/admin/route-packs/purchases', { params: { limit: 200 } }),
-    api.get('/api/admin/route-packs/opens', { params: { limit: 100 } }),
-  ])
-  routePacks.value = packs
-  routePackPurchases.value = purchases.data
-  routePackOpens.value = opens.data
-  if (!grantSlug.value && packs.length) grantSlug.value = packs[0].slug
+/** A deleted user takes their bookings and purchases with them. */
+function onUsersChanged() {
+  refresh()
+  accessCard.value?.refresh()
 }
 
-async function changeRoutePack(action: 'grant' | 'revoke', slug = grantSlug.value, email = grantEmail.value.trim()) {
-  if (!slug || !email) return
-  if (action === 'revoke' && !window.confirm(tr(`收回 ${email} 的路线包 ${slug}？`, `Revoke ${slug} from ${email}?`))) return
-  granting.value = true
-  error.value = ''
-  try {
-    await api.post(`/api/admin/route-packs/${encodeURIComponent(slug)}/${action}`, { email })
-    if (action === 'grant') grantEmail.value = ''
-    await refreshRoutePacks()
-  } catch (e: any) {
-    error.value = apiError(e, '路线包操作失败', 'Route pack update failed')
-  } finally {
-    granting.value = false
-  }
+/** Approving a payment can grant an execution pass, shown in the user list. */
+async function refreshAfterReview() {
+  await refresh()
+  usersCard.value?.refresh()
 }
 
 onMounted(refresh)
 
 function formatDateTime(value: string | null) {
   return value ? new Date(value).toLocaleString(dateLocale.value) : '—'
-}
-
-function formatPositions(ids: number[] | null) {
-  if (!ids?.length) return '—'
-  return ids.map((id) => posList.value.find((pos) => pos.pos_id === id)?.name || `ID: ${id}`).join(locale.value.startsWith('zh') ? '、' : ', ')
-}
-
-function formatDays(days: number[] | null) {
-  const labels = {
-    zh: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-    'zh-Hant': ['週一', '週二', '週三', '週四', '週五', '週六', '週日'],
-    en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    fr: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-    es: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-  }[locale.value]
-  return days?.length ? days.map((day) => labels[day] || String(day)).join(locale.value.startsWith('zh') ? '、' : ', ') : '—'
-}
-
-function formatParts(parts: number[] | null) {
-  const labels: Record<number, string> = {
-    zh: { 0: '上午', 1: '下午' }, 'zh-Hant': { 0: '上午', 1: '下午' }, en: { 0: 'Morning', 1: 'Afternoon' },
-    fr: { 0: 'Matin', 1: 'Après-midi' }, es: { 0: 'Mañana', 1: 'Tarde' },
-  }[locale.value]
-  return parts?.length ? parts.map((part) => labels[part] || String(part)).join(locale.value.startsWith('zh') ? '、' : ', ') : '—'
-}
-
-async function deleteUser(user: User) {
-  if (!window.confirm(tr(
-    `确定删除用户 ${user.email} 吗？该用户的任务和凭据也会被删除。`,
-    `Delete ${user.email}? Their bookings and credentials will also be deleted.`,
-    `Supprimer ${user.email}? Ses réservations et identifiants seront également supprimés.`,
-    `¿Eliminar ${user.email}? Sus reservas y credenciales también se eliminarán.`,
-    `確定刪除使用者 ${user.email} 嗎？該使用者的任務和憑證也會被刪除。`,
-  ))) return
-  deletingUserId.value = user.id
-  error.value = ''
-  try {
-    await api.delete(`/api/admin/users/${user.id}`)
-    await refresh()
-  } catch (e: any) {
-    error.value = apiError(e, '删除失败', 'Failed to delete user')
-  } finally {
-    deletingUserId.value = null
-  }
 }
 
 async function approvePayment(booking: Booking) {
@@ -169,7 +59,7 @@ async function approvePayment(booking: Booking) {
   reviewingBookingId.value = booking.id
   try {
     await api.post(`/api/admin/bookings/${booking.id}/approve-payment`)
-    await refresh()
+    await refreshAfterReview()
   } catch (e: any) {
     error.value = apiError(e, '审核通过失败', 'Failed to approve payment')
   } finally {
@@ -183,7 +73,7 @@ async function rejectPayment(booking: Booking) {
   reviewingBookingId.value = booking.id
   try {
     await api.post(`/api/admin/bookings/${booking.id}/reject-payment`, { reason })
-    await refresh()
+    await refreshAfterReview()
   } catch (e: any) {
     error.value = apiError(e, '拒绝付款失败', 'Failed to reject payment')
   } finally {
@@ -196,183 +86,9 @@ async function rejectPayment(booking: Booking) {
   <div class="space-y-6">
     <h1 class="text-2xl font-bold">{{ tr('管理员控制台', 'Admin Console') }}</h1>
     <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
-    <div class="card overflow-x-auto">
-      <h2 class="text-lg font-semibold mb-4">{{ tr('全部用户', 'All Users') }}</h2>
-      <div v-if="!users.length" class="text-sm text-slate-500 text-center py-8">{{ tr('暂无', 'None') }}</div>
-      <table v-else class="w-full text-sm">
-        <thead class="text-left text-slate-500 border-b">
-          <tr>
-            <th class="py-2">#</th>
-            <th>{{ tr('邮箱', 'Email') }}</th>
-            <th>{{ tr('角色', 'Role') }}</th>
-            <th>{{ tr('邮箱验证', 'Email verification') }}</th>
-            <th>{{ tr('状态', 'Status') }}</th>
-            <th>{{ tr('可用次数', 'Available passes') }}</th>
-            <th>{{ tr('已购路线包', 'Route packs') }}</th>
-            <th>{{ tr('导航打开', 'Route opens') }}</th>
-            <th>{{ tr('注册时间', 'Registered') }}</th>
-            <th class="text-right">{{ tr('操作', 'Actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <template v-for="user in users" :key="user.id">
-            <tr class="border-b">
-              <td class="py-2">{{ user.id }}</td>
-              <td>{{ user.email }}</td>
-              <td>
-                <span v-if="user.is_admin" class="badge bg-purple-100 text-purple-800">{{ tr('管理员', 'Admin') }}</span>
-                <span v-else>{{ tr('普通用户', 'User') }}</span>
-              </td>
-              <td>{{ user.email_verified ? tr('已验证', 'Verified') : tr('未验证', 'Not verified') }}</td>
-              <td>{{ user.is_active ? tr('启用', 'Active') : tr('停用', 'Disabled') }}</td>
-              <td>{{ user.available_execution_passes }}</td>
-              <td class="text-xs">
-                <span v-if="user.is_admin" class="text-purple-700">{{ tr('全部（管理员）', 'All (admin)') }}</span>
-                <span v-else-if="user.route_packs?.length">{{ user.route_packs.join(', ') }}</span>
-                <span v-else class="text-slate-400">—</span>
-              </td>
-              <td class="text-xs">
-                <template v-if="user.route_opens">
-                  <span>{{ user.route_opens }}</span>
-                  <span class="text-slate-400"> · {{ formatDateTime(user.route_opens_last_at ?? null) }}</span>
-                  <span
-                    v-if="(user.route_open_ips_24h ?? 0) >= SHARED_IP_WARN"
-                    class="badge bg-red-100 text-red-700 ml-1"
-                    :title="tr('24 小时内从很多不同 IP 打开，账号可能被共享', 'Opened from many IPs in 24 h: the account may be shared')"
-                  >{{ tr(`24h ${user.route_open_ips_24h} 个 IP`, `${user.route_open_ips_24h} IPs / 24h`) }}</span>
-                </template>
-                <span v-else class="text-slate-400">—</span>
-              </td>
-              <td>{{ formatDateTime(user.created_at) }}</td>
-              <td>
-                <div class="flex justify-end gap-2">
-                  <button
-                    class="btn-secondary text-xs px-3 py-1"
-                    @click="expandedUserId = expandedUserId === user.id ? null : user.id"
-                  >
-                    {{ expandedUserId === user.id ? tr('收起配置', 'Hide configuration') : tr('查看配置', 'View configuration') }}
-                  </button>
-                  <button
-                    v-if="!user.is_admin"
-                    class="btn-danger text-xs px-3 py-1"
-                    :disabled="deletingUserId === user.id"
-                    @click="deleteUser(user)"
-                  >
-                    {{ deletingUserId === user.id ? tr('删除中…', 'Deleting…') : tr('删除', 'Delete') }}
-                  </button>
-                  <span v-else class="self-center text-xs text-slate-400">{{ tr('受保护', 'Protected') }}</span>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="expandedUserId === user.id" class="border-b bg-slate-50">
-              <td colspan="9" class="p-4">
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <div>
-                    <h3 class="font-medium mb-2">{{ tr('ICBC 资料', 'ICBC Profile') }}</h3>
-                    <p>{{ tr('驾照号：', 'Licence number: ') }}{{ user.icbc_license_no || '—' }}</p>
-                    <p>{{ tr('姓氏：', 'Last name: ') }}{{ user.icbc_last_name || '—' }}</p>
-                    <p>keyword: {{ user.has_secret ? tr('已配置', 'Configured') : tr('未配置', 'Not configured') }}</p>
-                  </div>
-                  <div>
-                    <h3 class="font-medium mb-2">{{ tr('预约范围', 'Booking Range') }}</h3>
-                    <p>{{ tr('考试类型：', 'Exam class: ') }}{{ user.exam_class || '—' }}</p>
-                    <p>{{ tr('考点：', 'Location: ') }}{{ formatPositions(user.pos_ids) }}</p>
-                    <p>{{ tr('日期：', 'Dates: ') }}{{ user.expect_after_date || '—' }} {{ tr('至', 'to') }} {{ user.expect_before_date || '—' }}</p>
-                  </div>
-                  <div>
-                    <h3 class="font-medium mb-2">{{ tr('时间偏好', 'Time Preferences') }}</h3>
-                    <p>{{ tr('时间区间：', 'Time range: ') }}{{ user.expect_time_range || '—' }}</p>
-                    <p>{{ tr('星期：', 'Days: ') }}{{ formatDays(user.pref_days_of_week) }}</p>
-                    <p>{{ tr('时段：', 'Time of day: ') }}{{ formatParts(user.pref_parts_of_day) }}</p>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
-    </div>
-    <div class="card overflow-x-auto">
-      <h2 class="text-lg font-semibold mb-4">{{ tr('路线包授权', 'Route Pack Access') }}</h2>
-      <form class="flex flex-wrap gap-2 mb-4" @submit.prevent="changeRoutePack('grant')">
-        <select v-model="grantSlug" class="input w-auto">
-          <option v-for="pack in routePacks" :key="pack.slug" :value="pack.slug">{{ pack.slug }}</option>
-        </select>
-        <input v-model="grantEmail" type="email" required class="input w-64" :placeholder="tr('用户邮箱', 'User email')" />
-        <button type="submit" class="btn-primary" :disabled="granting || !grantSlug">{{ tr('手动开通', 'Grant') }}</button>
-      </form>
-      <div v-if="!routePackPurchases.length" class="text-sm text-slate-500 text-center py-4">{{ tr('暂无', 'None') }}</div>
-      <table v-else class="w-full text-sm">
-        <thead class="text-left text-slate-500 border-b">
-          <tr>
-            <th class="py-2">{{ tr('邮箱', 'Email') }}</th>
-            <th>{{ tr('路线包', 'Pack') }}</th>
-            <th>{{ tr('状态', 'Status') }}</th>
-            <th>{{ tr('来源', 'Source') }}</th>
-            <th>{{ tr('创建时间', 'Created') }}</th>
-            <th>{{ tr('操作', 'Actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in routePackPurchases" :key="p.id" class="border-b last:border-0">
-            <td class="py-2">{{ p.user_email || '—' }}</td>
-            <td>{{ p.pack_slug }}</td>
-            <td>
-              <span :class="p.status === 'active' ? 'badge-done' : 'badge-cancelled'">
-                {{ p.status === 'active' ? tr('有效', 'Active') : tr('已收回', 'Revoked') }}
-              </span>
-            </td>
-            <td>{{ p.source === 'stripe' ? 'Stripe' : tr('手动', 'Manual') }}</td>
-            <td>{{ formatDateTime(p.created_at) }}</td>
-            <td>
-              <button
-                v-if="p.status === 'active' && p.user_email"
-                class="btn-secondary text-xs"
-                :disabled="granting"
-                @click="changeRoutePack('revoke', p.pack_slug, p.user_email)"
-              >{{ tr('收回', 'Revoke') }}</button>
-              <button
-                v-else-if="p.user_email"
-                class="btn-secondary text-xs"
-                :disabled="granting"
-                @click="changeRoutePack('grant', p.pack_slug, p.user_email)"
-              >{{ tr('重新开通', 'Re-grant') }}</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card overflow-x-auto">
-      <h2 class="text-lg font-semibold mb-1">{{ tr('最近打开导航', 'Recent Route Opens') }}</h2>
-      <p class="text-xs text-slate-500 mb-4">
-        {{ tr('买家每点一次"打开导航"记一条。跳转后 Google 地图里的链接仍可被复制，这里只用来看使用情况和发现共享账号。',
-              'One row per "Open navigation" tap. After the redirect the Google Maps link can still be copied; this is for usage and spotting shared accounts.') }}
-      </p>
-      <div v-if="!routePackOpens.length" class="text-sm text-slate-500 text-center py-4">{{ tr('暂无', 'None') }}</div>
-      <table v-else class="w-full text-sm">
-        <thead class="text-left text-slate-500 border-b">
-          <tr>
-            <th class="py-2">{{ tr('时间', 'Time') }}</th>
-            <th>{{ tr('邮箱', 'Email') }}</th>
-            <th>{{ tr('路线', 'Route') }}</th>
-            <th>IP</th>
-            <th>{{ tr('已跳转', 'Redirected') }}</th>
-            <th>{{ tr('设备', 'Device') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="o in routePackOpens" :key="o.id" class="border-b last:border-0">
-            <td class="py-2 whitespace-nowrap">{{ formatDateTime(o.created_at) }}</td>
-            <td>{{ o.user_email || '—' }}</td>
-            <td>{{ o.pack_slug }} · {{ o.route_title || `#${o.route_index + 1}` }}</td>
-            <td class="text-xs">{{ o.ip || '—' }}</td>
-            <td>{{ o.redirected_at ? tr('是', 'Yes') : tr('否', 'No') }}</td>
-            <td class="text-xs text-slate-500 max-w-xs truncate" :title="o.user_agent || ''">{{ o.user_agent || '—' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <AdminUsersCard ref="usersCard" @changed="onUsersChanged" />
+    <AdminRoutePackAccessCard ref="accessCard" @changed="usersCard?.refresh()" />
+    <AdminRouteOpensCard />
 
     <div class="card">
       <h2 class="text-lg font-semibold mb-4">{{ tr('全部任务', 'All Bookings') }}</h2>

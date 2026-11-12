@@ -7,6 +7,7 @@ import SiteFooter from '@/components/SiteFooter.vue'
 
 // Layout for the route-pack site at the domain root: brand, language, login/logout.
 // Deliberately no links or branding of the booking service.
+// Admins also get tabs: the routes everyone sees, and the user list.
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
@@ -37,6 +38,24 @@ async function onLogout() {
           >{{ tr('登录', 'Log in') }}</RouterLink>
         </div>
       </div>
+      <nav
+        v-if="auth.user?.is_admin"
+        class="max-w-3xl mx-auto px-4 flex gap-1 text-sm"
+        :aria-label="tr('管理员导航', 'Admin navigation')"
+      >
+        <RouterLink
+          v-for="tab in [
+            { name: 'routes', label: tr('路线', 'Routes') },
+            { name: 'users', label: tr('用户', 'Users') },
+          ]"
+          :key="tab.name"
+          :to="{ name: tab.name }"
+          class="px-3 py-2 border-b-2 -mb-px"
+          :class="route.name === tab.name
+            ? 'border-blue-600 text-blue-700 font-medium'
+            : 'border-transparent text-slate-600 hover:text-slate-900'"
+        >{{ tab.label }}</RouterLink>
+      </nav>
     </header>
     <main class="max-w-6xl mx-auto px-4 py-6 sm:py-8">
       <RouterView />

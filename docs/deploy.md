@@ -237,6 +237,8 @@ Stripe 付款完成/取消后回到发起购买的站点：前端在 checkout �
 
 **配置 Stripe**：在 Stripe Dashboard 创建产品“路线包”和一次性价格 CAD 14.99，把 `price_...` 填入 `STRIPE_ROUTE_PACK_PRICE_ID`。Webhook 复用现有端点 `https://roadtestgo.com/api/payments/stripe/webhook`，已订阅的 `checkout.session.*` 事件即可，无需新端点。Stripe 未上线前，用管理后台“路线包授权”卡片（或 `POST /api/admin/route-packs/{slug}/grant`）手动开通。
 
+**管理员入口**：管理员登录路线站（`https://roadtestgo.com/`）后顶部多出「路线 / 用户」两个标签；「用户」（`/users`）显示全部用户、已购路线包、导航打开情况，并可手动开通/收回路线包。同样的三块内容在抢号后台 `/booking/admin` 也有，那里另含 ICBC 资料、删除用户和任务审核。普通用户和未登录访客看不到标签，直接访问 `/users` 会被带回路线页或登录页。
+
 > **升级注意（route-pack-filters）**：`country`、`region`、`city` 是必填字段。仓库内的 `route_packs.json` 已补齐；如果服务器用 `ROUTE_PACKS_FILE` 指向仓库外的数据文件，**发布前**先给其中每个包补上这三个字段，否则 `icbc-api` 会拒绝启动。
 
 **新增考场 / 填真实链接**：编辑数据文件，在 `packs` 里加一项后重启 `icbc-api`（启动时会校验文件，格式错误服务会拒绝启动，发布后务必看 `systemctl is-active icbc-api`）：

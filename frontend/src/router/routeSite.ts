@@ -29,6 +29,13 @@ const router = createRouter({
       component: () => import('@/views/VerifyEmail.vue'),
       meta: { guest: true },
     },
+    {
+      // Admin-only tab: users, their packs and route opens.
+      path: '/users',
+      name: 'users',
+      component: () => import('@/views/RouteUsers.vue'),
+      meta: { admin: true },
+    },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
@@ -43,6 +50,9 @@ router.beforeEach(async (to) => {
     }
   }
   if (to.meta.guest && auth.token) return { name: 'routes' }
+  if (to.meta.admin && !auth.user?.is_admin) {
+    return auth.token ? { name: 'routes' } : { name: 'login', query: { redirect: to.fullPath } }
+  }
 })
 
 export default router
