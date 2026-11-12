@@ -124,6 +124,7 @@ def test_anonymous_listing_has_no_links_and_no_purchase_flag(client):
             {"label": "第 2 段", "from": "Sussex Ave", "to": "centre"},
         ],
         "preview": "route-previews/burnaby-4399/route1-v2.jpg",
+        "preview_en": "route-previews/burnaby-4399/en/route1.jpg",
         "note": None,
         "note_zh": None,
     }
@@ -140,6 +141,7 @@ def test_public_listing_includes_segment_ends_and_route_note(client):
     assert "Carleton Ave" in pack["routes"][2]["note"]
     assert "Carleton Ave" in pack["routes"][2]["note_zh"]
     assert all(r["preview"] for r in pack["routes"])
+    assert all(r["preview_en"].startswith("route-previews/burnaby-4399/en/") for r in pack["routes"])
 
 
 def test_listing_shows_purchased_for_authenticated_user(client, auth_headers, db):

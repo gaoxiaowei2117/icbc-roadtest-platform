@@ -29,6 +29,7 @@ export interface RouteSummary {
   segments: { label: string; from: string | null; to: string | null }[]
   /** Overview image path relative to the site's base URL. */
   preview: string | null
+  preview_en?: string | null
   note: string | null
   note_zh: string | null
 }

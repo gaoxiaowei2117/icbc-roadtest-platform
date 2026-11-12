@@ -29,7 +29,8 @@
               "to": "centre",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.233400,-122.997797&destination=49.244979,-122.999504&waypoints=49.232433,-122.997784%7C49.232443,-122.994248%7C49.235405,-122.994283%7C49.235430,-123.003330%7C49.242908,-123.003150%7C49.241780,-122.998011%7C49.245185,-122.998327%7C49.245175,-122.999408"
             }
-          ]
+          ],
+          "preview_en": "route-previews/burnaby-4399/en/route1.jpg"
         },
         {
           "title": "路线 2",
@@ -47,7 +48,8 @@
               "to": "centre",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.238610,-123.009900&destination=49.244979,-122.999504&waypoints=49.236940,-123.011000%7C49.237100,-123.003300%7C49.242908,-123.003150%7C49.241780,-122.998011%7C49.245037,-122.998076%7C49.245175,-122.999408"
             }
-          ]
+          ],
+          "preview_en": "route-previews/burnaby-4399/en/route2.jpg"
         },
         {
           "title": "路线 3",
@@ -67,7 +69,8 @@
               "to": "centre",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.257180,-123.012150&destination=49.244979,-122.999504&waypoints=49.254731,-123.010760%7C49.254564,-123.004557%7C49.242942,-123.003372%7C49.241610,-122.998310%7C49.245062,-122.998096%7C49.245140,-122.999453"
             }
-          ]
+          ],
+          "preview_en": "route-previews/burnaby-4399/en/route3.jpg"
         },
         {
           "title": "路线 4 · 上高速线",
@@ -91,7 +94,8 @@
               "to": "centre",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.253077,-122.976504&destination=49.244640,-122.999491&waypoints=49.245755,-122.974934%7C49.249282,-122.980815%7C49.253559,-122.982319%7C49.253824,-122.989028%7C49.254356,-122.989363%7C49.254325,-122.993572%7C49.245203,-122.998527"
             }
-          ]
+          ],
+          "preview_en": "route-previews/burnaby-4399/en/route4.jpg"
         }
       ]
     }

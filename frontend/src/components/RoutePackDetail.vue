@@ -144,7 +144,9 @@ function routeNote(r: RouteSummary) {
 }
 
 function previewSrc(r: RouteSummary) {
-  return r.preview ? `${import.meta.env.BASE_URL}${r.preview}` : ''
+  // Chinese map labels for zh / zh-Hant, the English-labelled image for every other UI language.
+  const p = locale.value.startsWith('zh') ? r.preview || r.preview_en : r.preview_en || r.preview
+  return p ? `${import.meta.env.BASE_URL}${p}` : ''
 }
 
 function onKeydown(e: KeyboardEvent) {
