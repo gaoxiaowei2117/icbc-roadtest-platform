@@ -104,8 +104,12 @@ function formatPrice(pack: RoutePack) {
 
 /** Data titles are Chinese ("路线 1", "第 1 段", "全程"); show them in the UI language. */
 function routeTitle(title: string) {
-  const m = /^路线\s*(\d+)$/.exec(title)
-  return m ? tr(`路线 ${m[1]}`, `Route ${m[1]}`, `Itinéraire ${m[1]}`, `Ruta ${m[1]}`, `路線 ${m[1]}`) : title
+  const m = /^路线\s*(\d+)(?:\s*·\s*(.+))?$/.exec(title)
+  if (!m) return title
+  const n = m[1]
+  const hw = m[2] === '上高速线'
+  const sfx = (zh: string, en: string) => (m[2] ? (hw ? tr(` · ${zh}`, ` · ${en}`) : ` · ${m[2]}`) : '')
+  return tr(`路线 ${n}`, `Route ${n}`, `Itinéraire ${n}`, `Ruta ${n}`, `路線 ${n}`) + sfx('上高速线', 'Highway route')
 }
 
 function segmentLabel(label: string) {

@@ -64,11 +64,11 @@ def stripe_configured(monkeypatch):
 
 # ---- catalog -------------------------------------------------------------------
 
-def test_shipped_catalog_has_burnaby_pack_with_placeholders():
+def test_shipped_catalog_has_burnaby_pack():
     pack = catalog.get_pack(SLUG)
     assert pack is not None
     assert pack.name == "ICBC Burnaby Claim Centre (4399 Wayburne Dr)"
-    assert [r.title for r in pack.routes] == ["路线 1", "路线 2", "路线 3", "路线 4"]
+    assert [r.title for r in pack.routes] == ["路线 1", "路线 2", "路线 3", "路线 4 · 上高速线"]
     assert all(1 <= len(r.segments) <= 3 for r in pack.routes)
     assert catalog.price_cents(pack, get_settings()) == 1499
     assert catalog.currency(pack, get_settings()) == "cad"
@@ -104,7 +104,7 @@ def test_anonymous_listing_has_no_links_and_no_purchase_flag(client):
     assert pack["routes"][0] == {"title": "路线 1", "segment_count": 2}
     assert pack["checkout_enabled"] is False
     assert "google.com/maps" not in response.text
-    assert "PLACEHOLDER" not in response.text
+    assert "google.com/maps" not in response.text
 
 
 def test_listing_shows_purchased_for_authenticated_user(client, auth_headers, db):
@@ -115,7 +115,7 @@ def test_listing_shows_purchased_for_authenticated_user(client, auth_headers, db
     _grant(db, "buyer@gmail.com")
     listed = client.get("/api/route-packs", headers=headers)
     assert next(p for p in listed.json() if p["slug"] == SLUG)["purchased"] is True
-    assert "PLACEHOLDER" not in listed.text
+    assert "google.com/maps" not in listed.text
 
 
 def test_listing_rejects_invalid_token(client):
@@ -143,10 +143,10 @@ def test_links_forbidden_before_purchase_and_allowed_after(client, auth_headers,
     assert response.status_code == 200
     body = response.json()
     assert body["slug"] == SLUG
-    assert [r["title"] for r in body["routes"]] == ["路线 1", "路线 2", "路线 3", "路线 4"]
+    assert [r["title"] for r in body["routes"]] == ["路线 1", "路线 2", "路线 3", "路线 4 · 上高速线"]
     first = body["routes"][0]["segments"][0]
     assert first["label"] == "第 1 段"
-    assert first["url"].startswith("https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER")
+    assert first["url"].startswith("https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=")
 
 
 def test_links_forbidden_for_other_users_and_after_revoke(client, auth_headers, db):
