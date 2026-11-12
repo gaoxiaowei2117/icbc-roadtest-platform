@@ -42,6 +42,12 @@ const router = createRouter({
       meta: { auth: true },
     },
     {
+      // Public: anyone can see the pack; buying and opening links need login.
+      path: '/routes',
+      name: 'routes',
+      component: () => import('@/views/RoutePacks.vue'),
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/Admin.vue'),

@@ -31,6 +31,13 @@ async function onLogout() {
       <option value="fr">Français</option>
       <option value="es">Español</option>
     </select>
+    <nav
+      v-if="!auth.user && !['login', 'register'].includes(String(route.name))"
+      class="fixed left-4 top-4 z-10 flex gap-4 text-sm"
+    >
+      <RouterLink to="/routes" class="hover:text-blue-600">{{ tr('练习路线', 'Practice routes') }}</RouterLink>
+      <RouterLink to="/login" class="hover:text-blue-600">{{ tr('登录', 'Log in') }}</RouterLink>
+    </nav>
     <header
       v-if="auth.user && !['login', 'register'].includes(String(route.name))"
       class="bg-white border-b border-slate-200"
@@ -42,10 +49,12 @@ async function onLogout() {
           </span>
           <nav class="flex gap-4 text-sm">
             <RouterLink v-if="auth.user.is_admin" to="/admin" class="hover:text-blue-600">{{ tr('管理', 'Admin') }}</RouterLink>
+            <RouterLink v-if="auth.user.is_admin" to="/routes" class="hover:text-blue-600">{{ tr('练习路线', 'Practice routes') }}</RouterLink>
             <template v-else>
               <RouterLink to="/dashboard" class="hover:text-blue-600">{{ tr('资料', 'Profile') }}</RouterLink>
               <RouterLink to="/bookings" class="hover:text-blue-600">{{ tr('任务', 'Bookings') }}</RouterLink>
               <RouterLink to="/settings" class="hover:text-blue-600">{{ tr('设置', 'Settings') }}</RouterLink>
+              <RouterLink to="/routes" class="hover:text-blue-600">{{ tr('练习路线', 'Practice routes') }}</RouterLink>
             </template>
           </nav>
         </div>
@@ -62,7 +71,7 @@ async function onLogout() {
         </div>
       </div>
     </header>
-    <main class="max-w-6xl mx-auto px-4 py-8">
+    <main class="max-w-6xl mx-auto px-4 py-8" :class="{ 'pt-16': !auth.user && route.name === 'routes' }">
       <RouterView />
     </main>
     <footer class="border-t border-slate-200 mt-8">
