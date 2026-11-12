@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.api.route_packs import is_route_pack_event, process_route_pack_checkout_event
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.crud import booking as booking_crud
@@ -125,6 +126,9 @@ def _stripe_event_to_dict(event):
 def _process_checkout_event(db: Session, event: dict) -> None:
     event_type = event.get("type")
     session = _event_object(event)
+    if is_route_pack_event(session):
+        process_route_pack_checkout_event(db, event, session)
+        return
     session_id = session.get("id")
     metadata = session.get("metadata") or {}
     booking_id_raw = metadata.get("booking_id") or session.get("client_reference_id")

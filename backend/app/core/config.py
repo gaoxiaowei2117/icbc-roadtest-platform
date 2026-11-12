@@ -64,6 +64,27 @@ class Settings(BaseSettings):
             f"{self.app_base_url}{self.frontend_base_path}/bookings?stripe=cancelled"
         )
 
+    # Route packs (practice-route Google Maps links per test centre).
+    # Pack definitions live in app/data/route_packs.json unless ROUTE_PACKS_FILE
+    # points elsewhere (e.g. a server-only file holding the real links).
+    route_packs_file: str = ""
+    # Defaults for every pack; a pack may override them in the data file.
+    route_pack_price_cents: int = 1499
+    route_pack_currency: str = "cad"
+    stripe_route_pack_price_id: str = ""
+
+    def route_pack_checkout_enabled(self, pack_price_id: str | None = None) -> bool:
+        """Route-pack Checkout needs the Stripe key, webhook secret and a Price ID."""
+        return bool(
+            self.stripe_secret_key
+            and self.stripe_webhook_secret
+            and (pack_price_id or self.stripe_route_pack_price_id)
+        )
+
+    @property
+    def route_pack_return_url(self) -> str:
+        return f"{self.app_base_url}{self.frontend_base_path}/routes"
+
     # 任务卡死 reaper（T2）：扫描间隔 + running 超时阈值
     reaper_interval_seconds: int = 60
     running_timeout_minutes: int = 15

@@ -1,0 +1,43 @@
+{
+  "packs": [
+    {
+      "slug": "burnaby-4399",
+      "name": "ICBC Burnaby Claim Centre (4399 Wayburne Dr)",
+      "name_zh": "ICBC 本拿比考场（4399 Wayburne Dr）",
+      "centre": "4399 Wayburne Dr, Burnaby, BC",
+      "price_cents": 1499,
+      "currency": "cad",
+      "stripe_price_id": "",
+      "routes": [
+        {
+          "title": "路线 1",
+          "segments": [
+            {"label": "第 1 段", "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-R1S1-ORIGIN&destination=PLACEHOLDER-R1S1-DEST&travelmode=driving"},
+            {"label": "第 2 段", "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-R1S2-ORIGIN&destination=PLACEHOLDER-R1S2-DEST&travelmode=driving"}
+          ]
+        },
+        {
+          "title": "路线 2",
+          "segments": [
+            {"label": "第 1 段", "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-R2S1-ORIGIN&destination=PLACEHOLDER-R2S1-DEST&travelmode=driving"},
+            {"label": "第 2 段", "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-R2S2-ORIGIN&destination=PLACEHOLDER-R2S2-DEST&travelmode=driving"},
+            {"label": "第 3 段", "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-R2S3-ORIGIN&destination=PLACEHOLDER-R2S3-DEST&travelmode=driving"}
+          ]
+        },
+        {
+          "title": "路线 3",
+          "segments": [
+            {"label": "全程", "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-R3S1-ORIGIN&destination=PLACEHOLDER-R3S1-DEST&travelmode=driving"}
+          ]
+        },
+        {
+          "title": "路线 4",
+          "segments": [
+            {"label": "第 1 段", "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-R4S1-ORIGIN&destination=PLACEHOLDER-R4S1-DEST&travelmode=driving"},
+            {"label": "第 2 段", "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-R4S2-ORIGIN&destination=PLACEHOLDER-R4S2-DEST&travelmode=driving"}
+          ]
+        }
+      ]
+    }
+  ]
+}

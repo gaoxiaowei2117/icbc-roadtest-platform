@@ -30,6 +30,21 @@ def get_current_user(
     return user
 
 
+def get_optional_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Public endpoints that personalise when logged in.
+
+    No Authorization header means anonymous. A header that is present but invalid
+    still returns 401 so the frontend refreshes its token instead of silently
+    showing the anonymous view.
+    """
+    if creds is None:
+        return None
+    return get_current_user(creds, db)
+
+
 def get_admin_user(user: User = Depends(get_current_user)) -> User:
     if not user.is_admin:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "需要 admin 权限")
