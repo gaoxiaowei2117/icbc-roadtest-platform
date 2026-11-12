@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { redirectQuery, safeRedirect } from '@/router/redirect'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/i18n'
 
@@ -10,6 +11,7 @@ const error = ref('')
 const loading = ref(false)
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const { tr, apiError } = useI18n()
 
 async function onSubmit() {
@@ -17,11 +19,11 @@ async function onSubmit() {
   loading.value = true
   try {
     await auth.login(email.value, password.value)
-    router.push(auth.user?.is_admin ? '/admin' : '/dashboard')
+    router.push(safeRedirect(route.query) || (auth.user?.is_admin ? '/admin' : '/dashboard'))
   } catch (e: any) {
     if (e.response?.status === 403) {
       if (confirm(tr('邮箱未验证，是否前往验证？', 'Email is not verified. Go to verification?'))) {
-        router.push({ name: 'verify', query: { email: email.value } })
+        router.push({ name: 'verify', query: { email: email.value, ...redirectQuery(route.query) } })
       }
     } else {
       error.value = apiError(e, '登录失败', 'Login failed')
@@ -50,7 +52,7 @@ async function onSubmit() {
           {{ loading ? tr('登录中…', 'Logging in…') : tr('登录', 'Log in') }}
         </button>
         <p class="text-sm text-center text-slate-600">
-          {{ tr('还没有账号？', "Don't have an account? ") }}<RouterLink to="/register" class="text-blue-600 hover:underline">{{ tr('注册', 'Register') }}</RouterLink>
+          {{ tr('还没有账号？', "Don't have an account? ") }}<RouterLink :to="{ name: 'register', query: redirectQuery(route.query) }" class="text-blue-600 hover:underline">{{ tr('注册', 'Register') }}</RouterLink>
         </p>
       </form>
     </div>

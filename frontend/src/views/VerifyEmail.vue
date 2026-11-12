@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { redirectQuery, safeRedirect } from '@/router/redirect'
 import { useI18n } from '@/i18n'
 
 const route = useRoute()
@@ -22,7 +23,7 @@ async function onVerify() {
   try {
     await auth.verifyEmail(email.value, code.value)
     alert(tr('验证成功', 'Email verified'))
-    router.push('/dashboard')
+    router.push(safeRedirect(route.query) || '/dashboard')
   } catch (e: any) {
     alert(tr('验证失败：', 'Verification failed: ') + apiError(e, '未知错误', 'Unknown error'))
   }
@@ -73,7 +74,7 @@ onMounted(() => { if (email.value) startCooldown() })
         {{ cooldown > 0 ? tr(`重发（${cooldown}s）`, `Resend (${cooldown}s)`, `Renvoyer (${cooldown}s)`, `Reenviar (${cooldown}s)`, `重新發送（${cooldown}s）`) : tr('重发验证码', 'Resend code') }}
       </button>
       <p class="text-sm text-center text-slate-600">
-        <RouterLink to="/login" class="text-blue-600 hover:underline">{{ tr('返回登录', 'Back to login') }}</RouterLink>
+        <RouterLink :to="{ name: 'login', query: redirectQuery(route.query) }" class="text-blue-600 hover:underline">{{ tr('返回登录', 'Back to login') }}</RouterLink>
       </p>
     </div>
   </div>
