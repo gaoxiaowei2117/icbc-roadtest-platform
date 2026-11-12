@@ -21,13 +21,13 @@
               "label": "第 1 段",
               "from": "centre",
               "to": "Sussex Ave",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.233400,-122.997797&waypoints=49.243983,-122.999450%7C49.243979,-122.998214%7C49.241735,-122.998165%7C49.242850,-123.003417%7C49.235400,-123.003347%7C49.235401,-122.994313%7C49.233439,-122.994296"
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.233201,-122.997819&waypoints=49.243952,-122.999123%7C49.243791,-122.998170%7C49.241695,-122.998412%7C49.242625,-123.003421%7C49.235625,-123.003358%7C49.235418,-122.994670%7C49.233412,-122.994639"
             },
             {
               "label": "第 2 段",
               "from": "Sussex Ave",
               "to": "centre",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.233400,-122.997797&destination=49.244979,-122.999504&waypoints=49.232433,-122.997784%7C49.232443,-122.994248%7C49.235405,-122.994283%7C49.235430,-123.003330%7C49.242908,-123.003150%7C49.241780,-122.998011%7C49.245185,-122.998327%7C49.245175,-122.999408"
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.233201,-122.997819&destination=49.244979,-122.999504&waypoints=49.232411,-122.997500%7C49.232668,-122.994226%7C49.235184,-122.994234%7C49.235388,-123.003077%7C49.242888,-123.002808%7C49.242005,-122.998011%7C49.245224,-122.998664"
             }
           ],
           "preview_en": "route-previews/burnaby-4399/en/route1.jpg"
@@ -40,13 +40,13 @@
               "label": "第 1 段",
               "from": "centre",
               "to": "Price Cres",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.238610,-123.009900&waypoints=49.243983,-122.999450%7C49.243979,-122.998214%7C49.241735,-122.998165%7C49.242999,-123.013440%7C49.241317,-123.013541%7C49.238060,-123.006870"
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.238101,-123.007208&waypoints=49.243952,-122.999123%7C49.243791,-122.998170%7C49.241695,-122.998412%7C49.242772,-123.013494%7C49.241264,-123.013218"
             },
             {
               "label": "第 2 段",
               "from": "Price Cres",
               "to": "centre",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.238610,-123.009900&destination=49.244979,-122.999504&waypoints=49.236940,-123.011000%7C49.237100,-123.003300%7C49.242908,-123.003150%7C49.241780,-122.998011%7C49.245037,-122.998076%7C49.245175,-122.999408"
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.238101,-123.007208&destination=49.244979,-122.999504&waypoints=49.238421,-123.010085%7C49.236941,-123.010657%7C49.237324,-123.003386%7C49.242888,-123.002808%7C49.242005,-122.998011%7C49.245185,-122.998276"
             }
           ],
           "preview_en": "route-previews/burnaby-4399/en/route2.jpg"
@@ -60,14 +60,14 @@
             {
               "label": "第 1 段",
               "from": "centre",
-              "to": "Gilmore Ave",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.257180,-123.012150&waypoints=49.243983,-122.999450%7C49.243979,-122.998214%7C49.241735,-122.998165%7C49.245800,-123.019780%7C49.254600,-123.019728%7C49.254648,-123.014045%7C49.257100,-123.013970"
+              "to": "Manor St",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.257195,-123.013726&waypoints=49.243952,-122.999123%7C49.243791,-122.998170%7C49.241695,-122.998412%7C49.246023,-123.019850%7C49.254693,-123.019572%7C49.254835,-123.013962"
             },
             {
               "label": "第 2 段",
-              "from": "Gilmore Ave",
+              "from": "Manor St",
               "to": "centre",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.257180,-123.012150&destination=49.244979,-122.999504&waypoints=49.254731,-123.010760%7C49.254564,-123.004557%7C49.242942,-123.003372%7C49.241610,-122.998310%7C49.245062,-122.998096%7C49.245140,-122.999453"
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.257195,-123.013726&destination=49.244979,-122.999504&waypoints=49.257065,-123.011997%7C49.254580,-123.010669%7C49.254422,-123.004443%7C49.242902,-123.003030%7C49.241612,-122.997986%7C49.245185,-122.998319"
             }
           ],
           "preview_en": "route-previews/burnaby-4399/en/route3.jpg"
