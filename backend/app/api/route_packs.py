@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -21,6 +21,7 @@ from app.schemas.route_pack import (
     RouteLinksOut,
     RoutePackCheckoutIn,
     RoutePackDef,
+    RoutePackFacetsOut,
     RoutePackLinksOut,
     RoutePackOut,
     RouteSegmentOut,
@@ -49,6 +50,10 @@ def _pack_out(pack: RoutePackDef, purchased: bool | None) -> RoutePackOut:
         slug=pack.slug,
         name=pack.name,
         name_zh=pack.name_zh,
+        country=pack.country,
+        region=pack.region,
+        city=pack.city,
+        city_zh=pack.city_zh,
         centre=pack.centre,
         price_cents=catalog.price_cents(pack, settings),
         currency=catalog.currency(pack, settings),
@@ -74,14 +79,22 @@ def _pack_out(pack: RoutePackDef, purchased: bool | None) -> RoutePackOut:
 
 @router.get("", response_model=list[RoutePackOut])
 def list_route_packs(
+    country: str | None = Query(default=None, max_length=2, description="ISO 3166-1 alpha-2, e.g. CA"),
+    region: str | None = Query(default=None, max_length=3, description="ISO 3166-2 part, e.g. BC"),
+    q: str | None = Query(default=None, max_length=100, description="Search name, address, city, slug"),
     user: User | None = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ) -> list[RoutePackOut]:
     owned = route_pack_crud.purchased_slugs(db, user.id) if user else None
-    return [
-        _pack_out(pack, None if owned is None else pack.slug in owned)
-        for pack in catalog.all_packs()
-    ]
+    packs = catalog.filter_packs(catalog.all_packs(), country=country, region=region, q=q)
+    return [_pack_out(pack, None if owned is None else pack.slug in owned) for pack in packs]
+
+
+# Declared before /{slug} so "facets" isn't taken as a slug.
+@router.get("/facets", response_model=RoutePackFacetsOut)
+def route_pack_facets() -> RoutePackFacetsOut:
+    """Countries and regions that have packs (unfiltered), with counts."""
+    return RoutePackFacetsOut.model_validate(catalog.facets(catalog.all_packs()))
 
 
 @router.get("/{slug}", response_model=RoutePackOut)

@@ -6,6 +6,9 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+# ISO 3166-1 alpha-2 country, and the ISO 3166-2 subdivision part after "CA-" / "US-".
+_COUNTRY_RE = re.compile(r"^[A-Z]{2}$")
+_REGION_RE = re.compile(r"^[A-Z0-9]{1,3}$")
 
 
 # ---- Catalog (app/data/route_packs.json) -------------------------------------
@@ -52,6 +55,12 @@ class RoutePackDef(BaseModel):
     slug: str
     name: str = Field(min_length=1)
     name_zh: str | None = None
+    # Location, used to browse by country → region → centre and for search.
+    country: str
+    region: str
+    city: str = Field(min_length=1, max_length=100)
+    city_zh: str | None = Field(default=None, max_length=100)
+    # Street address of the test centre.
     centre: str = Field(min_length=1)
     # Optional per-pack overrides of ROUTE_PACK_PRICE_CENTS / ROUTE_PACK_CURRENCY /
     # STRIPE_ROUTE_PACK_PRICE_ID. Keep price_cents equal to the Stripe Price amount.
@@ -65,6 +74,20 @@ class RoutePackDef(BaseModel):
     def _check_slug(cls, v: str) -> str:
         if not _SLUG_RE.match(v):
             raise ValueError("slug 只能包含小写字母、数字和连字符")
+        return v
+
+    @field_validator("country")
+    @classmethod
+    def _check_country(cls, v: str) -> str:
+        if not _COUNTRY_RE.match(v):
+            raise ValueError("country 必须是 ISO 3166-1 两位大写字母代码，例如 CA")
+        return v
+
+    @field_validator("region")
+    @classmethod
+    def _check_region(cls, v: str) -> str:
+        if not _REGION_RE.match(v):
+            raise ValueError("region 必须是 ISO 3166-2 地区代码（不含国家前缀），例如 BC")
         return v
 
 
@@ -97,6 +120,10 @@ class RoutePackOut(BaseModel):
     slug: str
     name: str
     name_zh: str | None
+    country: str
+    region: str
+    city: str
+    city_zh: str | None
     centre: str
     price_cents: int
     currency: str
@@ -105,6 +132,23 @@ class RoutePackOut(BaseModel):
     checkout_enabled: bool
     # None for anonymous requests.
     purchased: bool | None = None
+
+
+class RegionFacetOut(BaseModel):
+    code: str
+    count: int
+
+
+class CountryFacetOut(BaseModel):
+    code: str
+    count: int
+    regions: list[RegionFacetOut]
+
+
+class RoutePackFacetsOut(BaseModel):
+    """Countries/regions that have at least one pack, for the browse dropdowns."""
+    total: int
+    countries: list[CountryFacetOut]
 
 
 class RouteSegmentOut(BaseModel):

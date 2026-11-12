@@ -1,5 +1,6 @@
 """Route pack catalog, purchase gating, Stripe checkout/webhook and admin grants."""
 import json
+from pathlib import Path
 
 import pytest
 
@@ -74,10 +75,24 @@ def test_shipped_catalog_has_burnaby_pack():
     assert catalog.currency(pack, get_settings()) == "cad"
 
 
+def test_catalog_requires_valid_location_codes(tmp_path, monkeypatch):
+    base = {
+        "slug": "x-pack", "name": "X", "city": "Burnaby", "centre": "Somewhere",
+        "routes": [{"title": "R", "segments": [{"label": "1", "url": "https://www.google.com/maps/dir/?api=1"}]}],
+    }
+    for bad in ({}, {"country": "CA"}, {"country": "Canada", "region": "BC"}, {"country": "CA", "region": "CA-BC"}):
+        path = tmp_path / "packs.json"
+        path.write_text(json.dumps({"packs": [{**base, **bad}]}), encoding="utf-8")
+        monkeypatch.setattr(catalog, "_catalog_path", lambda: path)
+        with pytest.raises(ValueError):
+            catalog.all_packs()
+
+
 def test_catalog_rejects_more_than_three_segments(tmp_path, monkeypatch):
     bad = {
         "packs": [{
             "slug": "bad-pack", "name": "Bad", "centre": "Somewhere",
+            "country": "CA", "region": "BC", "city": "Burnaby",
             "routes": [{"title": "R", "segments": [
                 {"label": str(i), "url": "https://www.google.com/maps/dir/?api=1"} for i in range(4)
             ]}],
@@ -432,3 +447,67 @@ def test_route_pack_admin_requires_admin(client, auth_headers):
     assert client.post(f"/api/admin/route-packs/{SLUG}/grant", headers=headers,
                        json={"email": "buyer@gmail.com"}).status_code == 403
     assert client.get("/api/admin/route-packs/purchases", headers=headers).status_code == 403
+
+
+# ---- browse: location, filters, search, facets ----------------------------------------
+
+MULTI = Path(__file__).parent / "fixtures" / "route_packs_multi.json"
+
+
+@pytest.fixture
+def multi_catalog(monkeypatch):
+    monkeypatch.setattr(catalog, "_catalog_path", lambda: MULTI)
+
+
+def _slugs(response):
+    assert response.status_code == 200
+    return [p["slug"] for p in response.json()]
+
+
+def test_listing_includes_location_fields(client):
+    pack = client.get(f"/api/route-packs/{SLUG}").json()
+    assert (pack["country"], pack["region"], pack["city"], pack["city_zh"]) == ("CA", "BC", "Burnaby", "本拿比")
+
+
+def test_listing_filters_by_country_and_region(client, multi_catalog):
+    assert len(_slugs(client.get("/api/route-packs"))) == 5
+    assert _slugs(client.get("/api/route-packs?country=US")) == ["seattle-downtown"]
+    assert _slugs(client.get("/api/route-packs?country=ca&region=bc")) == [
+        "burnaby-4399", "richmond-5300", "surrey-newton",
+    ]
+    assert _slugs(client.get("/api/route-packs?country=CA&region=ON")) == ["toronto-downsview"]
+    assert _slugs(client.get("/api/route-packs?country=US&region=BC")) == []
+    assert client.get("/api/route-packs?country=CAN").status_code == 422
+
+
+def test_listing_search_matches_names_city_address_and_slug(client, multi_catalog):
+    assert _slugs(client.get("/api/route-packs", params={"q": "richmond"})) == ["richmond-5300"]
+    assert _slugs(client.get("/api/route-packs", params={"q": "列治文"})) == ["richmond-5300"]
+    assert _slugs(client.get("/api/route-packs", params={"q": "多伦多"})) == ["toronto-downsview"]
+    assert _slugs(client.get("/api/route-packs", params={"q": "KING GEORGE"})) == ["surrey-newton"]
+    assert _slugs(client.get("/api/route-packs", params={"q": "  burnaby-4399 "})) == ["burnaby-4399"]
+    assert _slugs(client.get("/api/route-packs", params={"q": "icbc", "region": "BC"})) == [
+        "burnaby-4399", "richmond-5300", "surrey-newton",
+    ]
+    assert _slugs(client.get("/api/route-packs", params={"q": "vancouver island"})) == []
+    # Search never looks inside the links.
+    assert _slugs(client.get("/api/route-packs", params={"q": "PLACEHOLDER"})) == []
+
+
+def test_facets_list_countries_and_regions_with_counts(client, multi_catalog):
+    response = client.get("/api/route-packs/facets")
+    assert response.status_code == 200
+    assert response.json() == {
+        "total": 5,
+        "countries": [
+            {"code": "CA", "count": 4, "regions": [{"code": "BC", "count": 3}, {"code": "ON", "count": 1}]},
+            {"code": "US", "count": 1, "regions": [{"code": "WA", "count": 1}]},
+        ],
+    }
+
+
+def test_facets_for_shipped_catalog(client):
+    assert client.get("/api/route-packs/facets").json() == {
+        "total": 1,
+        "countries": [{"code": "CA", "count": 1, "regions": [{"code": "BC", "count": 1}]}],
+    }

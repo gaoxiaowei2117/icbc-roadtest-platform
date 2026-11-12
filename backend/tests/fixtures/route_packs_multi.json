@@ -1,0 +1,359 @@
+{
+  "packs": [
+    {
+      "slug": "burnaby-4399",
+      "name": "ICBC Burnaby Claim Centre (4399 Wayburne Dr)",
+      "name_zh": "ICBC 本拿比考场（4399 Wayburne Dr）",
+      "country": "CA",
+      "region": "BC",
+      "city": "Burnaby",
+      "city_zh": "本拿比",
+      "centre": "4399 Wayburne Dr, Burnaby, BC",
+      "price_cents": 1499,
+      "currency": "cad",
+      "stripe_price_id": "",
+      "routes": [
+        {
+          "title": "路线 1",
+          "preview": "route-previews/burnaby-4399/route1.jpg",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Sussex Ave",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-burnaby-4399-R1S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Sussex Ave",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-burnaby-4399-R1S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 2",
+          "preview": "route-previews/burnaby-4399/route2.jpg",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Price Cres",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-burnaby-4399-R2S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Price Cres",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-burnaby-4399-R2S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 3",
+          "preview": "route-previews/burnaby-4399/route3.jpg",
+          "note": "In Google Maps this route skips a short Carleton Ave → Fir St loop; follow the overview map for that part.",
+          "note_zh": "Google 地图导航在 Carleton Ave → Fir St 一小段与考试路线不同，这段请按地图概览图行驶。",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Gilmore Ave",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-burnaby-4399-R3S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Gilmore Ave",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-burnaby-4399-R3S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 4 · 上高速线",
+          "preview": "route-previews/burnaby-4399/route4.jpg",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Smith Ave",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-burnaby-4399-R4S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Smith Ave",
+              "to": "Exit 32 (Laurel St)",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-burnaby-4399-R4S2&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 3 段",
+              "from": "Laurel St",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-burnaby-4399-R4S3&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "richmond-5300",
+      "name": "ICBC Richmond Driver Licensing (5300 No. 3 Rd)",
+      "name_zh": "ICBC 列治文考场（5300 No. 3 Rd）",
+      "country": "CA",
+      "region": "BC",
+      "city": "Richmond",
+      "city_zh": "列治文",
+      "centre": "5300 No. 3 Rd, Richmond, BC",
+      "price_cents": 1499,
+      "currency": "cad",
+      "routes": [
+        {
+          "title": "路线 1",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Garden City Rd",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-richmond-5300-R1S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Garden City Rd",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-richmond-5300-R1S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 2",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Westminster Hwy",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-richmond-5300-R2S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Westminster Hwy",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-richmond-5300-R2S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 3",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Alderbridge Way",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-richmond-5300-R3S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Alderbridge Way",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-richmond-5300-R3S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "surrey-newton",
+      "name": "ICBC Surrey Newton (7380 King George Blvd)",
+      "name_zh": "ICBC 素里 Newton 考场",
+      "country": "CA",
+      "region": "BC",
+      "city": "Surrey",
+      "city_zh": "素里",
+      "centre": "7380 King George Blvd, Surrey, BC",
+      "price_cents": 1499,
+      "currency": "cad",
+      "routes": [
+        {
+          "title": "路线 1",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "72 Ave",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-surrey-newton-R1S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "72 Ave",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-surrey-newton-R1S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 2",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "128 St",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-surrey-newton-R2S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "128 St",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-surrey-newton-R2S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 3",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Scott Rd",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-surrey-newton-R3S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Scott Rd",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-surrey-newton-R3S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 4",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "64 Ave",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-surrey-newton-R4S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "64 Ave",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-surrey-newton-R4S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "toronto-downsview",
+      "name": "DriveTest Toronto Downsview (37 Carl Hall Rd)",
+      "name_zh": "DriveTest 多伦多 Downsview 考场",
+      "country": "CA",
+      "region": "ON",
+      "city": "Toronto",
+      "city_zh": "多伦多",
+      "centre": "37 Carl Hall Rd, Toronto, ON",
+      "price_cents": 1999,
+      "currency": "cad",
+      "routes": [
+        {
+          "title": "路线 1",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Sheppard Ave W",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-toronto-downsview-R1S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Sheppard Ave W",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-toronto-downsview-R1S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 2",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Keele St",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-toronto-downsview-R2S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Keele St",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-toronto-downsview-R2S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "seattle-downtown",
+      "name": "WA DOL Seattle Downtown",
+      "name_zh": "西雅图市中心考场",
+      "country": "US",
+      "region": "WA",
+      "city": "Seattle",
+      "city_zh": "西雅图",
+      "centre": "2200 6th Ave, Seattle, WA",
+      "price_cents": 1499,
+      "currency": "usd",
+      "routes": [
+        {
+          "title": "路线 1",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Denny Way",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-seattle-downtown-R1S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Denny Way",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-seattle-downtown-R1S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 2",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Westlake Ave",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-seattle-downtown-R2S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Westlake Ave",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-seattle-downtown-R2S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        },
+        {
+          "title": "路线 3",
+          "segments": [
+            {
+              "label": "第 1 段",
+              "from": "centre",
+              "to": "Mercer St",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-seattle-downtown-R3S1&destination=PLACEHOLDER&travelmode=driving"
+            },
+            {
+              "label": "第 2 段",
+              "from": "Mercer St",
+              "to": "centre",
+              "url": "https://www.google.com/maps/dir/?api=1&origin=PLACEHOLDER-seattle-downtown-R3S2&destination=PLACEHOLDER&travelmode=driving"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
