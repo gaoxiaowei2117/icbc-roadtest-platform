@@ -54,20 +54,24 @@
         {
           "title": "路线 3",
           "preview": "route-previews/burnaby-4399/route3-v2.jpg",
-          "note": "In Google Maps this route skips a short Carleton Ave → Fir St loop; follow the overview map for that part.",
-          "note_zh": "Google 地图导航在 Carleton Ave → Fir St 一小段与考试路线不同，这段请按地图概览图行驶。",
           "segments": [
             {
               "label": "第 1 段",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.246023,-123.019850&waypoints=49.243952,-122.999123%7C49.243791,-122.998170%7C49.241695,-122.998412%7C49.243014,-123.004143%7C49.243127,-123.012550%7C49.245103,-123.012826%7C49.245116,-123.016131%7C49.245217,-123.019414",
               "from": "centre",
-              "to": "Manor St",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.257195,-123.013726&waypoints=49.243952,-122.999123%7C49.243791,-122.998170%7C49.241695,-122.998412%7C49.246023,-123.019850%7C49.254693,-123.019572%7C49.254835,-123.013962"
+              "to": "Smith Ave"
             },
             {
               "label": "第 2 段",
-              "from": "Manor St",
-              "to": "centre",
-              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.257195,-123.013726&destination=49.244979,-122.999504&waypoints=49.257065,-123.011997%7C49.254580,-123.010669%7C49.254422,-123.004443%7C49.242902,-123.003030%7C49.241612,-122.997986%7C49.245185,-122.998319"
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.246023,-123.019850&destination=49.242902,-123.003030&waypoints=49.254693,-123.019572%7C49.254835,-123.013962%7C49.256475,-123.013964%7C49.257195,-123.013726%7C49.257065,-123.011997%7C49.254580,-123.010669%7C49.254422,-123.004443",
+              "from": "Smith Ave",
+              "to": "Deer Lake Pkwy"
+            },
+            {
+              "label": "第 3 段",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.242902,-123.003030&destination=49.244979,-122.999504&waypoints=49.241612,-122.997986%7C49.245185,-122.998319",
+              "from": "Deer Lake Pkwy",
+              "to": "centre"
             }
           ],
           "preview_en": "route-previews/burnaby-4399/en/route3.jpg"

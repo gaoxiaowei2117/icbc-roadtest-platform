@@ -138,8 +138,11 @@ def test_public_listing_includes_segment_ends_and_route_note(client):
     assert [(s["from"], s["to"]) for s in highway["segments"]] == [
         ("centre", "Smith Ave"), ("Smith Ave", "Exit 32 (Laurel St)"), ("Laurel St", "centre"),
     ]
-    assert "Carleton Ave" in pack["routes"][2]["note"]
-    assert "Carleton Ave" in pack["routes"][2]["note_zh"]
+    # Route 3 keeps every turn (incl. Carleton -> Fir) in three parts, so it needs no note any more.
+    assert [(s["from"], s["to"]) for s in pack["routes"][2]["segments"]] == [
+        ("centre", "Smith Ave"), ("Smith Ave", "Deer Lake Pkwy"), ("Deer Lake Pkwy", "centre"),
+    ]
+    assert pack["routes"][2]["note"] is None
     assert all(r["preview"] for r in pack["routes"])
     assert all(r["preview_en"].startswith("route-previews/burnaby-4399/en/") for r in pack["routes"])
 
