@@ -37,6 +37,7 @@ class AdminUserOut(UserPublic):
     email_verified: bool
     has_secret: bool
     available_execution_passes: int
+    route_packs: list[str] = []  # slugs of active route-pack purchases
 
 
 class UserUpdate(ProfileFields):

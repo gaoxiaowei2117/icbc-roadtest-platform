@@ -13,7 +13,7 @@ from app.models.booking import BookingStatus, PaymentStatus
 from app.models.execution_pass import ExecutionPass, ExecutionPassStatus
 from app.models.user import User
 from app.schemas.booking import AdminBookingOut, BookingOut, PaymentReviewIn
-from app.models.route_pack import RoutePackPurchase, RoutePackPurchaseSource
+from app.models.route_pack import RoutePackPurchase, RoutePackPurchaseSource, RoutePackPurchaseStatus
 from app.schemas.route_pack import RoutePackGrantIn, RoutePackPurchaseOut
 from app.schemas.user import AdminUserOut, UserPublic
 
@@ -98,6 +98,15 @@ def list_all_users(
             .group_by(ExecutionPass.user_id)
         ).all()
         available_passes = {user_id: count for user_id, count in counts}
+    packs_by_user: dict[int, list[str]] = {}
+    if user_ids:
+        rows = db.execute(
+            select(RoutePackPurchase.user_id, RoutePackPurchase.pack_slug)
+            .where(RoutePackPurchase.user_id.in_(user_ids), RoutePackPurchase.status == RoutePackPurchaseStatus.active)
+            .order_by(RoutePackPurchase.pack_slug)
+        ).all()
+        for uid, slug in rows:
+            packs_by_user.setdefault(uid, []).append(slug)
     return [
         AdminUserOut(
             **UserPublic.model_validate(user).model_dump(),
@@ -105,6 +114,7 @@ def list_all_users(
             email_verified=user.email_verified,
             has_secret=user.secret is not None,
             available_execution_passes=available_passes.get(user.id, 0),
+            route_packs=packs_by_user.get(user.id, []),
         )
         for user in users
     ]

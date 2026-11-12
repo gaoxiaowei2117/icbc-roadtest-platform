@@ -13,6 +13,7 @@ type AdminUser = User & {
   email_verified: boolean
   has_secret: boolean
   available_execution_passes: number
+  route_packs?: string[]
 }
 
 const bookings = ref<Booking[]>([])
@@ -186,6 +187,7 @@ async function rejectPayment(booking: Booking) {
             <th>{{ tr('邮箱验证', 'Email verification') }}</th>
             <th>{{ tr('状态', 'Status') }}</th>
             <th>{{ tr('可用次数', 'Available passes') }}</th>
+            <th>{{ tr('已购路线包', 'Route packs') }}</th>
             <th>{{ tr('注册时间', 'Registered') }}</th>
             <th class="text-right">{{ tr('操作', 'Actions') }}</th>
           </tr>
@@ -202,6 +204,11 @@ async function rejectPayment(booking: Booking) {
               <td>{{ user.email_verified ? tr('已验证', 'Verified') : tr('未验证', 'Not verified') }}</td>
               <td>{{ user.is_active ? tr('启用', 'Active') : tr('停用', 'Disabled') }}</td>
               <td>{{ user.available_execution_passes }}</td>
+              <td class="text-xs">
+                <span v-if="user.is_admin" class="text-purple-700">{{ tr('全部（管理员）', 'All (admin)') }}</span>
+                <span v-else-if="user.route_packs?.length">{{ user.route_packs.join(', ') }}</span>
+                <span v-else class="text-slate-400">—</span>
+              </td>
               <td>{{ formatDateTime(user.created_at) }}</td>
               <td>
                 <div class="flex justify-end gap-2">

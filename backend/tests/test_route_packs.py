@@ -513,3 +513,26 @@ def test_facets_for_shipped_catalog(client):
         "total": 1,
         "countries": [{"code": "CA", "count": 1, "regions": [{"code": "BC", "count": 1}]}],
     }
+
+
+def test_admin_opens_every_pack_without_buying(client, auth_headers, db):
+    admin = _make_admin(client, auth_headers, db)
+    listed = client.get("/api/route-packs", headers=admin).json()
+    assert all(p["purchased"] is True for p in listed)
+    assert client.get(f"/api/route-packs/{SLUG}", headers=admin).json()["purchased"] is True
+    links = client.get(f"/api/route-packs/{SLUG}/links", headers=admin)
+    assert links.status_code == 200
+    assert links.json()["routes"][0]["segments"][0]["url"].startswith("https://www.google.com/maps/")
+    # No purchase record was created for the admin.
+    assert db.query(RoutePackPurchase).count() == 0
+
+
+def test_admin_user_list_shows_route_packs(client, auth_headers, db):
+    auth_headers(email="buyer@gmail.com")
+    auth_headers(email="other@gmail.com")
+    admin = _make_admin(client, auth_headers, db)
+    assert client.post(f"/api/admin/route-packs/{SLUG}/grant", headers=admin,
+                       json={"email": "buyer@gmail.com"}).status_code == 200
+    users = {u["email"]: u for u in client.get("/api/admin/users", headers=admin).json()}
+    assert users["buyer@gmail.com"]["route_packs"] == [SLUG]
+    assert users["other@gmail.com"]["route_packs"] == []

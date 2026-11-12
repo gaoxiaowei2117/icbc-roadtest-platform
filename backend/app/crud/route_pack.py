@@ -21,6 +21,11 @@ def has_access(db: Session, user_id: int, pack_slug: str) -> bool:
     return db.scalar(stmt) is not None
 
 
+def user_can_open(db: Session, user, pack_slug: str) -> bool:
+    """Admins open every pack without buying; everyone else needs an active purchase."""
+    return bool(getattr(user, "is_admin", False)) or has_access(db, user.id, pack_slug)
+
+
 def purchased_slugs(db: Session, user_id: int) -> set[str]:
     stmt = select(RoutePackPurchase.pack_slug).where(
         RoutePackPurchase.user_id == user_id,

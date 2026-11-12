@@ -86,7 +86,12 @@ def list_route_packs(
     user: User | None = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ) -> list[RoutePackOut]:
-    owned = route_pack_crud.purchased_slugs(db, user.id) if user else None
+    if user is None:
+        owned = None
+    elif user.is_admin:  # admins can open every pack without buying
+        owned = {p.slug for p in catalog.all_packs()}
+    else:
+        owned = route_pack_crud.purchased_slugs(db, user.id)
     packs = catalog.filter_packs(catalog.all_packs(), country=country, region=region, q=q)
     return [_pack_out(pack, None if owned is None else pack.slug in owned) for pack in packs]
 
@@ -105,7 +110,7 @@ def get_route_pack(
     db: Session = Depends(get_db),
 ) -> RoutePackOut:
     pack = _pack_or_404(slug)
-    purchased = route_pack_crud.has_access(db, user.id, slug) if user else None
+    purchased = route_pack_crud.user_can_open(db, user, slug) if user else None
     return _pack_out(pack, purchased)
 
 
@@ -116,7 +121,7 @@ def get_route_pack_links(
     db: Session = Depends(get_db),
 ) -> RoutePackLinksOut:
     pack = _pack_or_404(slug)
-    if not route_pack_crud.has_access(db, user.id, slug):
+    if not route_pack_crud.user_can_open(db, user, slug):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "尚未购买该路线包")
     return RoutePackLinksOut(
         slug=pack.slug,
@@ -141,8 +146,8 @@ def create_route_pack_checkout(
     settings = get_settings()
     if not catalog.checkout_enabled(pack, settings):
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "路线包在线付款尚未开放")
-    if route_pack_crud.has_access(db, user.id, slug):
-        raise HTTPException(status.HTTP_409_CONFLICT, "已购买该路线包")
+    if route_pack_crud.user_can_open(db, user, slug):
+        raise HTTPException(status.HTTP_409_CONFLICT, "已购买该路线包（管理员无需购买）" if user.is_admin else "已购买该路线包")
     stripe.api_key = settings.stripe_secret_key
     site = (payload or RoutePackCheckoutIn()).site
 
