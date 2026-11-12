@@ -96,13 +96,22 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 
 按考场售卖的练习路线包：每个包有若干路线，每条路线 1–3 段（Google 地图 App 链接最多 9 个途经点，长路线拆段），每段一个 Google 地图导航链接。包定义在后端数据文件（默认 `backend/app/data/route_packs.json`，见部署文档）。**链接只会通过 `/links` 返回给已购买的用户。**
 
-### GET /route-packs
-公开。返回所有路线包（不含链接）：
+### GET /route-packs?country=&region=&q=
+公开。返回路线包（不含链接）。查询参数都可选，不带参数返回全部（与之前一致）：
+- `country`：ISO 3166-1 两位代码，如 `CA`（大小写不敏感，超过 2 位返回 422）
+- `region`：ISO 3166-2 地区代码（不含国家前缀），如 `BC`
+- `q`：搜索词，大小写不敏感的子串匹配 slug、`name`、`name_zh`、`centre`（地址）、`city`、`city_zh`；支持中文。不搜索路线标题和链接。
+
+多个参数同时使用时取交集。
 ```json
 [{
   "slug": "burnaby-4399",
   "name": "ICBC Burnaby Claim Centre (4399 Wayburne Dr)",
   "name_zh": "ICBC 本拿比考场（4399 Wayburne Dr）",
+  "country": "CA",
+  "region": "BC",
+  "city": "Burnaby",
+  "city_zh": "本拿比",
   "centre": "4399 Wayburne Dr, Burnaby, BC",
   "price_cents": 1499,
   "currency": "cad",
@@ -125,6 +134,19 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 - `purchased`：匿名请求为 `null`；登录用户为 `true/false`（管理员收回后为 `false`）。
 - `segments[].from/to`：分段起止点（英文街道名；`centre` 表示考场，由前端翻译）。`preview` 是相对于前端站点根路径的概览图，`note`/`note_zh` 是可选说明。这些字段都公开，不含链接。
 - `checkout_enabled`：Stripe 密钥、Webhook 密钥和该包的 Price ID 都配置后才为 `true`；否则前端显示“即将开放 / 联系我们”。
+
+### GET /route-packs/facets
+公开。返回有路线包的国家和省/州及数量（不受筛选影响），前端只显示存在的选项：
+```json
+{
+  "total": 5,
+  "countries": [
+    { "code": "CA", "count": 4, "regions": [{ "code": "BC", "count": 3 }, { "code": "ON", "count": 1 }] },
+    { "code": "US", "count": 1, "regions": [{ "code": "WA", "count": 1 }] }
+  ]
+}
+```
+国家、地区的显示名称由前端 `frontend/src/regions.ts` 翻译（加拿大各省/地区、美国各州已有中英文），没有的显示代码本身。
 
 ### GET /route-packs/{slug}
 同上，单个包。未知 slug 返回 404。

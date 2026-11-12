@@ -237,6 +237,8 @@ Stripe 付款完成/取消后回到发起购买的站点：前端在 checkout �
 
 **配置 Stripe**：在 Stripe Dashboard 创建产品“路线包”和一次性价格 CAD 14.99，把 `price_...` 填入 `STRIPE_ROUTE_PACK_PRICE_ID`。Webhook 复用现有端点 `https://roadtestgo.com/api/payments/stripe/webhook`，已订阅的 `checkout.session.*` 事件即可，无需新端点。Stripe 未上线前，用管理后台“路线包授权”卡片（或 `POST /api/admin/route-packs/{slug}/grant`）手动开通。
 
+> **升级注意（route-pack-filters）**：`country`、`region`、`city` 是必填字段。仓库内的 `route_packs.json` 已补齐；如果服务器用 `ROUTE_PACKS_FILE` 指向仓库外的数据文件，**发布前**先给其中每个包补上这三个字段，否则 `icbc-api` 会拒绝启动。
+
 **新增考场 / 填真实链接**：编辑数据文件，在 `packs` 里加一项后重启 `icbc-api`（启动时会校验文件，格式错误服务会拒绝启动，发布后务必看 `systemctl is-active icbc-api`）：
 
 ```json
@@ -244,6 +246,10 @@ Stripe 付款完成/取消后回到发起购买的站点：前端在 checkout �
   "slug": "richmond-5300",
   "name": "ICBC Richmond (5300 No. 3 Rd)",
   "name_zh": "ICBC 列治文考场",
+  "country": "CA",
+  "region": "BC",
+  "city": "Richmond",
+  "city_zh": "列治文",
   "centre": "5300 No. 3 Rd, Richmond, BC",
   "price_cents": 1499,
   "currency": "cad",
@@ -261,7 +267,11 @@ Stripe 付款完成/取消后回到发起购买的站点：前端在 checkout �
 }
 ```
 
-- `slug` 一经售出不要再改（购买记录按 slug 关联）。只能用小写字母、数字、连字符。
+- `slug` 一经售出不要再改（购买记录按 slug 关联）。只能用小写字母、数字、连字符；建议用 `城市-门牌号/地名`，例如 `richmond-5300`。
+- `country`（必填）：ISO 3166-1 两位大写代码，如 `CA`、`US`。`region`（必填）：ISO 3166-2 地区代码去掉国家前缀，如 `BC`、`ON`、`WA`。`city`（必填，英文）和 `city_zh`（可选）用于卡片显示和搜索。`centre` 是考场地址。代码格式不对时服务拒绝启动。
+- 页面按 国家 → 省/州 → 考场 浏览，并支持搜索（名称、城市、地址、slug）。新国家/地区的显示名称在 `frontend/src/regions.ts` 里加（加拿大、美国已齐全），没加的显示代码；加了要重新构建前端。
+- 考场详情的分享链接：`https://roadtestgo.com/?centre=<slug>`（抢号服务内为 `/booking/routes?centre=<slug>`），可以放进 YouTube 简介。只有一个考场时，根路径直接显示它的详情。
+- 本地预览多考场界面：`ROUTE_PACKS_FILE=backend/tests/fixtures/route_packs_multi.json`（5 个假考场，占位链接）启动后端。不要把假考场写进正式数据文件。
 - 每条路线 1–3 段，每段 `url` 必须是 `https://` 链接；Google 地图 App 链接最多 9 个途经点，超过就拆段。
 - `price_cents` / `currency` / `stripe_price_id` 可选，留空则用上面的环境变量；某个包要不同价格时，在 Stripe 建对应 Price 并同时填这两个字段。
 - 标题写成 `路线 N`（可加 `· 上高速线`）、分段写成 `第 N 段` / `全程` 时，英文界面会自动显示为 Route N / Part N / Full route。
