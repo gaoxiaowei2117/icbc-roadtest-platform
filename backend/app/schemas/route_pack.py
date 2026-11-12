@@ -33,13 +33,15 @@ class RouteDef(BaseModel):
     # Overview image, relative to the frontend's public dir (served by both sites),
     # e.g. "route-previews/burnaby-4399/route1.jpg". Shown before purchase.
     preview: str | None = None
+    # Same image with English labels, shown when the UI is not Chinese (falls back to `preview`).
+    preview_en: str | None = None
     # Optional public note shown under the route (English / Chinese).
     note: str | None = Field(default=None, max_length=500)
     note_zh: str | None = Field(default=None, max_length=500)
     # Google Maps app links carry at most 9 waypoints, so long routes are split.
     segments: list[RouteSegmentDef] = Field(min_length=1, max_length=3)
 
-    @field_validator("preview")
+    @field_validator("preview", "preview_en")
     @classmethod
     def _check_preview(cls, v: str | None) -> str | None:
         if v is not None and (v.startswith("/") or ":" in v or ".." in v):
@@ -88,6 +90,7 @@ class RouteSummaryOut(BaseModel):
     segment_count: int
     segments: list[RouteSegmentSummaryOut]
     preview: str | None = None
+    preview_en: str | None = None
     note: str | None = None
     note_zh: str | None = None
 

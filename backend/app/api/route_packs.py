@@ -62,6 +62,7 @@ def _pack_out(pack: RoutePackDef, purchased: bool | None) -> RoutePackOut:
                     for seg in route.segments
                 ],
                 preview=route.preview,
+                preview_en=route.preview_en,
                 note=route.note,
                 note_zh=route.note_zh,
             )
