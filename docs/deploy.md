@@ -201,6 +201,47 @@ curl -fsSI https://roadtestgo.com/booking/
 
 必须确认 Alembic 位于 `head`、三个服务均为 `active`、健康检查返回 `{"status":"ok"}`、页面返回 HTTP 200，才能认为发布完成。
 
+### 3.7 路线包（练习路线）
+
+页面：`https://roadtestgo.com/booking/routes`（无需登录即可查看，购买和打开链接需要登录）。
+
+**环境变量**（写入云端 `.env`，改完重启 `icbc-api`）：
+
+| 变量 | 说明 |
+|---|---|
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | 与执行次数付款共用 |
+| `STRIPE_ROUTE_PACK_PRICE_ID` | 路线包默认 Stripe Price ID（一次性 CAD 14.99）。不配置则页面显示“在线购买即将开放 / 联系我们”，checkout 返回 503 |
+| `ROUTE_PACK_PRICE_CENTS` | 页面显示价格，默认 `1499`；必须与 Stripe Price 金额一致（实际扣款以 Stripe Price 为准） |
+| `ROUTE_PACK_CURRENCY` | 默认 `cad` |
+| `ROUTE_PACKS_FILE` | 可选，路线包数据文件的绝对路径；默认 `backend/app/data/route_packs.json` |
+
+**配置 Stripe**：在 Stripe Dashboard 创建产品“路线包”和一次性价格 CAD 14.99，把 `price_...` 填入 `STRIPE_ROUTE_PACK_PRICE_ID`。Webhook 复用现有端点 `https://roadtestgo.com/api/payments/stripe/webhook`，已订阅的 `checkout.session.*` 事件即可，无需新端点。Stripe 未上线前，用管理后台“路线包授权”卡片（或 `POST /api/admin/route-packs/{slug}/grant`）手动开通。
+
+**新增考场 / 填真实链接**：编辑数据文件，在 `packs` 里加一项后重启 `icbc-api`（启动时会校验文件，格式错误服务会拒绝启动，发布后务必看 `systemctl is-active icbc-api`）：
+
+```json
+{
+  "slug": "richmond-5300",
+  "name": "ICBC Richmond (5300 No. 3 Rd)",
+  "name_zh": "ICBC 列治文考场",
+  "centre": "5300 No. 3 Rd, Richmond, BC",
+  "price_cents": 1499,
+  "currency": "cad",
+  "stripe_price_id": "",
+  "routes": [
+    { "title": "路线 1", "segments": [
+      { "label": "第 1 段", "url": "https://www.google.com/maps/dir/?api=1&origin=...&destination=...&waypoints=...&travelmode=driving" }
+    ] }
+  ]
+}
+```
+
+- `slug` 一经售出不要再改（购买记录按 slug 关联）。只能用小写字母、数字、连字符。
+- 每条路线 1–3 段，每段 `url` 必须是 `https://` 链接；Google 地图 App 链接最多 9 个途经点，超过就拆段。
+- `price_cents` / `currency` / `stripe_price_id` 可选，留空则用上面的环境变量；某个包要不同价格时，在 Stripe 建对应 Price 并同时填这两个字段。
+- 标题写成 `路线 N`、分段写成 `第 N 段` / `全程` 时，英文界面会自动显示为 Route N / Part N / Full route。
+- 仓库里的 `route_packs.json` 只有占位链接。真实链接如不想进 Git，可放到应用目录外（例如 `/etc/icbc-platform/route_packs.json`，属主 `icbc`，权限 `0640`），并设置 `ROUTE_PACKS_FILE`。注意不要放在 `/opt/icbc-platform/` 下，3.3 的 `rsync --delete` 会删掉它。
+
 ## 4. 本地 Docker worker
 
 ### 4.1 配置

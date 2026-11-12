@@ -3,7 +3,8 @@
 Base URL：`https://roadtestgo.com/api`
 
 ## 鉴权
-除 `/auth/*` 和 `/health` 外都需要 `Authorization: Bearer <access_token>` 头。
+除 `/auth/*`、`/health`、`GET /pos-list`、`GET /route-packs`、`GET /route-packs/{slug}` 和 Stripe webhook 外都需要 `Authorization: Bearer <access_token>` 头。
+`GET /route-packs[/{slug}]` 可匿名访问；带上 token 时会额外返回 `purchased`，token 无效时返回 401（前端据此刷新 token）。
 
 ## 认证
 
@@ -90,6 +91,56 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 ### GET /bookings/{id}
 ### POST /bookings/{id}/cancel
 
+## 路线包（练习路线）
+
+按考场售卖的练习路线包：每个包有若干路线，每条路线 1–3 段（Google 地图 App 链接最多 9 个途经点，长路线拆段），每段一个 Google 地图导航链接。包定义在后端数据文件（默认 `backend/app/data/route_packs.json`，见部署文档）。**链接只会通过 `/links` 返回给已购买的用户。**
+
+### GET /route-packs
+公开。返回所有路线包（不含链接）：
+```json
+[{
+  "slug": "burnaby-4399",
+  "name": "ICBC Burnaby Claim Centre (4399 Wayburne Dr)",
+  "name_zh": "ICBC 本拿比考场（4399 Wayburne Dr）",
+  "centre": "4399 Wayburne Dr, Burnaby, BC",
+  "price_cents": 1499,
+  "currency": "cad",
+  "route_count": 4,
+  "routes": [{ "title": "路线 1", "segment_count": 2 }],
+  "checkout_enabled": false,
+  "purchased": null
+}]
+```
+- `purchased`：匿名请求为 `null`；登录用户为 `true/false`（管理员收回后为 `false`）。
+- `checkout_enabled`：Stripe 密钥、Webhook 密钥和该包的 Price ID 都配置后才为 `true`；否则前端显示“即将开放 / 联系我们”。
+
+### GET /route-packs/{slug}
+同上，单个包。未知 slug 返回 404。
+
+### GET /route-packs/{slug}/links
+需登录。已购买返回：
+```json
+{ "slug": "burnaby-4399",
+  "routes": [{ "title": "路线 1", "segments": [{ "label": "第 1 段", "url": "https://www.google.com/maps/dir/?api=1&..." }] }] }
+```
+未购买或已被收回返回 `403`。
+
+### POST /route-packs/{slug}/checkout
+需登录。创建一次性付款（`mode=payment`）的 Stripe Checkout，返回 `{ "url", "session_id" }`，前端跳转到 `url`。
+- 未配置返回 `503`；已购买返回 `409`；未知 slug 返回 `404`；Stripe 出错返回 `502`。
+- 23 小时内未完成的同一包会话会被复用，不会重复创建。
+- Session metadata：`{ "kind": "route_pack", "pack_slug": "...", "user_id": "..." }`；PaymentIntent 带同样的 metadata。
+- 成功/取消后回到 `{APP_BASE_URL}{FRONTEND_BASE_PATH}/routes?pack=<slug>&checkout=success|cancelled`。
+
+## 付款（Stripe）
+
+### POST /payments/stripe/webhook
+Stripe 调用，校验 `Stripe-Signature`。处理 `checkout.session.completed`、`checkout.session.async_payment_succeeded`、`checkout.session.async_payment_failed`、`checkout.session.expired`：
+- metadata `kind=route_pack`：付款成功后为该用户开通路线包（每个用户每个包一条记录，重复投递幂等）。
+- 其它（`booking_id`）：原有执行次数流程，不变。
+
+`payment` 表新增 `kind`（`execution_pass` / `route_pack`）和 `product_ref`（路线包 slug）。
+
 ## Worker（共享密钥）
 
 ### POST /worker/claim
@@ -150,3 +201,18 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 
 ### DELETE /admin/users/{user_id}
 删除普通用户，并级联删除该用户的任务和加密凭据。管理员账号不允许通过此接口删除。
+
+### GET /admin/route-packs/purchases?limit=...
+返回路线包开通记录（含 `user_email`、`pack_slug`、`status`=`active|revoked`、`source`=`stripe|manual`）。
+
+### POST /admin/route-packs/{slug}/grant
+```json
+{ "email": "user@example.com" }
+```
+手动开通（线下收款或测试）。重复开通无副作用；对已收回的记录会重新激活。slug 或用户不存在返回 404。
+
+### POST /admin/route-packs/{slug}/revoke
+```json
+{ "email": "user@example.com" }
+```
+收回访问权（例如 Stripe 退款后需手动收回；本接口不会退款）。没有开通记录返回 404。
