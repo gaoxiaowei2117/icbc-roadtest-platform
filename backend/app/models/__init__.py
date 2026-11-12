@@ -4,11 +4,11 @@ from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.execution_pass import ExecutionPass, ExecutionPassStatus
 from app.models.payment import Payment, PaymentKind, PaymentProvider, PaymentRecordStatus
 from app.models.route_pack import (
-    RoutePackPurchase, RoutePackPurchaseSource, RoutePackPurchaseStatus,
+    RoutePackOpen, RoutePackPurchase, RoutePackPurchaseSource, RoutePackPurchaseStatus,
 )
 
 __all__ = [
     "User", "Secret", "Booking", "BookingStatus", "PaymentStatus",
     "ExecutionPass", "ExecutionPassStatus", "Payment", "PaymentKind", "PaymentProvider",
-    "PaymentRecordStatus", "RoutePackPurchase", "RoutePackPurchaseSource", "RoutePackPurchaseStatus",
+    "PaymentRecordStatus", "RoutePackOpen", "RoutePackPurchase", "RoutePackPurchaseSource", "RoutePackPurchaseStatus",
 ]

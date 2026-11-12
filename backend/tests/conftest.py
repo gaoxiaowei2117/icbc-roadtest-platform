@@ -47,7 +47,7 @@ def _clean():
     """每个测试前清空所有表，保证测试相互独立。"""
     with engine.begin() as conn:
         conn.exec_driver_sql(
-            'TRUNCATE route_pack_purchase, payment, execution_pass, secret, booking, "user" '
+            'TRUNCATE route_pack_open, route_pack_purchase, payment, execution_pass, secret, booking, "user" '
             'RESTART IDENTITY CASCADE'
         )
     yield

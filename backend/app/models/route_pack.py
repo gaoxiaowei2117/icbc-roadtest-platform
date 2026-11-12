@@ -68,3 +68,27 @@ class RoutePackPurchase(Base):
         "User", back_populates="route_pack_purchases", foreign_keys=[user_id]
     )
     payment: Mapped["Payment | None"] = relationship("Payment")  # noqa: F821
+
+
+class RoutePackOpen(Base):
+    """One row per click on "open navigation": who opened which route, from where.
+
+    Created when the buyer's page asks for a redirect token; `redirected_at` is set
+    when that token is used at /api/route-packs/go/<token>.
+    """
+
+    __tablename__ = "route_pack_open"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    pack_slug: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    route_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    segment_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    ip: Mapped[str | None] = mapped_column(String(64))
+    user_agent: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+    redirected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

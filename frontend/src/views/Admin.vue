@@ -14,7 +14,26 @@ type AdminUser = User & {
   has_secret: boolean
   available_execution_passes: number
   route_packs?: string[]
+  route_opens?: number
+  route_opens_last_at?: string | null
+  route_open_ips_24h?: number
 }
+
+/** Distinct IPs in 24 h at or above this: the account may be shared (shown, not blocked). */
+const SHARED_IP_WARN = 5
+
+type RoutePackOpen = {
+  id: number
+  user_email: string | null
+  pack_slug: string
+  route_title: string | null
+  route_index: number
+  ip: string | null
+  user_agent: string | null
+  created_at: string
+  redirected_at: string | null
+}
+const routePackOpens = ref<RoutePackOpen[]>([])
 
 const bookings = ref<Booking[]>([])
 const users = ref<AdminUser[]>([])
@@ -61,12 +80,14 @@ async function refresh() {
 }
 
 async function refreshRoutePacks() {
-  const [packs, purchases] = await Promise.all([
+  const [packs, purchases, opens] = await Promise.all([
     listRoutePacks(),
     api.get('/api/admin/route-packs/purchases', { params: { limit: 200 } }),
+    api.get('/api/admin/route-packs/opens', { params: { limit: 100 } }),
   ])
   routePacks.value = packs
   routePackPurchases.value = purchases.data
+  routePackOpens.value = opens.data
   if (!grantSlug.value && packs.length) grantSlug.value = packs[0].slug
 }
 
@@ -188,6 +209,7 @@ async function rejectPayment(booking: Booking) {
             <th>{{ tr('状态', 'Status') }}</th>
             <th>{{ tr('可用次数', 'Available passes') }}</th>
             <th>{{ tr('已购路线包', 'Route packs') }}</th>
+            <th>{{ tr('导航打开', 'Route opens') }}</th>
             <th>{{ tr('注册时间', 'Registered') }}</th>
             <th class="text-right">{{ tr('操作', 'Actions') }}</th>
           </tr>
@@ -207,6 +229,18 @@ async function rejectPayment(booking: Booking) {
               <td class="text-xs">
                 <span v-if="user.is_admin" class="text-purple-700">{{ tr('全部（管理员）', 'All (admin)') }}</span>
                 <span v-else-if="user.route_packs?.length">{{ user.route_packs.join(', ') }}</span>
+                <span v-else class="text-slate-400">—</span>
+              </td>
+              <td class="text-xs">
+                <template v-if="user.route_opens">
+                  <span>{{ user.route_opens }}</span>
+                  <span class="text-slate-400"> · {{ formatDateTime(user.route_opens_last_at ?? null) }}</span>
+                  <span
+                    v-if="(user.route_open_ips_24h ?? 0) >= SHARED_IP_WARN"
+                    class="badge bg-red-100 text-red-700 ml-1"
+                    :title="tr('24 小时内从很多不同 IP 打开，账号可能被共享', 'Opened from many IPs in 24 h: the account may be shared')"
+                  >{{ tr(`24h ${user.route_open_ips_24h} 个 IP`, `${user.route_open_ips_24h} IPs / 24h`) }}</span>
+                </template>
                 <span v-else class="text-slate-400">—</span>
               </td>
               <td>{{ formatDateTime(user.created_at) }}</td>
@@ -304,6 +338,37 @@ async function rejectPayment(booking: Booking) {
                 @click="changeRoutePack('grant', p.pack_slug, p.user_email)"
               >{{ tr('重新开通', 'Re-grant') }}</button>
             </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card overflow-x-auto">
+      <h2 class="text-lg font-semibold mb-1">{{ tr('最近打开导航', 'Recent Route Opens') }}</h2>
+      <p class="text-xs text-slate-500 mb-4">
+        {{ tr('买家每点一次"打开导航"记一条。跳转后 Google 地图里的链接仍可被复制，这里只用来看使用情况和发现共享账号。',
+              'One row per "Open navigation" tap. After the redirect the Google Maps link can still be copied; this is for usage and spotting shared accounts.') }}
+      </p>
+      <div v-if="!routePackOpens.length" class="text-sm text-slate-500 text-center py-4">{{ tr('暂无', 'None') }}</div>
+      <table v-else class="w-full text-sm">
+        <thead class="text-left text-slate-500 border-b">
+          <tr>
+            <th class="py-2">{{ tr('时间', 'Time') }}</th>
+            <th>{{ tr('邮箱', 'Email') }}</th>
+            <th>{{ tr('路线', 'Route') }}</th>
+            <th>IP</th>
+            <th>{{ tr('已跳转', 'Redirected') }}</th>
+            <th>{{ tr('设备', 'Device') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="o in routePackOpens" :key="o.id" class="border-b last:border-0">
+            <td class="py-2 whitespace-nowrap">{{ formatDateTime(o.created_at) }}</td>
+            <td>{{ o.user_email || '—' }}</td>
+            <td>{{ o.pack_slug }} · {{ o.route_title || `#${o.route_index + 1}` }}</td>
+            <td class="text-xs">{{ o.ip || '—' }}</td>
+            <td>{{ o.redirected_at ? tr('是', 'Yes') : tr('否', 'No') }}</td>
+            <td class="text-xs text-slate-500 max-w-xs truncate" :title="o.user_agent || ''">{{ o.user_agent || '—' }}</td>
           </tr>
         </tbody>
       </table>

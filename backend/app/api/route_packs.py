@@ -3,22 +3,28 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_optional_user
+from app.core import route_open
 from app.core import route_packs as catalog
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.core.ratelimit import limiter
 from app.crud import route_pack as route_pack_crud
+from app.crud import user as user_crud
 from app.models.payment import Payment, PaymentKind, PaymentProvider, PaymentRecordStatus
-from app.models.route_pack import RoutePackPurchaseSource
+from app.models.route_pack import RoutePackOpen, RoutePackPurchaseSource
 from app.models.user import User
 from app.schemas.payment import StripeCheckoutOut
 from app.schemas.route_pack import (
     RouteLinksOut,
+    RouteOpenIn,
+    RouteOpenOut,
     RoutePackCheckoutIn,
     RoutePackDef,
     RoutePackFacetsOut,
@@ -103,6 +109,41 @@ def route_pack_facets() -> RoutePackFacetsOut:
     return RoutePackFacetsOut.model_validate(catalog.facets(catalog.all_packs()))
 
 
+_GO_PAGE = """<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>roadtestgo</title>
+<style>body{{font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:15vh auto;padding:0 16px;color:#1e293b}}
+a{{color:#2563eb}}</style></head><body><p>{zh}</p><p>{en}</p>
+<p><a href="/">roadtestgo.com</a></p></body></html>"""
+
+
+def _go_error(code: int, zh: str, en: str) -> HTMLResponse:
+    return HTMLResponse(_GO_PAGE.format(zh=zh, en=en), status_code=code, headers={"Cache-Control": "no-store"})
+
+
+# Declared before /{slug} routes. No login header here: the browser (or the phone handing
+# the link to Google Maps) just follows it, so the signed token carries who and what.
+@router.get("/go/{token}", include_in_schema=False)
+def follow_route_link(token: str, db: Session = Depends(get_db)):
+    claims = route_open.decode_token(token)
+    if claims is None:
+        return _go_error(410, "链接已过期，请回到网站重新点「打开导航」。",
+                         "This link has expired. Go back to the site and tap “Open navigation” again.")
+    pack = catalog.get_pack(claims["slug"])
+    user = user_crud.get_by_id(db, claims["user_id"])
+    if pack is None or user is None or not user.is_active or not route_pack_crud.user_can_open(db, user, pack.slug):
+        return _go_error(403, "这个账号已经不能打开这条路线。", "This account can no longer open this route.")
+    try:
+        url = pack.routes[claims["route_index"]].segments[claims["segment_index"]].url
+    except IndexError:
+        return _go_error(404, "这条路线已经更新，请回到网站重新打开。", "This route has changed. Go back to the site and open it again.")
+    log = db.get(RoutePackOpen, claims["open_id"])
+    if log is not None and log.redirected_at is None:
+        log.redirected_at = datetime.now(timezone.utc)
+        db.commit()
+    # 302 + no-store: never cached, so a changed link in the data file applies at once.
+    return RedirectResponse(url, status_code=302, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+
+
 @router.get("/{slug}", response_model=RoutePackOut)
 def get_route_pack(
     slug: str,
@@ -128,10 +169,43 @@ def get_route_pack_links(
         routes=[
             RouteLinksOut(
                 title=route.title,
-                segments=[RouteSegmentOut(label=s.label, url=s.url) for s in route.segments],
+                segments=[RouteSegmentOut(label=s.label) for s in route.segments],
             )
             for route in pack.routes
         ],
+    )
+
+
+@router.post("/{slug}/open", response_model=RouteOpenOut)
+@limiter.limit("120/hour")
+def open_route(
+    request: Request,
+    slug: str,
+    payload: RouteOpenIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RouteOpenOut:
+    """Log a click on "open navigation" and hand back a short-lived redirect URL."""
+    pack = _pack_or_404(slug)
+    if not route_pack_crud.user_can_open(db, user, slug):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "尚未购买该路线包")
+    if payload.route >= len(pack.routes) or payload.segment >= len(pack.routes[payload.route].segments):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "路线不存在")
+    log = RoutePackOpen(
+        user_id=user.id,
+        pack_slug=slug,
+        route_index=payload.route,
+        segment_index=payload.segment,
+        ip=route_open.client_ip(request),
+        user_agent=(request.headers.get("user-agent") or "")[:300] or None,
+    )
+    db.add(log)
+    db.commit()
+    token = route_open.create_token(log.id, user.id, slug, payload.route, payload.segment)
+    prefix = get_settings().api_v1_prefix
+    return RouteOpenOut(
+        url=f"{prefix}/route-packs/go/{token}",
+        expires_in=int(route_open.TOKEN_TTL.total_seconds()),
     )
 
 

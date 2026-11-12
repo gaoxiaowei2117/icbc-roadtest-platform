@@ -155,8 +155,35 @@ class RoutePackFacetsOut(BaseModel):
 
 
 class RouteSegmentOut(BaseModel):
+    """A segment a buyer can open. The Google Maps link itself is never sent to the
+    browser: use POST /{slug}/open to get a short-lived redirect URL instead."""
     label: str
+
+
+class RouteOpenIn(BaseModel):
+    route: int = Field(ge=0, le=99)
+    segment: int = Field(default=0, ge=0, le=2)
+
+
+class RouteOpenOut(BaseModel):
+    # Path on this site, e.g. "/api/route-packs/go/<token>"; valid for `expires_in` seconds.
     url: str
+    expires_in: int
+
+
+class RoutePackOpenOut(BaseModel):
+    """Admin view of one "open navigation" click."""
+    id: int
+    user_id: int
+    user_email: str | None = None
+    pack_slug: str
+    route_index: int
+    route_title: str | None = None
+    segment_index: int
+    ip: str | None
+    user_agent: str | None
+    created_at: datetime
+    redirected_at: datetime | None
 
 
 class RouteLinksOut(BaseModel):

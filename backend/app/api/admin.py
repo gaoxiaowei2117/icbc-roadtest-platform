@@ -1,4 +1,6 @@
 """/api/admin/* admin 角色专属：查看所有任务、管理用户和路线包授权。"""
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -13,8 +15,10 @@ from app.models.booking import BookingStatus, PaymentStatus
 from app.models.execution_pass import ExecutionPass, ExecutionPassStatus
 from app.models.user import User
 from app.schemas.booking import AdminBookingOut, BookingOut, PaymentReviewIn
-from app.models.route_pack import RoutePackPurchase, RoutePackPurchaseSource, RoutePackPurchaseStatus
-from app.schemas.route_pack import RoutePackGrantIn, RoutePackPurchaseOut
+from app.models.route_pack import (
+    RoutePackOpen, RoutePackPurchase, RoutePackPurchaseSource, RoutePackPurchaseStatus,
+)
+from app.schemas.route_pack import RoutePackGrantIn, RoutePackOpenOut, RoutePackPurchaseOut
 from app.schemas.user import AdminUserOut, UserPublic
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -107,6 +111,22 @@ def list_all_users(
         ).all()
         for uid, slug in rows:
             packs_by_user.setdefault(uid, []).append(slug)
+    opens: dict[int, tuple[int, datetime | None]] = {}
+    ips_24h: dict[int, int] = {}
+    if user_ids:
+        for uid, count, last in db.execute(
+            select(RoutePackOpen.user_id, func.count(RoutePackOpen.id), func.max(RoutePackOpen.created_at))
+            .where(RoutePackOpen.user_id.in_(user_ids))
+            .group_by(RoutePackOpen.user_id)
+        ).all():
+            opens[uid] = (count, last)
+        since = datetime.now(timezone.utc) - timedelta(hours=24)
+        for uid, n in db.execute(
+            select(RoutePackOpen.user_id, func.count(func.distinct(RoutePackOpen.ip)))
+            .where(RoutePackOpen.user_id.in_(user_ids), RoutePackOpen.created_at >= since)
+            .group_by(RoutePackOpen.user_id)
+        ).all():
+            ips_24h[uid] = n
     return [
         AdminUserOut(
             **UserPublic.model_validate(user).model_dump(),
@@ -115,6 +135,9 @@ def list_all_users(
             has_secret=user.secret is not None,
             available_execution_passes=available_passes.get(user.id, 0),
             route_packs=packs_by_user.get(user.id, []),
+            route_opens=opens.get(user.id, (0, None))[0],
+            route_opens_last_at=opens.get(user.id, (0, None))[1],
+            route_open_ips_24h=ips_24h.get(user.id, 0),
         )
         for user in users
     ]
@@ -149,6 +172,39 @@ def list_route_pack_purchases(
     db: Session = Depends(get_db),
 ) -> list:
     return [_purchase_out(p) for p in route_pack_crud.list_all(db, limit=limit)]
+
+
+@router.get("/route-packs/opens", response_model=list[RoutePackOpenOut])
+def list_route_pack_opens(
+    limit: int = Query(default=200, ge=1, le=1000),
+    user_id: int | None = Query(default=None),
+    _admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+) -> list:
+    """最近的"打开导航"记录（谁、哪条路线、什么时候、从哪个 IP）。"""
+    stmt = (
+        select(RoutePackOpen, User.email)
+        .join(User, User.id == RoutePackOpen.user_id)
+        .order_by(RoutePackOpen.created_at.desc(), RoutePackOpen.id.desc())
+        .limit(limit)
+    )
+    if user_id is not None:
+        stmt = stmt.where(RoutePackOpen.user_id == user_id)
+    out = []
+    for log, email in db.execute(stmt).all():
+        pack = route_pack_catalog.get_pack(log.pack_slug)
+        title = (
+            pack.routes[log.route_index].title
+            if pack is not None and log.route_index < len(pack.routes)
+            else None
+        )
+        out.append(RoutePackOpenOut(
+            id=log.id, user_id=log.user_id, user_email=email, pack_slug=log.pack_slug,
+            route_index=log.route_index, route_title=title, segment_index=log.segment_index,
+            ip=log.ip, user_agent=log.user_agent, created_at=log.created_at,
+            redirected_at=log.redirected_at,
+        ))
+    return out
 
 
 @router.post("/route-packs/{slug}/grant", response_model=RoutePackPurchaseOut)

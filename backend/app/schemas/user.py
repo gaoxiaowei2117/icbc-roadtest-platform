@@ -38,6 +38,10 @@ class AdminUserOut(UserPublic):
     has_secret: bool
     available_execution_passes: int
     route_packs: list[str] = []  # slugs of active route-pack purchases
+    # "Open navigation" clicks (route-pack redirect links)
+    route_opens: int = 0
+    route_opens_last_at: datetime | None = None
+    route_open_ips_24h: int = 0  # distinct IPs in the last 24 h; many = the account may be shared
 
 
 class UserUpdate(ProfileFields):

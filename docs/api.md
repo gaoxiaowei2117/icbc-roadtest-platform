@@ -94,7 +94,7 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 
 ## 路线包（练习路线）
 
-按考场售卖的练习路线包：每个包有若干路线，每条路线通常一段（`全程`），最多 3 段，每段一个 Google 地图导航链接。包定义在后端数据文件（生产为 `ROUTE_PACKS_FILE` 指向的服务器私有文件；仓库内 `backend/app/data/route_packs.json` 只有占位链接，见部署文档）。**链接只会通过 `/links` 返回给已购买的用户。**
+按考场售卖的练习路线包：每个包有若干路线，每条路线通常一段（`全程`），最多 3 段，每段一个 Google 地图导航链接。包定义在后端数据文件（生产为 `ROUTE_PACKS_FILE` 指向的服务器私有文件；仓库内 `backend/app/data/route_packs.json` 只有占位链接，见部署文档）。**Google 地图链接从不发给浏览器**：已购买的用户点"打开导航"时调用 `POST /{slug}/open`，拿到几分钟内有效的中转地址 `/route-packs/go/<token>`，由服务器 302 跳转到数据文件里当前的链接，并记一条打开记录。
 
 ### GET /route-packs?country=&region=&q=
 公开。返回路线包（不含链接）。查询参数都可选，不带参数返回全部（与之前一致）：
@@ -152,12 +152,23 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 同上，单个包。未知 slug 返回 404。
 
 ### GET /route-packs/{slug}/links
-需登录。已购买返回：
+需登录。已购买返回路线和分段名（**不含链接**）：
 ```json
 { "slug": "burnaby-4399",
-  "routes": [{ "title": "路线 1", "segments": [{ "label": "第 1 段", "url": "https://www.google.com/maps/dir/?api=1&..." }] }] }
+  "routes": [{ "title": "路线 1", "segments": [{ "label": "全程" }] }] }
 ```
 未购买或已被收回返回 `403`。
+
+### POST /route-packs/{slug}/open
+需登录，限速 120 次/小时/IP。请求 `{ "route": 0, "segment": 0 }`（下标从 0 开始，`segment` 可省略）。已购买（或管理员）时记一条打开记录（用户、路线、IP、User-Agent），返回：
+```json
+{ "url": "/api/route-packs/go/<token>", "expires_in": 300 }
+```
+前端随即 `window.location` 到这个地址。未购买 `403`，路线或分段不存在 `404`。
+
+### GET /route-packs/go/{token}
+不需要登录头（浏览器或手机直接跟随）。令牌签名有效、未过期（5 分钟）、用户仍有权限时 `302` 跳转到数据文件里**当前**的 Google 地图链接（`Cache-Control: no-store`），并标记该打开记录已跳转。令牌无效或过期 `410`，权限已收回 `403`，路线已删 `404`，都返回一个简短的中英文提示页。令牌用 `JWT_SECRET` 派生的独立密钥签名，不能当登录令牌用。
+跳转后 Google 地图里的链接仍可被复制，这一层只防随手转发，主要用来统计使用和停用账号。
 
 ### POST /route-packs/{slug}/checkout
 需登录。创建一次性付款（`mode=payment`）的 Stripe Checkout，返回 `{ "url", "session_id" }`，前端跳转到 `url`。
@@ -239,6 +250,9 @@ Stripe 调用，校验 `Stripe-Signature`。处理 `checkout.session.completed`�
 
 ### GET /admin/route-packs/purchases?limit=...
 返回路线包开通记录（含 `user_email`、`pack_slug`、`status`=`active|revoked`、`source`=`stripe|manual`）。
+
+### GET /admin/route-packs/opens?limit=&user_id=
+最近的"打开导航"记录（默认 200，最多 1000），含 `user_email`、`pack_slug`、`route_index`、`route_title`、`ip`、`user_agent`、`created_at`、`redirected_at`。`GET /admin/users` 每个用户另有 `route_opens`（总次数）、`route_opens_last_at`、`route_open_ips_24h`（24 小时内不同 IP 数，后台 ≥ 5 时标红提示可能共享账号）。
 
 ### POST /admin/route-packs/{slug}/grant
 ```json

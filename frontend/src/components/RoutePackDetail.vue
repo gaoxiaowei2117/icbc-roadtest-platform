@@ -2,7 +2,7 @@
 // One test centre's pack: overview images, segments, buy / open buttons.
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { createRoutePackCheckout, getRoutePack, getRoutePackLinks, type RoutePack, type RouteSummary } from '@/api/routePacks'
+import { createRoutePackCheckout, getRoutePack, openRoute, type RoutePack, type RouteSummary } from '@/api/routePacks'
 import { SITE } from '@/site'
 import { useAuthStore } from '@/stores/auth'
 import { SUPPORT_EMAIL } from '@/config/support'
@@ -188,11 +188,10 @@ async function onOpenSegment(pack: RoutePack, routeIndex: number, segmentIndex: 
   opening.value = key
   error.value = ''
   try {
-    // Fetched on demand so the links never sit in the page or its URL.
-    const links = await getRoutePackLinks(pack.slug)
-    const url = links.routes[routeIndex]?.segments[segmentIndex]?.url
-    if (!url) throw new Error('missing link')
-    // Same tab: on phones this hands off to the Google Maps app.
+    // The server checks the purchase, logs the click and returns a few-minutes redirect URL
+    // (/api/route-packs/go/<token>) that forwards to Google Maps; the link never sits in the page.
+    const { url } = await openRoute(pack.slug, routeIndex, segmentIndex)
+    // Same tab: on phones the redirect hands off to the Google Maps app.
     window.location.assign(url)
   } catch (e: any) {
     error.value = apiError(e, '打开导航失败', 'Could not open navigation')

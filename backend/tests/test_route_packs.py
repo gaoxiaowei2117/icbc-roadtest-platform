@@ -11,6 +11,7 @@ from app.models.booking import Booking, BookingStatus, PaymentStatus
 from app.models.execution_pass import ExecutionPass
 from app.models.payment import Payment, PaymentKind, PaymentRecordStatus
 from app.models.route_pack import (
+    RoutePackOpen,
     RoutePackPurchase,
     RoutePackPurchaseSource,
     RoutePackPurchaseStatus,
@@ -176,8 +177,7 @@ def test_links_forbidden_before_purchase_and_allowed_after(client, auth_headers,
     assert body["slug"] == SLUG
     assert [r["title"] for r in body["routes"]] == ["路线 1", "路线 2", "路线 3", "路线 4 · 上高速线"]
     first = body["routes"][0]["segments"][0]
-    assert first["label"] == "全程"
-    assert first["url"].startswith("https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=")
+    assert first == {"label": "全程"}  # the Google Maps link never reaches the browser
 
 
 def test_links_forbidden_for_other_users_and_after_revoke(client, auth_headers, db):
@@ -516,7 +516,11 @@ def test_admin_opens_every_pack_without_buying(client, auth_headers, db):
     assert client.get(f"/api/route-packs/{SLUG}", headers=admin).json()["purchased"] is True
     links = client.get(f"/api/route-packs/{SLUG}/links", headers=admin)
     assert links.status_code == 200
-    assert links.json()["routes"][0]["segments"][0]["url"].startswith("https://www.google.com/maps/")
+    opened = client.post(f"/api/route-packs/{SLUG}/open", headers=admin, json={"route": 0})
+    assert opened.status_code == 200
+    go = client.get(opened.json()["url"], follow_redirects=False)
+    assert go.status_code == 302
+    assert go.headers["location"].startswith("https://www.google.com/maps/")
     # No purchase record was created for the admin.
     assert db.query(RoutePackPurchase).count() == 0
 
@@ -530,3 +534,111 @@ def test_admin_user_list_shows_route_packs(client, auth_headers, db):
     users = {u["email"]: u for u in client.get("/api/admin/users", headers=admin).json()}
     assert users["buyer@gmail.com"]["route_packs"] == [SLUG]
     assert users["other@gmail.com"]["route_packs"] == []
+
+
+# ---- redirect links (open navigation) --------------------------------------------
+
+def _open(client, headers, route=0, segment=0, slug=SLUG, **kw):
+    return client.post(f"/api/route-packs/{slug}/open", headers=headers,
+                       json={"route": route, "segment": segment}, **kw)
+
+
+def test_open_requires_login_and_purchase(client, auth_headers, db):
+    assert client.post(f"/api/route-packs/{SLUG}/open", json={"route": 0}).status_code == 401
+    headers = auth_headers(email="buyer@gmail.com")
+    assert _open(client, headers).status_code == 403
+    assert db.query(RoutePackOpen).count() == 0
+
+
+def test_open_logs_and_redirects_to_current_link(client, auth_headers, db):
+    headers = auth_headers(email="buyer@gmail.com")
+    user = _grant(db, "buyer@gmail.com")
+    response = client.post(
+        f"/api/route-packs/{SLUG}/open", json={"route": 3},
+        headers={**headers, "User-Agent": "test-phone", "CF-Connecting-IP": "203.0.113.7"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["url"].startswith("/api/route-packs/go/")
+    assert body["expires_in"] == 300
+    assert "google" not in body["url"]
+
+    log = db.query(RoutePackOpen).one()
+    assert (log.user_id, log.pack_slug, log.route_index, log.segment_index) == (user.id, SLUG, 3, 0)
+    assert (log.ip, log.user_agent, log.redirected_at) == ("203.0.113.7", "test-phone", None)
+
+    go = client.get(body["url"], follow_redirects=False)
+    assert go.status_code == 302
+    expected = catalog.get_pack(SLUG).routes[3].segments[0].url
+    assert go.headers["location"] == expected
+    assert go.headers["cache-control"] == "no-store"
+    db.refresh(log)
+    assert log.redirected_at is not None
+
+
+def test_open_rejects_unknown_route_or_segment(client, auth_headers, db):
+    headers = auth_headers(email="buyer@gmail.com")
+    _grant(db, "buyer@gmail.com")
+    assert _open(client, headers, route=99).status_code == 404
+    assert _open(client, headers, route=0, segment=2).status_code == 404
+    assert _open(client, headers, slug="nowhere").status_code == 404
+
+
+def test_go_rejects_bad_expired_and_login_tokens(client, auth_headers, db, monkeypatch):
+    from datetime import timedelta
+    from app.core import route_open
+    from app.core.security import create_access_token
+
+    headers = auth_headers(email="buyer@gmail.com")
+    user = _grant(db, "buyer@gmail.com")
+    assert client.get("/api/route-packs/go/not-a-token", follow_redirects=False).status_code == 410
+    # A login token is not a redirect token (different key).
+    login = create_access_token(user.id)
+    assert client.get(f"/api/route-packs/go/{login}", follow_redirects=False).status_code == 410
+    # Expired
+    monkeypatch.setattr(route_open, "TOKEN_TTL", timedelta(seconds=-1))
+    url = _open(client, headers).json()["url"]
+    response = client.get(url, follow_redirects=False)
+    assert response.status_code == 410
+    assert "过期" in response.text
+
+
+def test_go_stops_working_after_revoke(client, auth_headers, db):
+    headers = auth_headers(email="buyer@gmail.com")
+    user = _grant(db, "buyer@gmail.com")
+    url = _open(client, headers).json()["url"]
+    purchase = db.query(RoutePackPurchase).filter_by(user_id=user.id).one()
+    purchase.status = RoutePackPurchaseStatus.revoked
+    db.commit()
+    assert client.get(url, follow_redirects=False).status_code == 403
+
+
+def test_go_follows_the_data_file_when_links_change(client, auth_headers, db, monkeypatch):
+    headers = auth_headers(email="buyer@gmail.com")
+    _grant(db, "buyer@gmail.com")
+    url = _open(client, headers, route=1).json()["url"]
+    pack = catalog.get_pack(SLUG)
+    seg = pack.routes[1].segments[0]
+    monkeypatch.setattr(seg, "url", "https://www.google.com/maps/dir/49.1,-123.1/49.2,-123.2/")
+    go = client.get(url, follow_redirects=False)
+    assert go.headers["location"] == "https://www.google.com/maps/dir/49.1,-123.1/49.2,-123.2/"
+
+
+def test_admin_sees_open_counts_and_log(client, auth_headers, db):
+    buyer = auth_headers(email="buyer@gmail.com")
+    auth_headers(email="other@gmail.com")
+    _grant(db, "buyer@gmail.com")
+    for ip in ("198.51.100.1", "198.51.100.2", "198.51.100.2"):
+        client.post(f"/api/route-packs/{SLUG}/open", json={"route": 2},
+                    headers={**buyer, "CF-Connecting-IP": ip})
+    admin = _make_admin(client, auth_headers, db)
+    users = {u["email"]: u for u in client.get("/api/admin/users", headers=admin).json()}
+    assert users["buyer@gmail.com"]["route_opens"] == 3
+    assert users["buyer@gmail.com"]["route_open_ips_24h"] == 2
+    assert users["buyer@gmail.com"]["route_opens_last_at"] is not None
+    assert users["other@gmail.com"]["route_opens"] == 0
+
+    log = client.get("/api/admin/route-packs/opens", headers=admin).json()
+    assert len(log) == 3
+    assert log[0]["user_email"] == "buyer@gmail.com"
+    assert log[0]["route_title"] == "路线 3"
+    assert client.get("/api/admin/route-packs/opens", headers=buyer).status_code == 403

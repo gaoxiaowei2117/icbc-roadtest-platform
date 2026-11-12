@@ -34,9 +34,10 @@ export interface RouteSummary {
   note_zh: string | null
 }
 
-export interface RoutePackLinks {
-  slug: string
-  routes: { title: string; segments: { label: string; url: string }[] }[]
+export interface RouteOpen {
+  /** Path on this site (/api/route-packs/go/<token>) that redirects to Google Maps; valid for `expires_in` seconds. */
+  url: string
+  expires_in: number
 }
 
 export interface RoutePackFilters {
@@ -63,9 +64,12 @@ export async function getRoutePackFacets(): Promise<RoutePackFacets> {
   return (await api.get('/api/route-packs/facets')).data
 }
 
-/** Only succeeds for users who bought the pack; the links are never part of the page itself. */
-export async function getRoutePackLinks(slug: string): Promise<RoutePackLinks> {
-  return (await api.get(`/api/route-packs/${encodeURIComponent(slug)}/links`)).data
+/**
+ * Only succeeds for users who bought the pack. The server logs the click and returns a
+ * short-lived redirect URL; the Google Maps link itself never reaches the page.
+ */
+export async function openRoute(slug: string, route: number, segment = 0): Promise<RouteOpen> {
+  return (await api.post(`/api/route-packs/${encodeURIComponent(slug)}/open`, { route, segment })).data
 }
 
 /** `site` picks the Stripe return page (this site); the server maps it to a fixed URL. */
