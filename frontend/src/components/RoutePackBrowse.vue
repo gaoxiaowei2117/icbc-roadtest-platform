@@ -122,8 +122,8 @@ function groupTitle(g: { country: string; region: string }) {
           enterkeyhint="search"
         />
       </label>
-      <div class="grid gap-3" :class="multiCountry ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'">
-        <select v-if="multiCountry" class="input" :value="country" :aria-label="tr('国家', 'Country')" @change="onCountry">
+      <div class="grid grid-cols-2 gap-3">
+        <select class="input" :value="country" :aria-label="tr('国家', 'Country')" @change="onCountry">
           <option value="">{{ tr('全部国家', 'All countries') }}</option>
           <option v-for="c in facets.countries" :key="c.code" :value="c.code">{{ countryName(c.code) }} ({{ c.count }})</option>
         </select>

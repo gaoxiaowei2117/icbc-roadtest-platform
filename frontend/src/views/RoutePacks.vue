@@ -3,7 +3,7 @@
 //   ?centre=<slug>                 → that centre's detail (shareable)
 //   ?country=&region=&q=           → browse view filters
 //   ?pack=<slug>&checkout=success  → Stripe return; rewritten to ?centre=<slug>
-// With exactly one pack and no filters the page goes straight to its detail.
+// Without ?centre the browse view (search + country/region filters) is always shown, even with one pack.
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import { getRoutePackFacets, listRoutePacks, type RoutePackFacets } from '@/api/routePacks'
@@ -24,8 +24,8 @@ const checkout = ref<{ slug: string; status: 'success' | 'cancelled' } | null>(n
 
 const centre = computed(() => str(route.query.centre))
 const hasFilters = computed(() => !!(route.query.country || route.query.region || route.query.q))
-const detailSlug = computed(() => centre.value || (onlySlug.value && !hasFilters.value ? onlySlug.value : ''))
-const canBrowse = computed(() => (facets.value?.total ?? 0) > 1)
+const detailSlug = computed(() => centre.value)
+const canBrowse = computed(() => true)
 
 function backToList() {
   const query: LocationQueryRaw = { ...route.query }
