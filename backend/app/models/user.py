@@ -51,3 +51,7 @@ class User(Base):
     payments: Mapped[list["Payment"]] = relationship(  # noqa: F821
         "Payment", back_populates="user", cascade="all, delete-orphan"
     )
+    route_pack_purchases: Mapped[list["RoutePackPurchase"]] = relationship(  # noqa: F821
+        "RoutePackPurchase", back_populates="user", cascade="all, delete-orphan",
+        foreign_keys="RoutePackPurchase.user_id",
+    )

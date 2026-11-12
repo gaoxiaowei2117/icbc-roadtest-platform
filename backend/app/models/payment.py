@@ -1,4 +1,4 @@
-"""Payment records for manual and Stripe execution-pass purchases."""
+"""Payment records for manual and Stripe purchases (execution passes, route packs)."""
 import enum
 from datetime import datetime
 
@@ -12,6 +12,12 @@ from app.core.database import Base
 class PaymentProvider(str, enum.Enum):
     stripe = "stripe"
     manual = "manual"
+
+
+class PaymentKind(str, enum.Enum):
+    """What a payment buys. Existing rows are execution passes tied to a booking."""
+    execution_pass = "execution_pass"
+    route_pack = "route_pack"
 
 
 class PaymentRecordStatus(str, enum.Enum):
@@ -37,6 +43,15 @@ class Payment(Base):
         SAEnum(PaymentProvider, name="payment_provider", native_enum=False, length=20),
         nullable=False,
     )
+    kind: Mapped[PaymentKind] = mapped_column(
+        SAEnum(PaymentKind, name="payment_kind", native_enum=False, length=20),
+        default=PaymentKind.execution_pass,
+        server_default=PaymentKind.execution_pass.value,
+        nullable=False,
+        index=True,
+    )
+    # Product identifier for non-booking purchases, e.g. the route pack slug.
+    product_ref: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[PaymentRecordStatus] = mapped_column(
         SAEnum(
             PaymentRecordStatus,
