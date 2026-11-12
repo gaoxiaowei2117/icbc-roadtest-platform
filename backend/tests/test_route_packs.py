@@ -101,10 +101,30 @@ def test_anonymous_listing_has_no_links_and_no_purchase_flag(client):
     assert pack["price_cents"] == 1499
     assert pack["currency"] == "cad"
     assert pack["route_count"] == 4
-    assert pack["routes"][0] == {"title": "路线 1", "segment_count": 2}
+    assert pack["routes"][0] == {
+        "title": "路线 1",
+        "segment_count": 2,
+        "segments": [
+            {"label": "第 1 段", "from": "centre", "to": "Sussex Ave"},
+            {"label": "第 2 段", "from": "Sussex Ave", "to": "centre"},
+        ],
+        "preview": "route-previews/burnaby-4399/route1.jpg",
+        "note": None,
+        "note_zh": None,
+    }
     assert pack["checkout_enabled"] is False
     assert "google.com/maps" not in response.text
-    assert "google.com/maps" not in response.text
+
+
+def test_public_listing_includes_segment_ends_and_route_note(client):
+    pack = client.get(f"/api/route-packs/{SLUG}").json()
+    highway = pack["routes"][3]
+    assert [(s["from"], s["to"]) for s in highway["segments"]] == [
+        ("centre", "Smith Ave"), ("Smith Ave", "Exit 32 (Laurel St)"), ("Laurel St", "centre"),
+    ]
+    assert "Carleton Ave" in pack["routes"][2]["note"]
+    assert "Carleton Ave" in pack["routes"][2]["note_zh"]
+    assert all(r["preview"] for r in pack["routes"])
 
 
 def test_listing_shows_purchased_for_authenticated_user(client, auth_headers, db):
@@ -219,6 +239,45 @@ def test_checkout_creates_stripe_session(client, auth_headers, db, stripe_config
     again = client.post(f"/api/route-packs/{SLUG}/checkout", headers=headers)
     assert again.json()["session_id"] == "cs_test_route_pack"
     assert len(calls) == 1
+
+
+def test_checkout_from_route_site_returns_to_root(
+    client, auth_headers, db, stripe_configured, monkeypatch
+):
+    headers = auth_headers(email="buyer@gmail.com")
+    calls = []
+
+    def fake_create(**kwargs):
+        calls.append(kwargs)
+        n = len(calls)
+        return type("S", (), {"id": f"cs_site_{n}", "url": f"https://checkout.stripe.test/{n}"})()
+
+    monkeypatch.setattr("app.api.route_packs.stripe.checkout.Session.create", fake_create)
+    root = client.post(f"/api/route-packs/{SLUG}/checkout", headers=headers, json={"site": "routes"})
+    assert root.status_code == 200
+    base = stripe_configured.app_base_url
+    assert calls[0]["success_url"] == (
+        f"{base}/?pack={SLUG}&checkout=success&session_id={{CHECKOUT_SESSION_ID}}"
+    )
+    assert calls[0]["cancel_url"] == f"{base}/?pack={SLUG}&checkout=cancelled"
+
+    # The booking site gets its own session (different return URL) ...
+    booking = client.post(f"/api/route-packs/{SLUG}/checkout", headers=headers, json={"site": "booking"})
+    assert booking.json()["session_id"] == "cs_site_2"
+    assert calls[1]["success_url"].startswith(f"{base}{stripe_configured.frontend_base_path}/routes?")
+    # ... and each site reuses its own open session.
+    again = client.post(f"/api/route-packs/{SLUG}/checkout", headers=headers, json={"site": "routes"})
+    assert again.json()["session_id"] == "cs_site_1"
+    assert len(calls) == 2
+
+
+def test_checkout_rejects_unknown_site(client, auth_headers, stripe_configured):
+    headers = auth_headers(email="buyer@gmail.com")
+    response = client.post(
+        f"/api/route-packs/{SLUG}/checkout", headers=headers,
+        json={"site": "https://evil.example"},
+    )
+    assert response.status_code == 422
 
 
 def test_checkout_uses_per_pack_price_override(client, auth_headers, stripe_configured, monkeypatch):

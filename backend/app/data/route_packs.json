@@ -11,56 +11,80 @@
       "routes": [
         {
           "title": "路线 1",
+          "preview": "route-previews/burnaby-4399/route1.jpg",
           "segments": [
             {
               "label": "第 1 段",
+              "from": "centre",
+              "to": "Sussex Ave",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.233400,-122.997797&waypoints=49.243983,-122.999450%7C49.243979,-122.998214%7C49.241735,-122.998165%7C49.242850,-123.003417%7C49.235400,-123.003347%7C49.235401,-122.994313%7C49.233439,-122.994296"
             },
             {
               "label": "第 2 段",
+              "from": "Sussex Ave",
+              "to": "centre",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.233400,-122.997797&destination=49.244979,-122.999504&waypoints=49.232433,-122.997784%7C49.232443,-122.994248%7C49.235405,-122.994283%7C49.235430,-123.003330%7C49.242908,-123.003150%7C49.241780,-122.998011%7C49.245185,-122.998327%7C49.245175,-122.999408"
             }
           ]
         },
         {
           "title": "路线 2",
+          "preview": "route-previews/burnaby-4399/route2.jpg",
           "segments": [
             {
               "label": "第 1 段",
+              "from": "centre",
+              "to": "Price Cres",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.238610,-123.009900&waypoints=49.243983,-122.999450%7C49.243979,-122.998214%7C49.241735,-122.998165%7C49.242999,-123.013440%7C49.241317,-123.013541%7C49.238060,-123.006870"
             },
             {
               "label": "第 2 段",
+              "from": "Price Cres",
+              "to": "centre",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.238610,-123.009900&destination=49.244979,-122.999504&waypoints=49.236940,-123.011000%7C49.237100,-123.003300%7C49.242908,-123.003150%7C49.241780,-122.998011%7C49.245037,-122.998076%7C49.245175,-122.999408"
             }
           ]
         },
         {
           "title": "路线 3",
+          "preview": "route-previews/burnaby-4399/route3.jpg",
+          "note": "In Google Maps this route skips a short Carleton Ave → Fir St loop; follow the overview map for that part.",
+          "note_zh": "Google 地图导航在 Carleton Ave → Fir St 一小段与考试路线不同，这段请按地图概览图行驶。",
           "segments": [
             {
               "label": "第 1 段",
+              "from": "centre",
+              "to": "Gilmore Ave",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.257180,-123.012150&waypoints=49.243983,-122.999450%7C49.243979,-122.998214%7C49.241735,-122.998165%7C49.245800,-123.019780%7C49.254600,-123.019728%7C49.254648,-123.014045%7C49.257100,-123.013970"
             },
             {
               "label": "第 2 段",
+              "from": "Gilmore Ave",
+              "to": "centre",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.257180,-123.012150&destination=49.244979,-122.999504&waypoints=49.254731,-123.010760%7C49.254564,-123.004557%7C49.242942,-123.003372%7C49.241610,-122.998310%7C49.245062,-122.998096%7C49.245140,-122.999453"
             }
           ]
         },
         {
           "title": "路线 4 · 上高速线",
+          "preview": "route-previews/burnaby-4399/route4.jpg",
           "segments": [
             {
               "label": "第 1 段",
+              "from": "centre",
+              "to": "Smith Ave",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244640,-122.999491&destination=49.238062,-123.019360&waypoints=49.243650,-122.998170%7C49.241708,-122.998660%7C49.242763,-123.003420%7C49.238567,-123.003899%7C49.237734,-123.006106%7C49.236934,-123.006295%7C49.237317,-123.019889"
             },
             {
               "label": "第 2 段",
+              "from": "Smith Ave",
+              "to": "Exit 32 (Laurel St)",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.238062,-123.019360&destination=49.253077,-122.976504&waypoints=49.238363,-123.015856%7C49.238397,-123.015333%7C49.238727,-123.013509%7C49.242968,-123.012956%7C49.243169,-123.003245%7C49.255919,-123.003987"
             },
             {
               "label": "第 3 段",
+              "from": "Laurel St",
+              "to": "centre",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.253077,-122.976504&destination=49.244640,-122.999491&waypoints=49.245755,-122.974934%7C49.249282,-122.980815%7C49.253559,-122.982319%7C49.253824,-122.989028%7C49.254356,-122.989363%7C49.254325,-122.993572%7C49.245203,-122.998527"
             }
           ]

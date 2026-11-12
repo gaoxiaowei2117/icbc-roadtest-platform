@@ -19,10 +19,12 @@ from app.models.user import User
 from app.schemas.payment import StripeCheckoutOut
 from app.schemas.route_pack import (
     RouteLinksOut,
+    RoutePackCheckoutIn,
     RoutePackDef,
     RoutePackLinksOut,
     RoutePackOut,
     RouteSegmentOut,
+    RouteSegmentSummaryOut,
     RouteSummaryOut,
 )
 
@@ -52,7 +54,17 @@ def _pack_out(pack: RoutePackDef, purchased: bool | None) -> RoutePackOut:
         currency=catalog.currency(pack, settings),
         route_count=len(pack.routes),
         routes=[
-            RouteSummaryOut(title=route.title, segment_count=len(route.segments))
+            RouteSummaryOut(
+                title=route.title,
+                segment_count=len(route.segments),
+                segments=[
+                    RouteSegmentSummaryOut(label=seg.label, from_=seg.from_, to=seg.to)
+                    for seg in route.segments
+                ],
+                preview=route.preview,
+                note=route.note,
+                note_zh=route.note_zh,
+            )
             for route in pack.routes
         ],
         checkout_enabled=catalog.checkout_enabled(pack, settings),
@@ -107,6 +119,7 @@ def get_route_pack_links(
 @router.post("/{slug}/checkout", response_model=StripeCheckoutOut)
 def create_route_pack_checkout(
     slug: str,
+    payload: RoutePackCheckoutIn | None = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> StripeCheckoutOut:
@@ -117,6 +130,7 @@ def create_route_pack_checkout(
     if route_pack_crud.has_access(db, user.id, slug):
         raise HTTPException(status.HTTP_409_CONFLICT, "已购买该路线包")
     stripe.api_key = settings.stripe_secret_key
+    site = (payload or RoutePackCheckoutIn()).site
 
     pack_payments = (
         Payment.user_id == user.id,
@@ -124,7 +138,7 @@ def create_route_pack_checkout(
         Payment.product_ref == slug,
         Payment.provider == PaymentProvider.stripe,
     )
-    existing = db.scalar(
+    open_sessions = db.scalars(
         select(Payment)
         .where(
             *pack_payments,
@@ -133,6 +147,10 @@ def create_route_pack_checkout(
             Payment.created_at > datetime.now(timezone.utc) - _CHECKOUT_REUSE_WINDOW,
         )
         .order_by(Payment.id.desc())
+    ).all()
+    # Reuse an open session only if it returns to the same site.
+    existing = next(
+        (p for p in open_sessions if (p.metadata_json or {}).get("site", "booking") == site), None
     )
     if existing is not None:
         return StripeCheckoutOut(url=existing.checkout_url, session_id=existing.provider_session_id)
@@ -140,7 +158,7 @@ def create_route_pack_checkout(
     # Concurrent clicks share the attempt number and therefore the Stripe
     # idempotency key (same session); later retries get a fresh key.
     attempt = db.scalar(select(func.count(Payment.id)).where(*pack_payments)) or 0
-    return_url = f"{settings.route_pack_return_url}?pack={slug}"
+    return_url = f"{settings.route_pack_return_url(site)}?pack={slug}"
     metadata = {"kind": ROUTE_PACK_KIND, "pack_slug": slug, "user_id": str(user.id)}
     try:
         session = stripe.checkout.Session.create(
@@ -154,7 +172,7 @@ def create_route_pack_checkout(
             payment_intent_data={"metadata": metadata},
             success_url=f"{return_url}&checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{return_url}&checkout=cancelled",
-            idempotency_key=f"icbc-route-pack-{slug}-{user.id}-checkout-{attempt}",
+            idempotency_key=f"icbc-route-pack-{slug}-{user.id}-{site}-checkout-{attempt}",
         )
     except stripe.error.StripeError as exc:
         logger.exception("路线包 Stripe Checkout 创建失败 pack=%s user_id=%s", slug, user.id)
@@ -170,7 +188,9 @@ def create_route_pack_checkout(
         currency=catalog.currency(pack, settings),
         provider_session_id=session.id,
         checkout_url=session.url,
-        metadata_json={"kind": ROUTE_PACK_KIND, "pack_slug": slug, "user_id": user.id},
+        metadata_json={
+            "kind": ROUTE_PACK_KIND, "pack_slug": slug, "user_id": user.id, "site": site,
+        },
     )
     db.add(payment)
     try:

@@ -1,6 +1,7 @@
 """Route pack schemas: the data-file catalog and the API responses."""
 import re
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -10,8 +11,12 @@ _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 # ---- Catalog (app/data/route_packs.json) -------------------------------------
 
 class RouteSegmentDef(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
     label: str = Field(min_length=1, max_length=100)
+    # Start / end of the segment, shown publicly: English street names, or the
+    # token "centre" for the test centre (the UI translates it).
+    from_: str | None = Field(default=None, alias="from", max_length=100)
+    to: str | None = Field(default=None, max_length=100)
     url: str = Field(min_length=1)
 
     @field_validator("url")
@@ -25,8 +30,21 @@ class RouteSegmentDef(BaseModel):
 class RouteDef(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=100)
+    # Overview image, relative to the frontend's public dir (served by both sites),
+    # e.g. "route-previews/burnaby-4399/route1.jpg". Shown before purchase.
+    preview: str | None = None
+    # Optional public note shown under the route (English / Chinese).
+    note: str | None = Field(default=None, max_length=500)
+    note_zh: str | None = Field(default=None, max_length=500)
     # Google Maps app links carry at most 9 waypoints, so long routes are split.
     segments: list[RouteSegmentDef] = Field(min_length=1, max_length=3)
+
+    @field_validator("preview")
+    @classmethod
+    def _check_preview(cls, v: str | None) -> str | None:
+        if v is not None and (v.startswith("/") or ":" in v or ".." in v):
+            raise ValueError("preview 必须是前端 public 目录下的相对路径")
+        return v
 
 
 class RoutePackDef(BaseModel):
@@ -57,9 +75,21 @@ class RoutePackCatalog(BaseModel):
 
 # ---- API responses ------------------------------------------------------------
 
+class RouteSegmentSummaryOut(BaseModel):
+    """Public segment info: where it goes, never the link."""
+    model_config = ConfigDict(populate_by_name=True)
+    label: str
+    from_: str | None = Field(default=None, alias="from")
+    to: str | None = None
+
+
 class RouteSummaryOut(BaseModel):
     title: str
     segment_count: int
+    segments: list[RouteSegmentSummaryOut]
+    preview: str | None = None
+    note: str | None = None
+    note_zh: str | None = None
 
 
 class RoutePackOut(BaseModel):
@@ -90,6 +120,12 @@ class RouteLinksOut(BaseModel):
 class RoutePackLinksOut(BaseModel):
     slug: str
     routes: list[RouteLinksOut]
+
+
+class RoutePackCheckoutIn(BaseModel):
+    # Which site the purchase started from; decides the Stripe return URL.
+    # Only these two fixed values are accepted, never a client-supplied URL.
+    site: Literal["booking", "routes"] = "booking"
 
 
 class RoutePackGrantIn(BaseModel):
