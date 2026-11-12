@@ -29,3 +29,24 @@ def test_send_verification_code_calls_send_email():
     args = send.call_args[0]
     assert args[0] == "u@x.com"
     assert "123456" in args[2]
+
+
+def test_route_site_verification_email_has_no_booking_branding():
+    with patch("app.core.email.send_email") as m:
+        email.send_verification_code("u@x.com", "654321", site="routes")
+    to, subject, body = m.call_args.args
+    assert to == "u@x.com"
+    assert "654321" in body
+    assert "抢号" not in subject and "抢号" not in body
+    assert "roadtestgo" in subject
+
+
+def test_register_passes_site_to_verification_email(client, monkeypatch):
+    sent = []
+    monkeypatch.setattr(
+        "app.api.auth.send_verification_code", lambda to, code, site="booking": sent.append(site)
+    )
+    client.post("/api/auth/register", json={"email": "a@gmail.com", "password": "secret123", "site": "routes"})
+    client.post("/api/auth/register", json={"email": "b@gmail.com", "password": "secret123"})
+    client.post("/api/auth/resend-code", json={"email": "a@gmail.com", "site": "routes"})
+    assert sent == ["routes", "booking", "routes"]

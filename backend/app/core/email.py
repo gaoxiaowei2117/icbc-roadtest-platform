@@ -21,7 +21,20 @@ def send_email(to: str, subject: str, body: str) -> None:
         s.send_message(msg)
 
 
-def send_verification_code(to: str, code: str) -> None:
+def send_verification_code(to: str, code: str, site: str = "booking") -> None:
+    if site == "routes":
+        # Users who signed up on the route-pack site (roadtestgo.com/) never
+        # saw the booking service, so don't brand the email with it.
+        send_email(
+            to,
+            "路考练习路线 · roadtestgo — 邮箱验证码 / Verification code",
+            f"你的验证码是 {code}，10 分钟内有效。如非本人操作请忽略。\n\n"
+            f"Your verification code is {code}. It is valid for 10 minutes. "
+            "If you did not request it, please ignore this email.\n\n"
+            "roadtestgo.com — 独立开发的小工具，与 ICBC 无任何关联。"
+            " An independent tool, not affiliated with ICBC.",
+        )
+        return
     send_email(
         to,
         "ICBC 抢号平台 — 邮箱验证码",

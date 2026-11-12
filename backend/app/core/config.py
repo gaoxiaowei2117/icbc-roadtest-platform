@@ -81,8 +81,10 @@ class Settings(BaseSettings):
             and (pack_price_id or self.stripe_route_pack_price_id)
         )
 
-    @property
-    def route_pack_return_url(self) -> str:
+    def route_pack_return_url(self, site: str = "booking") -> str:
+        """Stripe return page: the route site at / or the booking app's /routes."""
+        if site == "routes":
+            return f"{self.app_base_url}/"
         return f"{self.app_base_url}{self.frontend_base_path}/routes"
 
     # 任务卡死 reaper（T2）：扫描间隔 + running 超时阈值

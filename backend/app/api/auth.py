@@ -25,11 +25,11 @@ def _gen_code() -> str:
     return f"{secrets.randbelow(1000000):06d}"
 
 
-def _issue_code(db: Session, user) -> None:
+def _issue_code(db: Session, user, site: str = "booking") -> None:
     code = _gen_code()
     expires = datetime.now(timezone.utc) + timedelta(minutes=_CODE_TTL_MIN)
     user_crud.set_verify_code(db, user, code, expires)
-    send_verification_code(user.email, code)
+    send_verification_code(user.email, code, site=site)
 
 
 @router.post("/register", response_model=RegisterOut, status_code=status.HTTP_201_CREATED)
@@ -38,7 +38,7 @@ def register(request: Request, payload: RegisterIn, db: Session = Depends(get_db
     if user_crud.get_by_email(db, payload.email):
         raise HTTPException(status.HTTP_409_CONFLICT, "邮箱已注册")
     user = user_crud.create(db, payload.email, payload.password, is_admin=False)
-    _issue_code(db, user)
+    _issue_code(db, user, payload.site)
     return RegisterOut(message="验证码已发送到邮箱，请查收并验证")
 
 
@@ -66,7 +66,7 @@ def verify_email(request: Request, payload: VerifyEmailIn, db: Session = Depends
 def resend_code(request: Request, payload: ResendCodeIn, db: Session = Depends(get_db)) -> MessageOut:
     user = user_crud.get_by_email(db, payload.email)
     if user is not None and not user.email_verified:
-        _issue_code(db, user)
+        _issue_code(db, user, payload.site)
     return MessageOut(message="若该邮箱已注册且未验证，验证码已重新发送")
 
 
