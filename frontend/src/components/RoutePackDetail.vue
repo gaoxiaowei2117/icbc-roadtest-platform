@@ -161,6 +161,24 @@ function previewSrc(r: RouteSummary) {
   return p ? `${import.meta.env.BASE_URL}${p}` : ''
 }
 
+/** Purchased packs open every route; a free trial route opens for anyone logged in. */
+function canOpen(pack: RoutePack, r: RouteSummary) {
+  return !!pack.purchased || (!!r.free && !!auth.token)
+}
+
+/** Free trial routes ("路线 1、路线 2" / "Route 1, Route 2"), for the bullet list. */
+function freeRouteTitles(pack: RoutePack) {
+  return pack.routes.filter((r) => r.free).map((r) => routeTitle(r.title)).join(tr('、', ', '))
+}
+
+function lockedCount(pack: RoutePack) {
+  return pack.routes.filter((r) => !r.free).length
+}
+
+function goLogin() {
+  router.push({ name: 'login', query: { redirect: route.fullPath } })
+}
+
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') enlarged.value = null
 }
@@ -168,7 +186,7 @@ function onKeydown(e: KeyboardEvent) {
 async function onBuy(pack: RoutePack) {
   if (!auth.token) {
     // Come back to this centre after logging in.
-    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    goLogin()
     return
   }
   buying.value = pack.slug
@@ -227,13 +245,29 @@ function contactMailto(pack: RoutePack) {
           `${pack.route_count} rutas de práctica alrededor del centro`,
           `${pack.route_count} 條練習路線，涵蓋考場周邊常見考試路段`,
         ) }}</li>
+        <li v-if="!pack.purchased && freeRouteTitles(pack)" class="text-green-700 font-medium">✓ {{ tr(
+          `${freeRouteTitles(pack)} 免费试用，登录即可打开`,
+          `${freeRouteTitles(pack)}: free trial, just log in`,
+          `${freeRouteTitles(pack)} : essai gratuit, connectez-vous`,
+          `${freeRouteTitles(pack)}: prueba gratis, solo inicia sesión`,
+          `${freeRouteTitles(pack)} 免費試用，登入即可開啟`,
+        ) }}</li>
         <li>✓ {{ tr('手机一键打开 Google 地图导航', 'Opens in the Google Maps app on your phone', 'S’ouvre dans l’application Google Maps', 'Se abre en la app de Google Maps', '手機一鍵開啟 Google 地圖導航') }}</li>
         <li>✓ {{ tr('一次付款，永久查看', 'One-time payment, no subscription', 'Paiement unique, sans abonnement', 'Pago único, sin suscripción', '一次付款，永久查看') }}</li>
       </ul>
 
       <!-- Not purchased: price + buy first, so phones don't scroll past the previews. -->
       <div v-if="!pack.purchased" class="flex flex-wrap items-center gap-4 border-y border-slate-100 py-4">
-        <span class="text-2xl font-bold">{{ formatPrice(pack) }}</span>
+        <div>
+          <span class="text-2xl font-bold">{{ formatPrice(pack) }}</span>
+          <p v-if="lockedCount(pack) < pack.route_count" class="text-sm text-slate-500">{{ tr(
+            `还有 ${lockedCount(pack)} 条路线 · 解锁全部`,
+            `${lockedCount(pack)} more route${lockedCount(pack) === 1 ? '' : 's'} · unlock all`,
+            `${lockedCount(pack)} itinéraire(s) de plus · tout débloquer`,
+            `${lockedCount(pack)} ruta(s) más · desbloquear todo`,
+            `還有 ${lockedCount(pack)} 條路線 · 解鎖全部`,
+          ) }}</p>
+        </div>
         <template v-if="pack.checkout_enabled">
           <button class="btn-primary px-6 py-3 text-base" :disabled="buying !== null" @click="onBuy(pack)">
             {{ buying === pack.slug ? tr('正在跳转付款…', 'Redirecting to checkout…') : tr('购买', 'Buy now') }}
@@ -247,12 +281,16 @@ function contactMailto(pack: RoutePack) {
         </span>
       </div>
 
-      <!-- Routes: overview image + segments. Locked: text only; purchased: one big
-           button per segment, whose link is fetched from the API on tap. -->
+      <!-- Routes: overview image + segments. Locked: text only; purchased (or a free trial
+           route while logged in): one big button per segment, whose link is fetched from the API on tap. -->
       <div class="grid gap-4" :class="pack.purchased ? '' : 'sm:grid-cols-2'">
         <div v-for="(r, ri) in pack.routes" :key="ri" class="border border-slate-200 rounded-lg p-4 space-y-3 min-w-0">
           <h3 class="font-semibold">
-            <span v-if="!pack.purchased" aria-hidden="true">🔒 </span>{{ routeTitle(r.title) }}
+            <span v-if="!pack.purchased && !r.free" aria-hidden="true">🔒 </span>{{ routeTitle(r.title) }}
+            <span
+              v-if="!pack.purchased && r.free"
+              class="ml-1 align-middle rounded-full bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5"
+            >{{ tr('免费试用', 'Free trial', 'Essai gratuit', 'Prueba gratis', '免費試用') }}</span>
           </h3>
           <div :class="pack.purchased ? 'sm:flex sm:gap-4 space-y-3 sm:space-y-0' : 'space-y-3'">
             <button
@@ -274,7 +312,7 @@ function contactMailto(pack: RoutePack) {
               />
             </button>
             <div class="space-y-2 min-w-0 flex-1">
-              <template v-if="pack.purchased">
+              <template v-if="canOpen(pack, r)">
                 <button
                   v-for="(seg, si) in r.segments"
                   :key="si"
@@ -286,6 +324,11 @@ function contactMailto(pack: RoutePack) {
                   <span aria-hidden="true" class="shrink-0">↗</span>
                 </button>
               </template>
+              <button
+                v-else-if="r.free"
+                class="btn-primary w-full py-4 text-base"
+                @click="goLogin"
+              >{{ tr('登录后免费打开导航', 'Log in to open it free', 'Connectez-vous pour l’ouvrir gratuitement', 'Inicia sesión para abrirla gratis', '登入後免費開啟導航') }}</button>
               <ul v-else class="text-sm text-slate-600 space-y-1">
                 <li v-for="(seg, si) in r.segments" :key="si">{{ segmentText(seg) }}</li>
               </ul>

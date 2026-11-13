@@ -41,6 +41,8 @@ class RouteDef(BaseModel):
     # Optional public note shown under the route (English / Chinese).
     note: str | None = Field(default=None, max_length=500)
     note_zh: str | None = Field(default=None, max_length=500)
+    # Free trial route: any logged-in user can open it without buying the pack.
+    free: bool = False
     # Normally one "全程" segment per route; up to 3 if a route ever has to be split.
     segments: list[RouteSegmentDef] = Field(min_length=1, max_length=3)
 
@@ -116,6 +118,8 @@ class RouteSummaryOut(BaseModel):
     preview_en: str | None = None
     note: str | None = None
     note_zh: str | None = None
+    # Free trial route: opens for any logged-in user, purchase or not.
+    free: bool = False
 
 
 class RoutePackOut(BaseModel):

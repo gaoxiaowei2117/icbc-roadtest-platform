@@ -32,6 +32,8 @@ export interface RouteSummary {
   preview_en?: string | null
   note: string | null
   note_zh: string | null
+  /** Free trial route: any logged-in user can open it without buying the pack. */
+  free?: boolean
 }
 
 export interface RouteOpen {
@@ -65,7 +67,7 @@ export async function getRoutePackFacets(): Promise<RoutePackFacets> {
 }
 
 /**
- * Only succeeds for users who bought the pack. The server logs the click and returns a
+ * Only succeeds for users who bought the pack (or, for a free trial route, any logged-in user). The server logs the click and returns a
  * short-lived redirect URL; the Google Maps link itself never reaches the page.
  */
 export async function openRoute(slug: string, route: number, segment = 0): Promise<RouteOpen> {

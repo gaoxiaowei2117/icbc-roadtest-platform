@@ -15,6 +15,7 @@
       "routes": [
         {
           "title": "路线 1",
+          "free": true,
           "preview": "route-previews/burnaby-4399/route1-v2.jpg",
           "segments": [
             {

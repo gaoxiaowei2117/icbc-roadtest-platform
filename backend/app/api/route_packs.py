@@ -50,6 +50,13 @@ def _pack_or_404(slug: str) -> RoutePackDef:
     return pack
 
 
+def _can_open_route(db: Session, user: User, pack: RoutePackDef, route_index: int) -> bool:
+    """Free trial routes open for any logged-in user; the rest need the pack (or admin)."""
+    if 0 <= route_index < len(pack.routes) and pack.routes[route_index].free:
+        return True
+    return route_pack_crud.user_can_open(db, user, pack.slug)
+
+
 def _pack_out(pack: RoutePackDef, purchased: bool | None) -> RoutePackOut:
     settings = get_settings()
     return RoutePackOut(
@@ -76,6 +83,7 @@ def _pack_out(pack: RoutePackDef, purchased: bool | None) -> RoutePackOut:
                 preview_en=route.preview_en,
                 note=route.note,
                 note_zh=route.note_zh,
+                free=route.free,
             )
             for route in pack.routes
         ],
@@ -130,7 +138,10 @@ def follow_route_link(token: str, db: Session = Depends(get_db)):
                          "This link has expired. Go back to the site and tap “Open navigation” again.")
     pack = catalog.get_pack(claims["slug"])
     user = user_crud.get_by_id(db, claims["user_id"])
-    if pack is None or user is None or not user.is_active or not route_pack_crud.user_can_open(db, user, pack.slug):
+    if (
+        pack is None or user is None or not user.is_active
+        or not _can_open_route(db, user, pack, claims["route_index"])
+    ):
         return _go_error(403, "这个账号已经不能打开这条路线。", "This account can no longer open this route.")
     try:
         url = pack.routes[claims["route_index"]].segments[claims["segment_index"]].url
@@ -187,10 +198,10 @@ def open_route(
 ) -> RouteOpenOut:
     """Log a click on "open navigation" and hand back a short-lived redirect URL."""
     pack = _pack_or_404(slug)
-    if not route_pack_crud.user_can_open(db, user, slug):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "尚未购买该路线包")
     if payload.route >= len(pack.routes) or payload.segment >= len(pack.routes[payload.route].segments):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "路线不存在")
+    if not _can_open_route(db, user, pack, payload.route):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "尚未购买该路线包")
     log = RoutePackOpen(
         user_id=user.id,
         pack_slug=slug,

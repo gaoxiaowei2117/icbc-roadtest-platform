@@ -164,6 +164,10 @@ function groupTitle(g: { country: string; region: string }) {
           <div class="flex items-start justify-between gap-2">
             <h3 class="font-semibold leading-snug min-w-0">{{ packName(p) }}</h3>
             <span v-if="p.purchased" class="badge-done shrink-0">{{ tr('已购买', 'Purchased') }}</span>
+            <span
+              v-else-if="p.routes.some((r) => r.free)"
+              class="shrink-0 rounded-full bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5"
+            >{{ tr('可免费试用', 'Free trial', 'Essai gratuit', 'Prueba gratis', '可免費試用') }}</span>
           </div>
           <p class="text-sm text-slate-500 mt-1">{{ placeLine(p) }}</p>
           <div class="flex items-center justify-between gap-2 mt-3 text-sm">

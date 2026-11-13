@@ -278,6 +278,7 @@ Stripe 付款完成/取消后回到发起购买的站点：前端在 checkout �
 - `price_cents` / `currency` / `stripe_price_id` 可选，留空则用上面的环境变量；某个包要不同价格时，在 Stripe 建对应 Price 并同时填这两个字段。
 - 标题写成 `路线 N`（可加 `· 上高速线`）、分段写成 `第 N 段` / `全程` 时，英文界面会自动显示为 Route N / Part N / Full route。
 - `from` / `to`：分段起止点，公开显示（未购买也能看到，不含链接）。街道名写英文；考场写 `centre`，界面会翻译成“考场 / Test centre”。
+- `free`：可选，默认 `false`。设为 `true` 的路线是免费试用路线，登录用户不用购买就能打开导航，页面显示“免费试用”。改完真实数据文件后重启 `icbc-api` 生效；改回 `false` 后，已发出的跳转链接也会立刻失效。
 - `preview`：概览图相对路径（图片放进 `frontend/public/route-previews/<slug>/` 并重新构建、发布两个前端）；`note` / `note_zh`：可选说明，显示在路线下方。
 - **真实链接不进 Git**（仓库是公开过的，链接就是付费内容）。仓库里的 `backend/app/data/route_packs.json` 只放占位链接（起终点都是考场），用于测试和本地开发；结构、标题、`from`/`to`、概览图等公开字段与真实数据保持一致。
   - 本地真实数据：`private/route_packs.json`（已在 `.gitignore`，3.3 的 rsync 也排除了 `private/`）。新增考场或改路线时**改这份**，公开字段改动再同步到仓库那份（链接保持占位）。

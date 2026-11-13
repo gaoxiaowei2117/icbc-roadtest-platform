@@ -125,7 +125,8 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
     ],
     "preview": "route-previews/burnaby-4399/route1.jpg",
     "note": null,
-    "note_zh": null
+    "note_zh": null,
+    "free": true
   }],
   "checkout_enabled": false,
   "purchased": null
@@ -133,6 +134,7 @@ ICBC keyword 会用 libsodium SealedBox 公钥加密后存 DB。云端只持 `SE
 ```
 - `purchased`：匿名请求为 `null`；登录用户为 `true/false`（管理员收回后为 `false`）。
 - `segments[].from/to`：分段起止点（英文街道名；`centre` 表示考场，由前端翻译）。`preview` 是相对于前端站点根路径的概览图，`note`/`note_zh` 是可选说明。这些字段都公开，不含链接。
+- `free`：免费试用路线。任何已登录用户不用购买就能对它调用 `POST /{slug}/open`（照常记打开记录）；其他路线和 `GET /{slug}/links` 仍要求已购买。`purchased` 不受影响。
 - `checkout_enabled`：Stripe 密钥、Webhook 密钥和该包的 Price ID 都配置后才为 `true`；否则前端显示“即将开放 / 联系我们”。
 
 ### GET /route-packs/facets

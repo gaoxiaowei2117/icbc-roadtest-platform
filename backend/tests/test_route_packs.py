@@ -125,6 +125,7 @@ def test_anonymous_listing_has_no_links_and_no_purchase_flag(client):
         "preview_en": "route-previews/burnaby-4399/en/route1.jpg",
         "note": None,
         "note_zh": None,
+        "free": True,
     }
     assert pack["checkout_enabled"] is False
     assert "google.com/maps" not in response.text
@@ -544,10 +545,43 @@ def _open(client, headers, route=0, segment=0, slug=SLUG, **kw):
 
 
 def test_open_requires_login_and_purchase(client, auth_headers, db):
-    assert client.post(f"/api/route-packs/{SLUG}/open", json={"route": 0}).status_code == 401
+    assert client.post(f"/api/route-packs/{SLUG}/open", json={"route": 1}).status_code == 401
     headers = auth_headers(email="buyer@gmail.com")
-    assert _open(client, headers).status_code == 403
+    assert _open(client, headers, route=1).status_code == 403
     assert db.query(RoutePackOpen).count() == 0
+
+
+def test_shipped_catalog_has_route_1_as_the_only_free_route(client):
+    routes = client.get(f"/api/route-packs/{SLUG}").json()["routes"]
+    assert [r["free"] for r in routes] == [True, False, False, False]
+
+
+def test_free_route_opens_without_purchase_but_still_needs_login(client, auth_headers, db):
+    assert client.post(f"/api/route-packs/{SLUG}/open", json={"route": 0}).status_code == 401
+    headers = auth_headers(email="trial@gmail.com")
+    user = db.query(User).filter_by(email="trial@gmail.com").one()
+    assert client.get(f"/api/route-packs/{SLUG}", headers=headers).json()["purchased"] is False
+
+    response = _open(client, headers, route=0)
+    assert response.status_code == 200
+    log = db.query(RoutePackOpen).one()
+    assert (log.user_id, log.route_index) == (user.id, 0)
+    go = client.get(response.json()["url"], follow_redirects=False)
+    assert go.status_code == 302
+    assert go.headers["location"] == catalog.get_pack(SLUG).routes[0].segments[0].url
+
+    # The other routes stay locked, and the full links list still needs the pack.
+    for route in (1, 2, 3):
+        assert _open(client, headers, route=route).status_code == 403
+    assert client.get(f"/api/route-packs/{SLUG}/links", headers=headers).status_code == 403
+
+
+def test_free_route_token_stops_when_route_is_no_longer_free(client, auth_headers, db, monkeypatch):
+    headers = auth_headers(email="trial@gmail.com")
+    url = _open(client, headers, route=0).json()["url"]
+    monkeypatch.setattr(catalog.get_pack(SLUG).routes[0], "free", False)
+    assert client.get(url, follow_redirects=False).status_code == 403
+    assert _open(client, headers, route=0).status_code == 403
 
 
 def test_open_logs_and_redirects_to_current_link(client, auth_headers, db):
@@ -605,7 +639,7 @@ def test_go_rejects_bad_expired_and_login_tokens(client, auth_headers, db, monke
 def test_go_stops_working_after_revoke(client, auth_headers, db):
     headers = auth_headers(email="buyer@gmail.com")
     user = _grant(db, "buyer@gmail.com")
-    url = _open(client, headers).json()["url"]
+    url = _open(client, headers, route=1).json()["url"]
     purchase = db.query(RoutePackPurchase).filter_by(user_id=user.id).one()
     purchase.status = RoutePackPurchaseStatus.revoked
     db.commit()
