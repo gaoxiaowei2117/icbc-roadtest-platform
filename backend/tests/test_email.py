@@ -10,6 +10,7 @@ def test_send_email_uses_smtp(monkeypatch):
     with patch("app.core.email.smtplib.SMTP") as smtp_cls:
         smtp_cls.return_value.__enter__.return_value = smtp
         email.send_email("u@x.com", "subj", "body")
+    assert smtp_cls.call_args.kwargs["timeout"] == email.SMTP_TIMEOUT_SECONDS
     smtp.starttls.assert_called_once()
     smtp.login.assert_called_once_with("sys@gmail.com", "pw")
     smtp.send_message.assert_called_once()
@@ -50,3 +51,18 @@ def test_register_passes_site_to_verification_email(client, monkeypatch):
     client.post("/api/auth/register", json={"email": "b@gmail.com", "password": "secret123"})
     client.post("/api/auth/resend-code", json={"email": "a@gmail.com", "site": "routes"})
     assert sent == ["routes", "booking", "routes"]
+
+
+def test_register_succeeds_and_logs_when_email_fails(client, monkeypatch, caplog):
+    def boom(*a, **k):
+        raise OSError("smtp down")
+
+    monkeypatch.setattr("app.api.auth.send_verification_code", boom)
+    with caplog.at_level("ERROR", logger="icbc.auth"):
+        r = client.post("/api/auth/register", json={"email": "c@gmail.com", "password": "secret123"})
+        resend = client.post("/api/auth/resend-code", json={"email": "c@gmail.com"})
+    assert r.status_code == 201
+    assert resend.status_code == 200
+    failures = [rec for rec in caplog.records if "验证码邮件发送失败" in rec.getMessage()]
+    assert len(failures) == 2
+    assert "c@gmail.com" not in caplog.text

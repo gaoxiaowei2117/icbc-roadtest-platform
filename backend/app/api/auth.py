@@ -1,8 +1,9 @@
 """/api/auth/* 注册 / 邮箱验证 / 登录 / 刷新。"""
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -16,6 +17,7 @@ from app.schemas.auth import (
     ResendCodeIn, TokenOut, VerifyEmailIn,
 )
 
+logger = logging.getLogger("icbc.auth")
 router = APIRouter(prefix="/auth", tags=["auth"])
 _auth_limit = get_settings().auth_rate_limit
 _CODE_TTL_MIN = 10
@@ -25,20 +27,31 @@ def _gen_code() -> str:
     return f"{secrets.randbelow(1000000):06d}"
 
 
-def _issue_code(db: Session, user, site: str = "booking") -> None:
+def _send_code(to: str, code: str, site: str, user_id: int) -> None:
+    """Runs after the response is sent; a failure is logged (the user can tap "resend")."""
+    try:
+        send_verification_code(to, code, site=site)
+    except Exception:
+        logger.exception("验证码邮件发送失败 user_id=%s", user_id)
+
+
+def _issue_code(db: Session, user, background: BackgroundTasks, site: str = "booking") -> None:
     code = _gen_code()
     expires = datetime.now(timezone.utc) + timedelta(minutes=_CODE_TTL_MIN)
     user_crud.set_verify_code(db, user, code, expires)
-    send_verification_code(user.email, code, site=site)
+    # Sending takes a few seconds (Gmail SMTP); don't make the sign-up page wait for it.
+    background.add_task(_send_code, user.email, code, site, user.id)
 
 
 @router.post("/register", response_model=RegisterOut, status_code=status.HTTP_201_CREATED)
 @limiter.limit(_auth_limit)
-def register(request: Request, payload: RegisterIn, db: Session = Depends(get_db)) -> RegisterOut:
+def register(
+    request: Request, payload: RegisterIn, background: BackgroundTasks, db: Session = Depends(get_db)
+) -> RegisterOut:
     if user_crud.get_by_email(db, payload.email):
         raise HTTPException(status.HTTP_409_CONFLICT, "邮箱已注册")
     user = user_crud.create(db, payload.email, payload.password, is_admin=False)
-    _issue_code(db, user, payload.site)
+    _issue_code(db, user, background, payload.site)
     return RegisterOut(message="验证码已发送到邮箱，请查收并验证")
 
 
@@ -63,10 +76,12 @@ def verify_email(request: Request, payload: VerifyEmailIn, db: Session = Depends
 
 @router.post("/resend-code", response_model=MessageOut)
 @limiter.limit(_auth_limit)
-def resend_code(request: Request, payload: ResendCodeIn, db: Session = Depends(get_db)) -> MessageOut:
+def resend_code(
+    request: Request, payload: ResendCodeIn, background: BackgroundTasks, db: Session = Depends(get_db)
+) -> MessageOut:
     user = user_crud.get_by_email(db, payload.email)
     if user is not None and not user.email_verified:
-        _issue_code(db, user, payload.site)
+        _issue_code(db, user, background, payload.site)
     return MessageOut(message="若该邮箱已注册且未验证，验证码已重新发送")
 
 

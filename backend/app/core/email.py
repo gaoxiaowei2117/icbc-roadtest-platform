@@ -1,10 +1,16 @@
-"""邮件发送（smtplib 同步，复用系统 Gmail SMTP）。"""
+"""邮件发送（smtplib 同步，复用系统 Gmail SMTP）。
+
+接口里不要直接调用：用 BackgroundTasks 在响应发出后再发，见 app/api/auth.py。
+"""
 import smtplib
 from email.message import EmailMessage
 
 from app.core.config import get_settings
 
 settings = get_settings()
+
+# Connect / read timeout. Without it a slow Gmail could hold a worker thread indefinitely.
+SMTP_TIMEOUT_SECONDS = 15
 
 
 def send_email(to: str, subject: str, body: str) -> None:
@@ -15,7 +21,7 @@ def send_email(to: str, subject: str, body: str) -> None:
     msg["To"] = to
     msg["Subject"] = subject
     msg.set_content(body)
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as s:
+    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=SMTP_TIMEOUT_SECONDS) as s:
         s.starttls()
         s.login(settings.smtp_user, settings.smtp_password)
         s.send_message(msg)
