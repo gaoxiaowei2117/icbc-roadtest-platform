@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { api } from '@/api/client'
 import { getPosList, type PosEntry } from '@/api/pos'
+import { setStatsExclusion } from '@/api/stats'
 import type { User } from '@/stores/auth'
 import { useI18n } from '@/i18n'
 
@@ -22,6 +23,7 @@ type AdminUser = User & {
   route_opens?: number
   route_opens_last_at?: string | null
   route_open_ips_24h?: number
+  exclude_from_stats?: boolean
 }
 
 /** Distinct IPs in 24 h at or above this: the account may be shared (shown, not blocked). */
@@ -32,6 +34,7 @@ const posList = ref<PosEntry[]>([])
 const error = ref('')
 const deletingUserId = ref<number | null>(null)
 const expandedUserId = ref<number | null>(null)
+const togglingStatsId = ref<number | null>(null)
 const { tr, apiError, dateLocale, locale } = useI18n()
 
 async function refresh() {
@@ -83,6 +86,20 @@ function formatParts(parts: number[] | null) {
   return parts?.length ? parts.map((part) => labels[part] || String(part)).join(listSeparator()) : '—'
 }
 
+/** Mark a test account so the Stats tab leaves it out (admins are always left out). */
+async function toggleStats(user: AdminUser) {
+  togglingStatsId.value = user.id
+  error.value = ''
+  try {
+    const { excluded } = await setStatsExclusion(user.id, !user.exclude_from_stats)
+    user.exclude_from_stats = excluded
+  } catch (e: any) {
+    error.value = apiError(e, '修改失败', 'Failed to update')
+  } finally {
+    togglingStatsId.value = null
+  }
+}
+
 async function deleteUser(user: User) {
   if (!window.confirm(tr(
     `确定删除用户 ${user.email} 吗？该用户的任务和凭据也会被删除。`,
@@ -125,6 +142,7 @@ async function deleteUser(user: User) {
           <th class="pr-3">{{ tr('已购路线包', 'Route packs') }}</th>
           <th class="pr-3">{{ tr('导航打开', 'Route opens') }}</th>
           <th class="pr-3">{{ tr('注册时间', 'Registered') }}</th>
+          <th v-if="routeOnly" class="pr-3">{{ tr('计入统计', 'In stats') }}</th>
           <th v-if="!routeOnly" class="text-right">{{ tr('操作', 'Actions') }}</th>
         </tr>
       </thead>
@@ -158,6 +176,19 @@ async function deleteUser(user: User) {
               <span v-else class="text-slate-400">—</span>
             </td>
             <td class="pr-3 whitespace-nowrap">{{ formatDateTime(user.created_at) }}</td>
+            <td v-if="routeOnly" class="pr-3 whitespace-nowrap text-xs">
+              <span v-if="user.is_admin" class="text-slate-400">{{ tr('不计入（管理员）', 'No (admin)') }}</span>
+              <template v-else>
+                <span :class="user.exclude_from_stats ? 'text-slate-500' : 'text-slate-700'">
+                  {{ user.exclude_from_stats ? tr('不计入（测试）', 'No (test)') : tr('计入', 'Yes') }}
+                </span>
+                <button
+                  class="ml-2 text-blue-600 hover:underline disabled:opacity-50"
+                  :disabled="togglingStatsId === user.id"
+                  @click="toggleStats(user)"
+                >{{ user.exclude_from_stats ? tr('恢复计入', 'Count again') : tr('标为测试账号', 'Mark as test') }}</button>
+              </template>
+            </td>
             <td v-if="!routeOnly">
               <div class="flex justify-end gap-2">
                 <button

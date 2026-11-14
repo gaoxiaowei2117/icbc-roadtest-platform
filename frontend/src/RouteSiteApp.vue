@@ -7,7 +7,7 @@ import SiteFooter from '@/components/SiteFooter.vue'
 
 // Layout for the route-pack site at the domain root: brand, language, login/logout.
 // Deliberately no links or branding of the booking service.
-// Admins also get tabs: the routes everyone sees, and the user list.
+// Admins also get tabs: the routes everyone sees, the user list and the stats.
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
@@ -47,6 +47,7 @@ async function onLogout() {
           v-for="tab in [
             { name: 'routes', label: tr('路线', 'Routes') },
             { name: 'users', label: tr('用户', 'Users') },
+            { name: 'stats', label: tr('统计', 'Stats') },
           ]"
           :key="tab.name"
           :to="{ name: tab.name }"

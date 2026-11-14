@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_admin_user
 from app.core.database import get_db
 from app.core import route_packs as route_pack_catalog
+from app.core import stats as stats_core
 from app.crud import booking as booking_crud
 from app.crud import route_pack as route_pack_crud
 from app.crud import user as user_crud
@@ -19,6 +20,7 @@ from app.models.route_pack import (
     RoutePackOpen, RoutePackPurchase, RoutePackPurchaseSource, RoutePackPurchaseStatus,
 )
 from app.schemas.route_pack import RoutePackGrantIn, RoutePackOpenOut, RoutePackPurchaseOut
+from app.schemas.stats import StatsExclusionIn, StatsOut
 from app.schemas.user import AdminUserOut, UserPublic
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -138,9 +140,38 @@ def list_all_users(
             route_opens=opens.get(user.id, (0, None))[0],
             route_opens_last_at=opens.get(user.id, (0, None))[1],
             route_open_ips_24h=ips_24h.get(user.id, 0),
+            exclude_from_stats=user.exclude_from_stats,
         )
         for user in users
     ]
+
+
+@router.put("/users/{user_id}/stats-exclusion", response_model=StatsExclusionIn)
+def set_stats_exclusion(
+    user_id: int,
+    payload: StatsExclusionIn,
+    _admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+) -> StatsExclusionIn:
+    """Mark a (test) account as left out of the stats, or count it again."""
+    user = user_crud.get_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "用户不存在")
+    if user.is_admin:
+        raise HTTPException(status.HTTP_409_CONFLICT, "管理员账号本来就不计入统计")
+    user.exclude_from_stats = payload.excluded
+    db.commit()
+    return StatsExclusionIn(excluded=user.exclude_from_stats)
+
+
+@router.get("/stats", response_model=StatsOut)
+def get_stats(
+    days: int = Query(default=30, ge=1, le=365),
+    _admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+) -> StatsOut:
+    """Route-pack site stats by Vancouver day; admins and test accounts left out."""
+    return StatsOut.model_validate(stats_core.compute(db, days))
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

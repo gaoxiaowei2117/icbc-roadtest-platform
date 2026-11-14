@@ -42,6 +42,7 @@ class AdminUserOut(UserPublic):
     route_opens: int = 0
     route_opens_last_at: datetime | None = None
     route_open_ips_24h: int = 0  # distinct IPs in the last 24 h; many = the account may be shared
+    exclude_from_stats: bool = False  # test account, left out of the admin stats
 
 
 class UserUpdate(ProfileFields):

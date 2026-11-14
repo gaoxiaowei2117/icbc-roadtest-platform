@@ -36,6 +36,13 @@ const router = createRouter({
       component: () => import('@/views/RouteUsers.vue'),
       meta: { admin: true },
     },
+    {
+      // Admin-only tab: sign-ups, free-route trials and sales by day.
+      path: '/stats',
+      name: 'stats',
+      component: () => import('@/views/RouteStats.vue'),
+      meta: { admin: true },
+    },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })

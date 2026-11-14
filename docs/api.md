@@ -247,6 +247,19 @@ Stripe 调用，校验 `Stripe-Signature`。处理 `checkout.session.completed`�
 ### GET /admin/users?limit=...
 返回用户列表和当前 ICBC/预约配置。`has_secret` 仅表示 keyword 是否已配置，不返回密码哈希、keyword 密文或明文。仅 `is_admin=true` 可访问。
 
+### PUT /admin/users/{user_id}/stats-exclusion
+admin。请求体 `{"excluded": true}` 把账号标为测试账号（不计入统计），`false` 恢复计入；返回 `{"excluded": ...}`。管理员账号本来就不计入，对管理员调用返回 409。`GET /admin/users` 的每个用户带 `exclude_from_stats`。
+
+### GET /admin/stats?days=30
+admin。路线包网站的统计，`days` 取 1～365，按温哥华日历日汇总，管理员和测试账号不计入。返回：
+- `daily[]`：每天的 `signups`（注册）、`verified`（当天注册的人里现在已验证的）、`trial_users`（第一次打开免费路线在这天的人数）、`route_opens`（打开导航次数）、`checkouts`（发起路线包付款的人数）、`purchases`（Stripe 付款成功的购买，不含手动授权）、`revenue_cents`（当天付款成功的金额）。
+- `totals`：上面各项在整个范围内的合计（`checkouts` 按人去重）。
+- `funnel`：范围内注册的人到现在各走到哪一步：`signed_up` → `verified` → `tried_free_route` → `started_checkout` → `purchased`。
+- `trial_users_all_time` / `trial_then_purchased_all_time`：累计试用过免费路线的人数，以及其中在试用之后购买的人数。
+- `excluded_accounts`：不计入的账号数（管理员 + 测试账号）。
+
+哪条是免费路线按当前数据文件判断；改了免费路线后，历史打开记录也按新设置重新计算。访客数不在这里，看 Cloudflare Web Analytics。
+
 ### DELETE /admin/users/{user_id}
 删除普通用户，并级联删除该用户的任务和加密凭据。管理员账号不允许通过此接口删除。
 

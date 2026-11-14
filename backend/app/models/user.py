@@ -1,6 +1,6 @@
 """用户模型。表名 user（Postgres 保留字，使用原生引号）。"""
 from datetime import date, datetime
-from sqlalchemy import Boolean, Date, DateTime, Integer, String, func
+from sqlalchemy import Boolean, Date, DateTime, Integer, String, false, func
 from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,6 +16,10 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Test / internal account: left out of the admin stats (admins always are).
+    exclude_from_stats: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false(), nullable=False
+    )
     verify_code: Mapped[str | None] = mapped_column(String(6))
     verify_code_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
