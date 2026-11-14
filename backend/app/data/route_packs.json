@@ -59,6 +59,63 @@
           "preview_en": "route-previews/burnaby-4399/en/route4.jpg"
         }
       ]
+    },
+    {
+      "slug": "richmond-5300",
+      "name": "ICBC Richmond (Lansdowne Centre, 5300 No. 3 Rd)",
+      "name_zh": "ICBC 列治文考场（Lansdowne Centre，5300 No. 3 Rd）",
+      "country": "CA",
+      "region": "BC",
+      "city": "Richmond",
+      "city_zh": "列治文",
+      "centre": "5300 No. 3 Rd, Richmond, BC",
+      "price_cents": 1499,
+      "currency": "cad",
+      "stripe_price_id": "",
+      "routes": [
+        {
+          "title": "路线 1",
+          "free": true,
+          "preview": "route-previews/richmond-5300/route1.jpg",
+          "segments": [
+            {
+              "label": "全程",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.17622,-123.129531&destination=49.17622,-123.129531"
+            }
+          ],
+          "preview_en": "route-previews/richmond-5300/en/route1.jpg"
+        },
+        {
+          "title": "路线 2",
+          "preview": "route-previews/richmond-5300/route2.jpg",
+          "segments": [
+            {
+              "label": "全程",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.17622,-123.129531&destination=49.17622,-123.129531"
+            }
+          ]
+        },
+        {
+          "title": "路线 3",
+          "preview": "route-previews/richmond-5300/route3.jpg",
+          "segments": [
+            {
+              "label": "全程",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.17622,-123.129531&destination=49.17622,-123.129531"
+            }
+          ]
+        },
+        {
+          "title": "路线 4",
+          "preview": "route-previews/richmond-5300/route4.jpg",
+          "segments": [
+            {
+              "label": "全程",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.17622,-123.129531&destination=49.17622,-123.129531"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

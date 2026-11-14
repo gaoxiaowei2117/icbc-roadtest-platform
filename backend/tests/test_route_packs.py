@@ -76,6 +76,15 @@ def test_shipped_catalog_has_burnaby_pack():
     assert catalog.currency(pack, get_settings()) == "cad"
 
 
+def test_shipped_catalog_has_richmond_pack_with_route_1_free():
+    pack = catalog.get_pack("richmond-5300")
+    assert pack is not None
+    assert (pack.city, pack.region, pack.country) == ("Richmond", "BC", "CA")
+    assert [r.title for r in pack.routes] == ["路线 1", "路线 2", "路线 3", "路线 4"]
+    assert [r.free for r in pack.routes] == [True, False, False, False]
+    assert all(r.preview and r.preview.startswith("route-previews/richmond-5300/") for r in pack.routes)
+
+
 def test_catalog_requires_valid_location_codes(tmp_path, monkeypatch):
     base = {
         "slug": "x-pack", "name": "X", "city": "Burnaby", "centre": "Somewhere",
@@ -505,8 +514,8 @@ def test_facets_list_countries_and_regions_with_counts(client, multi_catalog):
 
 def test_facets_for_shipped_catalog(client):
     assert client.get("/api/route-packs/facets").json() == {
-        "total": 1,
-        "countries": [{"code": "CA", "count": 1, "regions": [{"code": "BC", "count": 1}]}],
+        "total": 2,
+        "countries": [{"code": "CA", "count": 2, "regions": [{"code": "BC", "count": 2}]}],
     }
 
 
