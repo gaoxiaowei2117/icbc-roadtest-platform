@@ -124,3 +124,17 @@ def test_admin_can_mark_test_accounts(client, auth_headers, db):
                       headers=headers).status_code == 409
     assert client.put("/api/admin/users/9999/stats-exclusion", json={"excluded": True},
                       headers=headers).status_code == 404
+
+
+def test_admin_can_delete_a_user_with_route_pack_history(client, auth_headers, db):
+    headers, _admin_user = _admin(client, auth_headers, db)
+    user = _user(db, "gone@gmail.com")
+    _open(db, user, 0, datetime.now(timezone.utc))
+    _buy(db, user, datetime.now(timezone.utc))
+    uid = user.id
+    db.expire_all()
+    assert client.delete(f"/api/admin/users/{uid}", headers=headers).status_code == 204
+    assert db.query(User).filter_by(id=uid).count() == 0
+    assert db.query(RoutePackOpen).filter_by(user_id=uid).count() == 0
+    assert db.query(RoutePackPurchase).filter_by(user_id=uid).count() == 0
+    assert db.query(Payment).filter_by(user_id=uid).count() == 0

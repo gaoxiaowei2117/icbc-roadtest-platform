@@ -338,6 +338,23 @@ function contactMailto(pack: RoutePack) {
         </div>
       </div>
       <p v-if="routeHint(pack)" class="text-xs text-slate-500">{{ routeHint(pack) }}</p>
+
+      <!-- Support: plain email text too, since mailto does nothing on phones without a mail app. -->
+      <div class="rounded-md bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-700">
+        {{ tr(
+          '购买、付款或打开导航遇到问题？请发邮件到 ',
+          'Problems buying, paying or opening navigation? Email ',
+          'Un problème pour acheter, payer ou ouvrir la navigation ? Écrivez à ',
+          '¿Problemas para comprar, pagar o abrir la navegación? Escribe a ',
+          '購買、付款或開啟導航遇到問題？請寄信到 ',
+        ) }}<a :href="contactMailto(pack)" class="font-semibold text-blue-600 hover:underline break-all">{{ SUPPORT_EMAIL }}</a>{{ tr(
+          '，并注明你的注册邮箱，我们会尽快回复。',
+          ' with your registered email and we will get back to you soon.',
+          ' en indiquant votre courriel d’inscription. Nous répondrons rapidement.',
+          ' con tu correo registrado y te responderemos pronto.',
+          '，並註明你的註冊信箱，我們會盡快回覆。',
+        ) }}
+      </div>
     </div>
 
     <div

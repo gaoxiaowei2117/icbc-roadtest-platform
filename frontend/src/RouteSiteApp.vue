@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/i18n'
 import LanguageSelect from '@/components/LanguageSelect.vue'
 import SiteFooter from '@/components/SiteFooter.vue'
+import { SUPPORT_EMAIL } from '@/config/support'
 
 // Layout for the route-pack site at the domain root: brand, language, login/logout.
 // Deliberately no links or branding of the booking service.
@@ -29,6 +30,12 @@ async function onLogout() {
         </RouterLink>
         <div class="flex items-center gap-2 text-sm shrink-0">
           <span v-if="auth.user" class="hidden md:inline text-slate-600 truncate max-w-[14rem]">{{ auth.user.email }}</span>
+          <a
+            :href="`mailto:${SUPPORT_EMAIL}`"
+            class="inline-flex items-center gap-1 text-slate-600 hover:text-blue-600 whitespace-nowrap"
+            :title="SUPPORT_EMAIL"
+            :aria-label="tr(`联系客服：${SUPPORT_EMAIL}`, `Contact support: ${SUPPORT_EMAIL}`)"
+          ><span aria-hidden="true">✉</span><span class="hidden sm:inline">{{ tr('联系客服', 'Contact', 'Contact', 'Contacto', '聯絡客服') }}</span></a>
           <LanguageSelect class="text-sm" />
           <button v-if="auth.user" class="btn-secondary whitespace-nowrap" @click="onLogout">{{ tr('登出', 'Log out') }}</button>
           <RouterLink

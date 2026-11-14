@@ -8,8 +8,8 @@ import { useI18n } from '@/i18n'
 
 /**
  * Admin user list, shared by the booking console and the route-pack site.
- * `routeOnly` keeps to what matters for route packs: no booking columns,
- * no ICBC profile, no delete (deleting also removes the user's bookings).
+ * `routeOnly` keeps to what matters for route packs: no booking columns and
+ * no ICBC profile. Delete is available in both; its confirmation says what goes with it.
  */
 const props = defineProps<{ routeOnly?: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -100,14 +100,20 @@ async function toggleStats(user: AdminUser) {
   }
 }
 
-async function deleteUser(user: User) {
+async function deleteUser(user: AdminUser) {
+  const packs = user.route_packs?.length
+    ? tr(
+      `\n\n⚠ 该用户已购买路线包（${user.route_packs.join(', ')}），删除后购买和付款记录也会一起删除，无法恢复。`,
+      `\n\n⚠ This user bought route packs (${user.route_packs.join(', ')}). Their purchase and payment records will be deleted too, permanently.`,
+    )
+    : ''
   if (!window.confirm(tr(
-    `确定删除用户 ${user.email} 吗？该用户的任务和凭据也会被删除。`,
-    `Delete ${user.email}? Their bookings and credentials will also be deleted.`,
-    `Supprimer ${user.email}? Ses réservations et identifiants seront également supprimés.`,
-    `¿Eliminar ${user.email}? Sus reservas y credenciales también se eliminarán.`,
-    `確定刪除使用者 ${user.email} 嗎？該使用者的任務和憑證也會被刪除。`,
-  ))) return
+    `确定删除用户 ${user.email} 吗？该用户的抢号任务、凭据、路线包购买和导航打开记录也会被删除，无法恢复。`,
+    `Delete ${user.email}? Their bookings, credentials, route-pack purchases and navigation opens will also be deleted, permanently.`,
+    `Supprimer ${user.email}? Ses réservations, identifiants, achats d’itinéraires et ouvertures de navigation seront également supprimés définitivement.`,
+    `¿Eliminar ${user.email}? Sus reservas, credenciales, compras de rutas y aperturas de navegación también se eliminarán de forma permanente.`,
+    `確定刪除使用者 ${user.email} 嗎？該使用者的搶號任務、憑證、路線包購買和導航開啟記錄也會被刪除，無法恢復。`,
+  ) + packs)) return
   deletingUserId.value = user.id
   error.value = ''
   try {
@@ -143,7 +149,7 @@ async function deleteUser(user: User) {
           <th class="pr-3">{{ tr('导航打开', 'Route opens') }}</th>
           <th class="pr-3">{{ tr('注册时间', 'Registered') }}</th>
           <th v-if="routeOnly" class="pr-3">{{ tr('计入统计', 'In stats') }}</th>
-          <th v-if="!routeOnly" class="text-right">{{ tr('操作', 'Actions') }}</th>
+          <th class="text-right">{{ tr('操作', 'Actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -189,9 +195,10 @@ async function deleteUser(user: User) {
                 >{{ user.exclude_from_stats ? tr('恢复计入', 'Count again') : tr('标为测试账号', 'Mark as test') }}</button>
               </template>
             </td>
-            <td v-if="!routeOnly">
+            <td>
               <div class="flex justify-end gap-2">
                 <button
+                  v-if="!routeOnly"
                   class="btn-secondary text-xs px-3 py-1"
                   @click="expandedUserId = expandedUserId === user.id ? null : user.id"
                 >
