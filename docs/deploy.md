@@ -196,10 +196,17 @@ ssh mycloud 'sudo chown -R www-data:www-data /var/www/icbc-platform /var/www/roa
 
 如果修改了 Nginx 配置：
 
+三个文件一起装（server 块、公共 location、Cloudflare 真实 IP），`nginx -t` 通过才重新加载：
+
 ```bash
-scp deploy/nginx-icbc.conf mycloud:/tmp/nginx-icbc.conf
-ssh mycloud 'sudo install -m 0644 /tmp/nginx-icbc.conf /etc/nginx/sites-available/icbc-platform && sudo nginx -t && sudo systemctl reload nginx'
+scp deploy/nginx-icbc.conf deploy/nginx-icbc-common.conf deploy/nginx-cloudflare-realip.conf mycloud:/tmp/
+ssh mycloud 'sudo install -m 0644 /tmp/nginx-icbc.conf /etc/nginx/sites-available/icbc-platform \
+  && sudo install -m 0644 /tmp/nginx-icbc-common.conf /etc/nginx/snippets/icbc-common.conf \
+  && sudo install -m 0644 /tmp/nginx-cloudflare-realip.conf /etc/nginx/snippets/cloudflare-realip.conf \
+  && sudo nginx -t && sudo systemctl reload nginx'
 ```
+
+本站访问日志在 `/var/log/nginx/roadtestgo.access.log`，记录的是访客真实 IP（Cloudflare 的 `CF-Connecting-IP`）；同机其他站点仍写 `access.log`。Cloudflare 公布新网段时，同步更新 `deploy/nginx-cloudflare-realip.conf` 和腾讯云防火墙。
 
 ### 3.6 发布后验证
 

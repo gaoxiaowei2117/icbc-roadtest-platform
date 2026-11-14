@@ -41,6 +41,7 @@ echo "==> 7. nginx 配置"
 cp "$APP_DIR/deploy/nginx-icbc.conf" /etc/nginx/sites-available/icbc-platform
 mkdir -p /etc/nginx/snippets
 cp "$APP_DIR/deploy/nginx-icbc-common.conf" /etc/nginx/snippets/icbc-common.conf
+cp "$APP_DIR/deploy/nginx-cloudflare-realip.conf" /etc/nginx/snippets/cloudflare-realip.conf
 ln -sf /etc/nginx/sites-available/icbc-platform /etc/nginx/sites-enabled/icbc-platform
 nginx -t
 systemctl reload nginx
