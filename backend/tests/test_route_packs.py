@@ -80,8 +80,8 @@ def test_shipped_catalog_has_richmond_pack_with_route_1_free():
     pack = catalog.get_pack("richmond-5300")
     assert pack is not None
     assert (pack.city, pack.region, pack.country) == ("Richmond", "BC", "CA")
-    assert [r.title for r in pack.routes] == ["路线 1", "路线 2", "路线 3", "路线 4"]
-    assert [r.free for r in pack.routes] == [True, False, False, False]
+    assert [r.title for r in pack.routes] == ["路线 1", "路线 2", "路线 3", "路线 4", "路线 5"]
+    assert [r.free for r in pack.routes] == [True, False, False, False, False]
     assert all(r.preview and r.preview.startswith("route-previews/richmond-5300/") for r in pack.routes)
 
 

@@ -76,18 +76,19 @@
         {
           "title": "路线 1",
           "free": true,
-          "preview": "route-previews/richmond-5300/route1.jpg",
+          "preview": "route-previews/richmond-5300/route1-v2.jpg",
+          "preview_en": "route-previews/richmond-5300/en/route1-v2.jpg",
           "segments": [
             {
               "label": "全程",
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.17622,-123.129531&destination=49.17622,-123.129531"
             }
-          ],
-          "preview_en": "route-previews/richmond-5300/en/route1.jpg"
+          ]
         },
         {
           "title": "路线 2",
-          "preview": "route-previews/richmond-5300/route2.jpg",
+          "preview": "route-previews/richmond-5300/route2-v2.jpg",
+          "preview_en": "route-previews/richmond-5300/en/route2-v3.jpg",
           "segments": [
             {
               "label": "全程",
@@ -97,7 +98,8 @@
         },
         {
           "title": "路线 3",
-          "preview": "route-previews/richmond-5300/route3.jpg",
+          "preview": "route-previews/richmond-5300/route3-v2.jpg",
+          "preview_en": "route-previews/richmond-5300/en/route3-v3.jpg",
           "segments": [
             {
               "label": "全程",
@@ -107,7 +109,19 @@
         },
         {
           "title": "路线 4",
-          "preview": "route-previews/richmond-5300/route4.jpg",
+          "preview": "route-previews/richmond-5300/route4-v2.jpg",
+          "preview_en": "route-previews/richmond-5300/en/route4-v2.jpg",
+          "segments": [
+            {
+              "label": "全程",
+              "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.17622,-123.129531&destination=49.17622,-123.129531"
+            }
+          ]
+        },
+        {
+          "title": "路线 5",
+          "preview": "route-previews/richmond-5300/route5-v2.jpg",
+          "preview_en": "route-previews/richmond-5300/en/route5-v2.jpg",
           "segments": [
             {
               "label": "全程",
