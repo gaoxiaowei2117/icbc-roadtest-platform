@@ -12,7 +12,8 @@ import hashlib
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Request
-from jose import JWTError, jwt
+import jwt
+from jwt import InvalidTokenError as JWTError
 
 from app.core.config import get_settings
 

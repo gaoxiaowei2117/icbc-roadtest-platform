@@ -20,7 +20,7 @@ os.environ["DATABASE_URL"] = os.environ.get(
     "postgresql+psycopg://icbc:postgres@127.0.0.1:5432/icbc_test",
 )
 os.environ["SECRET_PUBLIC_KEY"] = TEST_PUBLIC_KEY
-os.environ["JWT_SECRET"] = "test-jwt-secret"
+os.environ["JWT_SECRET"] = "test-jwt-secret-at-least-32-bytes-long"
 os.environ["WORKER_API_KEY"] = "test-worker-key"
 os.environ["RATE_LIMIT_ENABLED"] = "false"
 os.environ["BOOTSTRAP_ADMIN_EMAIL"] = ""
