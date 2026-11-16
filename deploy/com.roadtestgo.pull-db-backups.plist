@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Daily off-server copy of the database backups (09:00 local; runs on wake if the Mac slept).
+     Install (from the repo root):
+       mkdir -p ~/.local/bin && install -m 755 deploy/pull-db-backups.sh ~/.local/bin/roadtestgo-pull-db-backups
+       sed "s|__HOME__|$HOME|g" deploy/com.roadtestgo.pull-db-backups.plist > ~/Library/LaunchAgents/com.roadtestgo.pull-db-backups.plist
+       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.roadtestgo.pull-db-backups.plist
+     Log: ~/Backups/roadtestgo-db/pull.log -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.roadtestgo.pull-db-backups</string>
+  <key>ProgramArguments</key>
+  <array><string>__HOME__/.local/bin/roadtestgo-pull-db-backups</string></array>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string></dict>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key><string>__HOME__/Backups/roadtestgo-db/pull.log</string>
+  <key>StandardErrorPath</key><string>__HOME__/Backups/roadtestgo-db/pull.log</string>
+</dict>
+</plist>

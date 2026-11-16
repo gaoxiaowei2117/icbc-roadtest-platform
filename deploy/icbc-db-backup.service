@@ -1,0 +1,7 @@
+[Unit]
+Description=Back up the ICBC platform Postgres database
+After=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/icbc-db-backup

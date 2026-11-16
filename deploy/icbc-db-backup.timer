@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly ICBC platform database backup
+
+[Timer]
+# 03:30 Vancouver time, the quietest hour for the site.
+OnCalendar=*-*-* 03:30:00 America/Vancouver
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target
