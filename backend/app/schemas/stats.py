@@ -34,6 +34,13 @@ class StatsSourceOut(BaseModel):
     purchased: int
 
 
+class StatsHeardFromOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    answer: str
+    users: int
+    purchased: int
+
+
 class StatsOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     days: int
@@ -48,6 +55,7 @@ class StatsOut(BaseModel):
     trial_users_all_time: int
     trial_then_purchased_all_time: int
     by_source: list[StatsSourceOut]
+    heard_from: list[StatsHeardFromOut]
 
 
 class StatsExclusionIn(BaseModel):

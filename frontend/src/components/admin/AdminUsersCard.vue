@@ -5,6 +5,7 @@ import { getPosList, type PosEntry } from '@/api/pos'
 import { setStatsExclusion } from '@/api/stats'
 import type { User } from '@/stores/auth'
 import { useI18n } from '@/i18n'
+import { HEARD_FROM, SOURCE_NAMES } from '@/sources'
 
 /**
  * Admin user list, shared by the booking console and the route-pack site.
@@ -24,6 +25,9 @@ type AdminUser = User & {
   route_opens_last_at?: string | null
   route_open_ips_24h?: number
   exclude_from_stats?: boolean
+  signup_source?: string | null
+  signup_landing?: string | null
+  heard_from_detail?: string | null
 }
 
 /** Distinct IPs in 24 h at or above this: the account may be shared (shown, not blocked). */
@@ -126,6 +130,18 @@ async function deleteUser(user: AdminUser) {
     deletingUserId.value = null
   }
 }
+
+/** First-touch source shown in the users table ("direct" = no referrer, e.g. typed or app link). */
+function signupSourceLabel(src: string | null | undefined) {
+  if (!src) return '—'
+  if (src === 'direct') return tr('直接访问', 'Direct')
+  return SOURCE_NAMES[src] || src
+}
+
+function heardFromLabel(answer: string) {
+  const opt = HEARD_FROM.find((o) => o.value === answer)
+  return opt ? tr(opt.zh, opt.en, undefined, undefined, opt.zhHant) : answer
+}
 </script>
 
 <template>
@@ -148,6 +164,7 @@ async function deleteUser(user: AdminUser) {
           <th class="pr-3">{{ tr('已购路线包', 'Route packs') }}</th>
           <th class="pr-3">{{ tr('导航打开', 'Route opens') }}</th>
           <th class="pr-3">{{ tr('注册时间', 'Registered') }}</th>
+          <th v-if="routeOnly" class="pr-3">{{ tr('来源', 'Source') }}</th>
           <th v-if="routeOnly" class="pr-3">{{ tr('计入统计', 'In stats') }}</th>
           <th class="text-right">{{ tr('操作', 'Actions') }}</th>
         </tr>
@@ -182,6 +199,14 @@ async function deleteUser(user: AdminUser) {
               <span v-else class="text-slate-400">—</span>
             </td>
             <td class="pr-3 whitespace-nowrap">{{ formatDateTime(user.created_at) }}</td>
+            <td v-if="routeOnly" class="pr-3 text-xs">
+              <div :title="user.signup_landing || ''">{{ signupSourceLabel(user.signup_source) }}
+                <span v-if="user.signup_landing" class="text-slate-400">· {{ user.signup_landing }}</span>
+              </div>
+              <div v-if="user.heard_from" class="text-slate-600">
+                {{ tr('问卷：', 'Survey: ') }}{{ heardFromLabel(user.heard_from) }}<span v-if="user.heard_from_detail">（{{ user.heard_from_detail }}）</span>
+              </div>
+            </td>
             <td v-if="routeOnly" class="pr-3 whitespace-nowrap text-xs">
               <span v-if="user.is_admin" class="text-slate-400">{{ tr('不计入（管理员）', 'No (admin)') }}</span>
               <template v-else>
@@ -217,7 +242,7 @@ async function deleteUser(user: AdminUser) {
             </td>
           </tr>
           <tr v-if="!routeOnly && expandedUserId === user.id" class="border-b bg-slate-50">
-            <td colspan="10" class="p-4">
+            <td colspan="11" class="p-4">
               <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <h3 class="font-medium mb-2">{{ tr('ICBC 资料', 'ICBC Profile') }}</h3>

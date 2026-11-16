@@ -141,6 +141,10 @@ def list_all_users(
             route_opens_last_at=opens.get(user.id, (0, None))[1],
             route_open_ips_24h=ips_24h.get(user.id, 0),
             exclude_from_stats=user.exclude_from_stats,
+            signup_source=user.signup_source,
+            signup_detail=user.signup_detail,
+            signup_landing=user.signup_landing,
+            heard_from_detail=user.heard_from_detail,
         )
         for user in users
     ]

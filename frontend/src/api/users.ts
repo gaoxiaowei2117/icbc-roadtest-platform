@@ -9,6 +9,11 @@ export async function updateMe(payload: Partial<User>): Promise<User> {
   return (await api.patch('/api/users/me', payload)).data
 }
 
+/** Post-purchase "how did you hear about us?" answer; returns the updated user. */
+export async function setHeardFrom(answer: string, detail?: string): Promise<User> {
+  return (await api.put('/api/users/me/heard-from', { answer, detail: detail || null })).data
+}
+
 export async function getSecretStatus(): Promise<{ has_secret: boolean; updated_at: string | null }> {
   return (await api.get('/api/users/me/secret')).data
 }

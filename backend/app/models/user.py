@@ -25,6 +25,10 @@ class User(Base):
     signup_source: Mapped[str | None] = mapped_column(String(40))
     signup_detail: Mapped[str | None] = mapped_column(String(200))
     signup_landing: Mapped[str | None] = mapped_column(String(200))
+    # Post-purchase "how did you hear about us?" answer (choices: HeardFromIn in app/schemas/user.py).
+    heard_from: Mapped[str | None] = mapped_column(String(40))
+    heard_from_detail: Mapped[str | None] = mapped_column(String(200))
+    heard_from_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     verify_code: Mapped[str | None] = mapped_column(String(6))
     verify_code_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

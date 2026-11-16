@@ -38,6 +38,15 @@ export interface Stats {
   trial_then_purchased_all_time: number
   /** The range's sign-ups by first-touch source ("youtube", "google", "direct", "unknown" = before tracking). */
   by_source: StatsSource[]
+  /** All time: post-purchase survey answers, most common first. */
+  heard_from: StatsHeardFrom[]
+}
+
+export interface StatsHeardFrom {
+  answer: string
+  users: number
+  /** Of those, how many have a paid route pack. */
+  purchased: number
 }
 
 export interface StatsSource {

@@ -1,6 +1,7 @@
 """用户资料 schema。"""
 import re
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
@@ -30,6 +31,22 @@ class UserPublic(ProfileFields):
     email: EmailStr
     is_admin: bool
     created_at: datetime
+    # Answer to the post-purchase "how did you hear about us?" question (None = not asked yet).
+    heard_from: str | None = None
+
+
+HeardFromAnswer = Literal["youtube", "xiaohongshu", "wechat", "google", "friend", "instructor", "other"]
+
+
+class HeardFromIn(BaseModel):
+    answer: HeardFromAnswer
+    detail: str | None = Field(default=None, max_length=200)
+
+    @field_validator("detail")
+    @classmethod
+    def _strip(cls, v: str | None) -> str | None:
+        v = (v or "").strip()
+        return v or None
 
 
 class AdminUserOut(UserPublic):
@@ -43,6 +60,10 @@ class AdminUserOut(UserPublic):
     route_opens_last_at: datetime | None = None
     route_open_ips_24h: int = 0  # distinct IPs in the last 24 h; many = the account may be shared
     exclude_from_stats: bool = False  # test account, left out of the admin stats
+    signup_source: str | None = None  # first-touch source (app/core/attribution.py)
+    signup_detail: str | None = None
+    signup_landing: str | None = None
+    heard_from_detail: str | None = None  # free text with the "other" (or any) answer
 
 
 class UserUpdate(ProfileFields):

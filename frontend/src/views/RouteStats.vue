@@ -3,6 +3,7 @@
 // sales by Vancouver day. Admins and accounts marked as test accounts are left out
 // (marked on the Users tab). Visitor counts live in Cloudflare Web Analytics.
 import { computed, onMounted, ref, watch } from 'vue'
+import { HEARD_FROM, SOURCE_NAMES } from '@/sources'
 import { getStats, type Stats } from '@/api/stats'
 import { useI18n } from '@/i18n'
 
@@ -86,13 +87,12 @@ const activeDays = computed(() =>
     .reverse(),
 )
 
-const SOURCE_NAMES: Record<string, string> = {
-  youtube: 'YouTube', google: 'Google', bing: 'Bing', chatgpt: 'ChatGPT', perplexity: 'Perplexity',
-  claude: 'Claude', copilot: 'Copilot', duckduckgo: 'DuckDuckGo', baidu: '百度 Baidu',
-  xiaohongshu: '小红书', facebook: 'Facebook', instagram: 'Instagram', reddit: 'Reddit', wechat: '微信 WeChat',
+/** "youtube" → "YouTube"; other sites show their host. */
+function heardLabel(answer: string) {
+  const opt = HEARD_FROM.find((o) => o.value === answer)
+  return opt ? tr(opt.zh, opt.en, undefined, undefined, opt.zhHant) : answer
 }
 
-/** "youtube" → "YouTube"; other sites show their host. */
 function sourceLabel(source: string) {
   if (source === 'direct') return tr('直接访问 / 未知', 'Direct / unknown')
   if (source === 'unknown') return tr('未记录（统计上线前注册）', 'Not recorded (signed up before tracking)')
@@ -205,6 +205,32 @@ function sourceLabel(source: string) {
               <td class="py-2 px-3 text-right tabular-nums">{{ row.verified }}</td>
               <td class="py-2 px-3 text-right tabular-nums">{{ row.tried_free_route }}</td>
               <td class="py-2 px-3 text-right tabular-nums">{{ row.started_checkout }}</td>
+              <td class="py-2 pl-3 text-right tabular-nums">{{ row.purchased }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Post-purchase survey: "how did you hear about us?" (components/HeardFromSurvey.vue) -->
+      <div class="card overflow-x-auto">
+        <h2 class="text-lg font-semibold">{{ tr('购买后问卷：从哪里知道我们', 'Post-purchase survey: how they heard about us') }}</h2>
+        <p class="text-sm text-slate-500 mb-3">{{ tr(
+          '付款成功后请用户选一项（可跳过）。累计全部时间，不受上面日期范围影响。',
+          'Asked right after a successful payment (skippable). All time, not limited to the range above.',
+        ) }}</p>
+        <div v-if="!stats.heard_from.length" class="text-sm text-slate-500 py-6 text-center">{{ tr('还没有人回答。', 'No answers yet.') }}</div>
+        <table v-else class="w-full text-sm">
+          <thead class="text-left text-slate-500 border-b">
+            <tr>
+              <th class="py-2 pr-3 font-medium">{{ tr('回答', 'Answer') }}</th>
+              <th class="py-2 px-3 font-medium text-right">{{ tr('人数', 'People') }}</th>
+              <th class="py-2 pl-3 font-medium text-right">{{ tr('其中已购买', 'Of whom bought') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in stats.heard_from" :key="row.answer" class="border-b border-slate-100 last:border-0">
+              <td class="py-2 pr-3">{{ heardLabel(row.answer) }}</td>
+              <td class="py-2 px-3 text-right tabular-nums font-semibold">{{ row.users }}</td>
               <td class="py-2 pl-3 text-right tabular-nums">{{ row.purchased }}</td>
             </tr>
           </tbody>

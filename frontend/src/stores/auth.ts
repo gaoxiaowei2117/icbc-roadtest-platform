@@ -19,6 +19,8 @@ export interface User {
   pref_days_of_week: number[] | null
   pref_parts_of_day: number[] | null
   created_at: string
+  /** Post-purchase survey answer; null until answered. */
+  heard_from?: string | null
 }
 
 const ACCESS_KEY = 'icbc.access'

@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { SUPPORT_EMAIL } from '@/config/support'
 import { useI18n } from '@/i18n'
 import { useRoutePackText } from '@/routePackText'
+import HeardFromSurvey from '@/components/HeardFromSurvey.vue'
 
 const props = defineProps<{
   slug: string
@@ -236,6 +237,7 @@ function contactMailto(pack: RoutePack) {
 <template>
   <div class="space-y-6">
     <p v-if="message" class="text-sm rounded-md bg-blue-50 text-blue-800 px-4 py-3">{{ message }}</p>
+    <HeardFromSurvey v-if="checkout === 'success'" />
     <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
     <div v-if="loading" class="text-sm text-slate-500">{{ tr('加载中…', 'Loading…') }}</div>
     <div v-else-if="notFound" class="card text-sm text-slate-600">{{ tr('没有找到这个考场的路线包。', 'This test centre was not found.') }}</div>

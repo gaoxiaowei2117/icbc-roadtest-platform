@@ -80,7 +80,8 @@ export default defineConfig(({ mode }) => {
     server: {
       port: routes ? 5174 : 5173,
       proxy: {
-        '/api': 'http://127.0.0.1:8000',
+        // API_PROXY lets a second backend (another branch, another port) serve this dev server.
+        '/api': process.env.API_PROXY || 'http://127.0.0.1:8000',
       },
     },
     resolve: {

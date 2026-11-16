@@ -1,4 +1,6 @@
 """/api/users/* 当前用户资料 / ICBC 凭据管理。"""
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -9,7 +11,7 @@ from app.crud import secret as secret_crud
 from app.crud import user as user_crud
 from app.crud.user import BOOKING_REQUIRED_FIELDS
 from app.models.user import User
-from app.schemas.user import SecretIn, SecretStatus, UserPublic, UserUpdate
+from app.schemas.user import HeardFromIn, SecretIn, SecretStatus, UserPublic, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -48,6 +50,21 @@ def update_me(
             status.HTTP_400_BAD_REQUEST, "结束日期不能早于开始日期"
         )
     return user_crud.update_profile(db, user, **data)
+
+
+@router.put("/me/heard-from", response_model=UserPublic)
+def set_heard_from(
+    payload: HeardFromIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    """Post-purchase "how did you hear about us?" (the latest answer wins)."""
+    user.heard_from = payload.answer
+    user.heard_from_detail = payload.detail
+    user.heard_from_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.put("/me/secret", response_model=SecretStatus)

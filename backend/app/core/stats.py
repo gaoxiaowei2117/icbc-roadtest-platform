@@ -49,6 +49,14 @@ class SourceRow:
 
 
 @dataclass
+class HeardFromRow:
+    """All time: post-purchase survey answers ("youtube", "friend", …)."""
+    answer: str
+    users: int = 0
+    purchased: int = 0   # of those, how many have a paid route pack
+
+
+@dataclass
 class Stats:
     days: int
     start: date
@@ -65,6 +73,8 @@ class Stats:
     trial_then_purchased_all_time: int = 0
     # The range's sign-ups split by where they came from, most sign-ups first.
     by_source: list[SourceRow] = field(default_factory=list)
+    # All time: answers to the post-purchase question, most common first.
+    heard_from: list[HeardFromRow] = field(default_factory=list)
 
 
 def _local_day(ts: datetime) -> date:
@@ -184,6 +194,15 @@ def compute(db: Session, days: int, today: date | None = None) -> Stats:
         row.purchased += int(uid in first_purchase)
     by_source = sorted(rows.values(), key=lambda r: (-r.signups, r.source))
 
+    heard: dict[str, HeardFromRow] = {}
+    for uid, answer in db.execute(
+        select(User.id, User.heard_from).where(counted, User.heard_from.is_not(None))
+    ).all():
+        row = heard.setdefault(answer, HeardFromRow(answer=answer))
+        row.users += 1
+        row.purchased += int(uid in first_purchase)
+    heard_rows = sorted(heard.values(), key=lambda r: (-r.users, r.answer))
+
     trial_then_purchased = sum(
         1 for uid, ts in first_free.items() if uid in first_purchase and first_purchase[uid] >= ts
     )
@@ -192,5 +211,5 @@ def compute(db: Session, days: int, today: date | None = None) -> Stats:
         days=days, start=start, end=today, timezone=str(TZ), currency=currency,
         excluded_accounts=excluded, daily=daily, totals=totals, funnel=funnel,
         trial_users_all_time=len(first_free), trial_then_purchased_all_time=trial_then_purchased,
-        by_source=by_source,
+        by_source=by_source, heard_from=heard_rows,
     )
