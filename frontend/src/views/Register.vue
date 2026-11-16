@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { redirectQuery } from '@/router/redirect'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/i18n'
+import { setPendingEmail } from '@/pendingEmail'
 
 const email = ref('')
 const password = ref('')
@@ -28,7 +29,8 @@ async function onSubmit() {
   loading.value = true
   try {
     await auth.register(email.value, password.value)
-    router.push({ name: 'verify', query: { email: email.value, ...redirectQuery(route.query) } })
+    setPendingEmail(email.value)
+    router.push({ name: 'verify', query: redirectQuery(route.query) })
   } catch (e: any) {
     error.value = apiError(e, '注册失败', 'Registration failed')
   } finally {

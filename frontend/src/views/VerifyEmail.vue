@@ -5,13 +5,19 @@ import { useAuthStore } from '@/stores/auth'
 import { redirectQuery, safeRedirect } from '@/router/redirect'
 import { homePath } from '@/site'
 import { useI18n } from '@/i18n'
+import { clearPendingEmail, getPendingEmail } from '@/pendingEmail'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { tr, apiError } = useI18n()
 
-const email = ref((route.query.email as string) || '')
+// Old links may still carry ?email=; take it, then drop it from the address bar.
+const email = ref((route.query.email as string) || getPendingEmail())
+if (route.query.email) {
+  const { email: _drop, ...rest } = route.query
+  router.replace({ query: rest })
+}
 const code = ref('')
 const cooldown = ref(0)
 let timer: number | undefined
@@ -23,6 +29,7 @@ async function onVerify() {
   }
   try {
     await auth.verifyEmail(email.value, code.value)
+    clearPendingEmail()
     alert(tr('验证成功', 'Email verified'))
     router.push(safeRedirect(route.query) || homePath(auth.user?.is_admin))
   } catch (e: any) {

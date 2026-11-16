@@ -5,6 +5,7 @@ import { redirectQuery, safeRedirect } from '@/router/redirect'
 import { homePath } from '@/site'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/i18n'
+import { setPendingEmail } from '@/pendingEmail'
 
 const email = ref('')
 const password = ref('')
@@ -24,7 +25,8 @@ async function onSubmit() {
   } catch (e: any) {
     if (e.response?.status === 403) {
       if (confirm(tr('邮箱未验证，是否前往验证？', 'Email is not verified. Go to verification?'))) {
-        router.push({ name: 'verify', query: { email: email.value, ...redirectQuery(route.query) } })
+        setPendingEmail(email.value)
+        router.push({ name: 'verify', query: redirectQuery(route.query) })
       }
     } else {
       error.value = apiError(e, '登录失败', 'Login failed')
