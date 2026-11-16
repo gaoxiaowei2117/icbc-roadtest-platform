@@ -62,6 +62,13 @@ onMounted(() => { if (email.value) startCooldown() })
         `Se envió un código de verificación a ${email}. Es válido durante 10 minutos.`,
         `驗證碼已發送到 ${email}，10 分鐘內有效。`,
       ) }}</p>
+      <p class="text-sm text-amber-700 bg-amber-50 rounded px-3 py-2 text-center">{{ tr(
+        '没收到？邮件通常 1 分钟内到达，请查看垃圾邮件 / 广告邮件文件夹；还没有就点下面的"重发验证码"。',
+        'No email? It usually arrives within a minute. Check your spam or junk folder, or tap "Resend code" below.',
+        'Pas de courriel ? Il arrive en général en une minute. Vérifiez vos courriels indésirables, ou touchez « Renvoyer le code » ci-dessous.',
+        '¿No llegó? Suele tardar menos de un minuto. Revisa la carpeta de spam o toca «Reenviar código» abajo.',
+        '沒收到？郵件通常 1 分鐘內到達，請查看垃圾郵件資料夾；還沒有就點下面的重發按鈕。',
+      ) }}</p>
       <div>
         <label class="label">{{ tr('邮箱', 'Email') }}</label>
         <input v-model="email" type="email" class="input" />
