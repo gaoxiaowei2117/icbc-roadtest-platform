@@ -103,7 +103,7 @@ sudo rm -rf "$APP/.deploy-stage"
 echo "--> restart"
 sudo systemctl restart icbc-api
 for i in $(seq 1 30); do
-  if curl -fsS -o /dev/null http://127.0.0.1:8000/health; then echo "health ok after ${i}s"; exit 0; fi
+  if curl -fs -o /dev/null http://127.0.0.1:8000/health; then echo "health ok after ${i}s"; exit 0; fi
   sleep 1
 done
 
@@ -137,7 +137,7 @@ deploy_frontend() {
     "${SSH[@]}" "set -e; sudo rm -rf /tmp/fe-$site; sudo cp -r /var/www/$site /tmp/fe-$site; sudo chown -R \$(id -u):\$(id -g) /tmp/fe-$site"
     local n=() changes
     [[ $dry == 1 ]] && n=(-n)
-    changes=$(rsync -rlc --delete --itemize-changes "${n[@]}" -e "ssh -o ConnectTimeout=20" \
+    changes=$(rsync -rlc --delete --itemize-changes ${n[@]+"${n[@]}"} -e "ssh -o ConnectTimeout=20" \
       "frontend/$src/" "$HOST:/tmp/fe-$site/") || die "upload to $HOST failed"
     # Old hashed assets show as *deleting in the stage copy only; live keeps them.
     echo "$changes" | grep -v -e '^\.d' -e '^\*deleting' | grep . | sed 's/^/  /' | head -40 || echo "  (no file changes)"
