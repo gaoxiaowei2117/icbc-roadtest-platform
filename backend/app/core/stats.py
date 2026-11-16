@@ -38,6 +38,17 @@ class Day:
 
 
 @dataclass
+class SourceRow:
+    """Users who signed up in the range from one first-touch source, and how far they got."""
+    source: str                # "youtube", "google", "direct", …; "unknown" = signed up before tracking
+    signups: int = 0
+    verified: int = 0
+    tried_free_route: int = 0
+    started_checkout: int = 0
+    purchased: int = 0
+
+
+@dataclass
 class Stats:
     days: int
     start: date
@@ -52,6 +63,8 @@ class Stats:
     # All time: users who opened a free route, and how many of them bought afterwards.
     trial_users_all_time: int = 0
     trial_then_purchased_all_time: int = 0
+    # The range's sign-ups split by where they came from, most sign-ups first.
+    by_source: list[SourceRow] = field(default_factory=list)
 
 
 def _local_day(ts: datetime) -> date:
@@ -74,8 +87,11 @@ def compute(db: Session, days: int, today: date | None = None) -> Stats:
         .where(or_(User.is_admin.is_(True), User.exclude_from_stats.is_(True)))
     ) or 0
 
-    users = db.execute(select(User.id, User.created_at, User.email_verified).where(counted)).all()
-    signed_up_in_range = {uid: (_local_day(ts), verified) for uid, ts, verified in users if ts >= since}
+    users = db.execute(
+        select(User.id, User.created_at, User.email_verified, User.signup_source).where(counted)
+    ).all()
+    signed_up_in_range = {uid: (_local_day(ts), verified) for uid, ts, verified, _src in users if ts >= since}
+    source_of = {uid: src or "unknown" for uid, ts, _v, src in users if ts >= since}
 
     # Opens: all time for counted users (first free open decides the trial day).
     opens = db.execute(
@@ -158,6 +174,16 @@ def compute(db: Session, days: int, today: date | None = None) -> Stats:
         "purchased": len(cohort & set(first_purchase)),
     }
 
+    rows: dict[str, SourceRow] = {}
+    for uid in cohort:
+        row = rows.setdefault(source_of[uid], SourceRow(source=source_of[uid]))
+        row.signups += 1
+        row.verified += int(signed_up_in_range[uid][1])
+        row.tried_free_route += int(uid in first_free)
+        row.started_checkout += int(uid in checkout_users)
+        row.purchased += int(uid in first_purchase)
+    by_source = sorted(rows.values(), key=lambda r: (-r.signups, r.source))
+
     trial_then_purchased = sum(
         1 for uid, ts in first_free.items() if uid in first_purchase and first_purchase[uid] >= ts
     )
@@ -166,4 +192,5 @@ def compute(db: Session, days: int, today: date | None = None) -> Stats:
         days=days, start=start, end=today, timezone=str(TZ), currency=currency,
         excluded_accounts=excluded, daily=daily, totals=totals, funnel=funnel,
         trial_users_all_time=len(first_free), trial_then_purchased_all_time=trial_then_purchased,
+        by_source=by_source,
     )

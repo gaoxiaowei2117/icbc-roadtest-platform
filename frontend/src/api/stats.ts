@@ -36,6 +36,17 @@ export interface Stats {
   }
   trial_users_all_time: number
   trial_then_purchased_all_time: number
+  /** The range's sign-ups by first-touch source ("youtube", "google", "direct", "unknown" = before tracking). */
+  by_source: StatsSource[]
+}
+
+export interface StatsSource {
+  source: string
+  signups: number
+  verified: number
+  tried_free_route: number
+  started_checkout: number
+  purchased: number
 }
 
 export async function getStats(days: number): Promise<Stats> {

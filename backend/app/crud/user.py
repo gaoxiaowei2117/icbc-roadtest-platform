@@ -31,11 +31,22 @@ def delete(db: Session, user: User) -> None:
     db.commit()
 
 
-def create(db: Session, email: str, password: str, is_admin: bool = False) -> User:
+def create(
+    db: Session,
+    email: str,
+    password: str,
+    is_admin: bool = False,
+    signup: tuple[str, str | None, str | None] | None = None,
+) -> User:
+    """signup = (source, detail, landing) from app.core.attribution.classify."""
+    source, detail, landing = signup or (None, None, None)
     user = User(
         email=email.lower(),
         password_hash=hash_password(password),
         is_admin=is_admin,
+        signup_source=source,
+        signup_detail=detail,
+        signup_landing=landing,
     )
     db.add(user)
     db.commit()

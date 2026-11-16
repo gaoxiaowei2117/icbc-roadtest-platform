@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { firstTouch } from '@/attribution'
 import axios from 'axios'
 import { ref, computed } from 'vue'
 import { SITE } from '@/site'
@@ -70,7 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(email: string, password: string) {
-    await axios.post('/api/auth/register', { email, password, site: SITE })
+    await axios.post('/api/auth/register', { email, password, site: SITE, attribution: firstTouch() })
   }
 
   async function verifyEmail(email: string, code: string) {

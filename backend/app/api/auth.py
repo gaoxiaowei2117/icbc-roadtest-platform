@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.core.attribution import classify
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.email import send_verification_code
@@ -50,7 +51,9 @@ def register(
 ) -> RegisterOut:
     if user_crud.get_by_email(db, payload.email):
         raise HTTPException(status.HTTP_409_CONFLICT, "邮箱已注册")
-    user = user_crud.create(db, payload.email, payload.password, is_admin=False)
+    user = user_crud.create(
+        db, payload.email, payload.password, is_admin=False, signup=classify(payload.attribution)
+    )
     _issue_code(db, user, background, payload.site)
     return RegisterOut(message="验证码已发送到邮箱，请查收并验证")
 

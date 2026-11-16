@@ -4,6 +4,9 @@ import { createPinia } from 'pinia'
 // (see vite.config.ts), so each build only bundles its own layout and router.
 import { App, router } from '@site'
 import './style.css'
+import { captureFirstTouch } from './attribution'
+
+captureFirstTouch()
 
 const app = createApp(App)
 app.use(createPinia())

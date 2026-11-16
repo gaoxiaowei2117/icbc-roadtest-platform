@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.core.attribution import AttributionIn
+
 # Which frontend the user signed up on; only changes the verification email branding.
 Site = Literal["booking", "routes"]
 
@@ -11,6 +13,8 @@ class RegisterIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     site: Site = "booking"
+    # First-touch info the browser kept (referrer, landing page, utm_*); optional.
+    attribution: AttributionIn | None = None
 
 
 class LoginIn(BaseModel):

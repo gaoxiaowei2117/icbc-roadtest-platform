@@ -20,6 +20,11 @@ class User(Base):
     exclude_from_stats: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=false(), nullable=False
     )
+    # First touch before signing up (see app/core/attribution.py): "youtube", "google",
+    # "direct", …; detail = referrer host or utm medium/campaign/content; landing = first path.
+    signup_source: Mapped[str | None] = mapped_column(String(40))
+    signup_detail: Mapped[str | None] = mapped_column(String(200))
+    signup_landing: Mapped[str | None] = mapped_column(String(200))
     verify_code: Mapped[str | None] = mapped_column(String(6))
     verify_code_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

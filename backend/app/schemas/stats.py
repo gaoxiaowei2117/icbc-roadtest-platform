@@ -24,6 +24,16 @@ class StatsFunnelOut(BaseModel):
     purchased: int
 
 
+class StatsSourceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    source: str
+    signups: int
+    verified: int
+    tried_free_route: int
+    started_checkout: int
+    purchased: int
+
+
 class StatsOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     days: int
@@ -37,6 +47,7 @@ class StatsOut(BaseModel):
     funnel: StatsFunnelOut
     trial_users_all_time: int
     trial_then_purchased_all_time: int
+    by_source: list[StatsSourceOut]
 
 
 class StatsExclusionIn(BaseModel):

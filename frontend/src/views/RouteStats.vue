@@ -85,6 +85,19 @@ const activeDays = computed(() =>
     .slice()
     .reverse(),
 )
+
+const SOURCE_NAMES: Record<string, string> = {
+  youtube: 'YouTube', google: 'Google', bing: 'Bing', chatgpt: 'ChatGPT', perplexity: 'Perplexity',
+  claude: 'Claude', copilot: 'Copilot', duckduckgo: 'DuckDuckGo', baidu: '百度 Baidu',
+  xiaohongshu: '小红书', facebook: 'Facebook', instagram: 'Instagram', reddit: 'Reddit', wechat: '微信 WeChat',
+}
+
+/** "youtube" → "YouTube"; other sites show their host. */
+function sourceLabel(source: string) {
+  if (source === 'direct') return tr('直接访问 / 未知', 'Direct / unknown')
+  if (source === 'unknown') return tr('未记录（统计上线前注册）', 'Not recorded (signed up before tracking)')
+  return SOURCE_NAMES[source] || source
+}
 </script>
 
 <template>
@@ -164,6 +177,38 @@ const activeDays = computed(() =>
             `All time: ${stats.trial_users_all_time} people tried the free route; ${stats.trial_then_purchased_all_time} of them bought the pack afterwards (${pct(stats.trial_then_purchased_all_time, stats.trial_users_all_time)}).`,
           ) }}
         </p>
+      </div>
+
+      <!-- Sign-ups by where they first came from (first touch, see src/attribution.ts) -->
+      <div class="card overflow-x-auto">
+        <h2 class="text-lg font-semibold">{{ tr('注册来源', 'Sign-ups by source') }}</h2>
+        <p class="text-sm text-slate-500 mb-3">{{ tr(
+          '按用户第一次从哪里来到网站统计（30 天内），以及各自走到了哪一步。',
+          'Where each person first came from (within 30 days before signing up), and how far they got.',
+        ) }}</p>
+        <div v-if="!stats.by_source.length" class="text-sm text-slate-500 py-6 text-center">{{ tr('这段时间还没有人注册。', 'No sign-ups in this range yet.') }}</div>
+        <table v-else class="w-full text-sm">
+          <thead class="text-left text-slate-500 border-b">
+            <tr>
+              <th class="py-2 pr-3 font-medium">{{ tr('来源', 'Source') }}</th>
+              <th class="py-2 px-3 font-medium text-right">{{ tr('注册', 'Sign-ups') }}</th>
+              <th class="py-2 px-3 font-medium text-right">{{ tr('已验证', 'Verified') }}</th>
+              <th class="py-2 px-3 font-medium text-right">{{ tr('试用', 'Tried free') }}</th>
+              <th class="py-2 px-3 font-medium text-right">{{ tr('结账', 'Checkout') }}</th>
+              <th class="py-2 pl-3 font-medium text-right">{{ tr('购买', 'Bought') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in stats.by_source" :key="row.source" class="border-b border-slate-100 last:border-0">
+              <td class="py-2 pr-3">{{ sourceLabel(row.source) }}</td>
+              <td class="py-2 px-3 text-right tabular-nums font-semibold">{{ row.signups }}</td>
+              <td class="py-2 px-3 text-right tabular-nums">{{ row.verified }}</td>
+              <td class="py-2 px-3 text-right tabular-nums">{{ row.tried_free_route }}</td>
+              <td class="py-2 px-3 text-right tabular-nums">{{ row.started_checkout }}</td>
+              <td class="py-2 pl-3 text-right tabular-nums">{{ row.purchased }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- Day by day (table view of everything above) -->
