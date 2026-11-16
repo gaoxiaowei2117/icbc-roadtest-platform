@@ -14,7 +14,12 @@
  * YouTube ids, free flags) and seo/route-pages.json (hand-written text, FAQ, chapters).
  */
 
+import { captureFirstTouch } from '../src/attribution'
+
 export const SITE_ORIGIN = 'https://roadtestgo.com'
+
+/** Same first-touch capture as the app, so a visitor landing here from YouTube/Google is credited at sign-up. */
+const FIRST_TOUCH_SCRIPT = `<script>(${captureFirstTouch.toString()})()</script>`
 
 type Lang = 'zh' | 'en'
 type Bi = { zh: string; en: string }
@@ -69,6 +74,25 @@ interface PackContent {
 export interface SeoContent {
   updated: string
   packs: Record<string, PackContent>
+}
+
+type BiText = { zh: string; en: string }
+interface GuideSection {
+  h2: BiText
+  ordered?: boolean
+  /** Link the section to this centre's page. */
+  pack?: string
+  items: [BiText, BiText][]
+}
+export interface Guide {
+  slug: string
+  updated: string
+  title: BiText
+  description: BiText
+  h1: BiText
+  intro: BiText
+  sections: GuideSection[]
+  faq: [string, string, string, string][]
 }
 
 export interface SeoPage {
@@ -183,6 +207,7 @@ function layout(o: {
 <meta name="twitter:card" content="summary_large_image" />
 <style>${STYLE.trim()}</style>
 ${o.jsonld.map(ld).join('\n')}
+${FIRST_TOUCH_SCRIPT}
 </head>
 <body>
 <header>
@@ -233,7 +258,7 @@ function ctaBox(lang: Lang, pack: CatalogPack, opts: { freeRoute?: boolean } = {
   })}</a></div>`
 }
 
-function hubPage(lang: Lang, packs: CatalogPack[], content: SeoContent) {
+function hubPage(lang: Lang, packs: CatalogPack[], content: SeoContent, guides: Guide[]) {
   const path = hubPath(lang)
   const alternates = { zh: hubPath('zh'), en: hubPath('en') }
   const cards = packs
@@ -250,7 +275,8 @@ function hubPage(lang: Lang, packs: CatalogPack[], content: SeoContent) {
     zh: '按考场整理的 ICBC 路考练习路线：每条路线有讲解视频、重点路口和概览图，手机上可以一键打开 Google 地图导航跟着开，考前熟悉路况。',
     en: 'ICBC road test practice routes by test centre. Each route has a narrated video, its key intersections and an overview map, and opens as turn-by-turn Google Maps navigation on your phone so you can drive it before your test.',
   })}</p>
-<div class="cards">${cards}</div>`
+<div class="cards">${cards}</div>
+${guideLinks(lang, guides)}`
   return {
     page: { file: `${lang}/index.html`, path, alternates },
     html: layout({
@@ -264,7 +290,7 @@ function hubPage(lang: Lang, packs: CatalogPack[], content: SeoContent) {
   }
 }
 
-function packPage(lang: Lang, pack: CatalogPack, c: PackContent, updated: string) {
+function packPage(lang: Lang, pack: CatalogPack, c: PackContent, updated: string, guides: Guide[]) {
   const path = packPath(lang, pack.slug)
   const alternates = { zh: packPath('zh', pack.slug), en: packPath('en', pack.slug) }
   const centre = lang === 'zh' ? c.centre_zh : c.centre_en
@@ -290,7 +316,8 @@ ${ctaBox(lang, pack)}
 <h2>${t(lang, { zh: `${pack.routes.length} 条练习路线`, en: `${pack.routes.length} practice routes` })}</h2>
 <div class="cards">${cards}</div>
 <h2>${t(lang, { zh: '常见问题', en: 'FAQ' })}</h2>
-<div class="faq">${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join('\n')}</div>`
+<div class="faq">${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join('\n')}</div>
+${guideLinks(lang, guides)}`
   const product = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -408,18 +435,84 @@ ${vid && vm?.chapters.length ? `<h2>${t(lang, { zh: '视频章节', en: 'Video c
   }
 }
 
+const guidePath = (lang: Lang, slug: string) => `/${lang}/${slug}/`
+
+function guidePage(lang: Lang, g: Guide, packs: CatalogPack[], content: SeoContent) {
+  const path = guidePath(lang, g.slug)
+  const alternates = { zh: guidePath('zh', g.slug), en: guidePath('en', g.slug) }
+  const h1 = t(lang, g.h1)
+  const bc = crumbs(lang, [[t(lang, HUB_NAME), hubPath(lang)], [h1, path]])
+  const sections = g.sections
+    .map((sec) => {
+      const tag = sec.ordered ? 'ol' : 'ul'
+      const pack = sec.pack ? packs.find((p) => p.slug === sec.pack) : undefined
+      const link = pack
+        ? `<p><a href="${packPath(lang, pack.slug)}">${esc(t(lang, {
+            zh: `查看${content.packs[pack.slug]?.short_zh ?? pack.slug}的 ${pack.routes.length} 条练习路线和视频 →`,
+            en: `See the ${pack.routes.length} practice routes and videos for ${content.packs[pack.slug]?.short_en ?? pack.slug} →`,
+          }))}</a></p>`
+        : ''
+      return `<h2>${esc(t(lang, sec.h2))}</h2>
+<${tag} class="points">${sec.items.map(([term, text]) => `<li><strong>${esc(t(lang, term))}</strong>${lang === 'zh' ? '：' : ': '}${esc(t(lang, text))}</li>`).join('')}</${tag}>
+${link}`
+    })
+    .join('\n')
+  const faq = g.faq.map(([qz, az, qe, ae]) => (lang === 'zh' ? [qz, az] : [qe, ae]))
+  const body = `${bc.html}
+<h1>${esc(h1)}</h1>
+<p class="lead">${esc(t(lang, g.intro))}</p>
+${sections}
+<h2>${t(lang, { zh: '常见问题', en: 'FAQ' })}</h2>
+<div class="faq">${faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join('\n')}</div>
+<p class="note">${t(lang, {
+    zh: '评分规则来自 ICBC 官方表格《Road Test — Skills Explainer》（MV2959，2023 年 7 月版）；考场具体位置的提醒来自驾校教练经验，不是官方规则。考试以考官指令为准。',
+    en: 'Marking rules are from ICBC\'s "Road Test — Skills Explainer" (MV2959, July 2023); location tips are driving instructors\' experience, not official rules. Always follow the examiner\'s directions.',
+  })}</p>`
+  const article = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: h1,
+    description: t(lang, g.description),
+    inLanguage: lang === 'zh' ? 'zh-CN' : 'en',
+    dateModified: g.updated,
+    author: { '@type': 'Organization', name: 'roadtestgo', url: SITE_ORIGIN },
+    publisher: { '@type': 'Organization', name: 'roadtestgo', url: SITE_ORIGIN },
+    mainEntityOfPage: abs(path),
+  }
+  const faqLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  }
+  return {
+    page: { file: `${lang}/${g.slug}/index.html`, path, alternates },
+    html: layout({
+      lang, path, alternates, body, updated: g.updated, jsonld: [bc.data, article, faqLd],
+      title: t(lang, g.title), description: t(lang, g.description),
+    }),
+  }
+}
+
+/** Link block to the guides, shown on the hub and centre pages. */
+function guideLinks(lang: Lang, guides: Guide[]) {
+  if (!guides.length) return ''
+  return `<h2>${t(lang, { zh: '考前必读', en: 'Before your test' })}</h2>
+<ul>${guides.map((g) => `<li><a href="${guidePath(lang, g.slug)}">${esc(t(lang, g.h1))}</a></li>`).join('')}</ul>`
+}
+
 /** Every static page for both languages. */
-export function buildSeoPages(packs: CatalogPack[], content: SeoContent) {
+export function buildSeoPages(packs: CatalogPack[], content: SeoContent, guides: Guide[] = []) {
   const out: { page: SeoPage; html: string }[] = []
   for (const lang of ['zh', 'en'] as Lang[]) {
-    out.push(hubPage(lang, packs.filter((p) => content.packs[p.slug]), content))
+    out.push(hubPage(lang, packs.filter((p) => content.packs[p.slug]), content, guides))
+    for (const g of guides) out.push(guidePage(lang, g, packs, content))
     for (const pack of packs) {
       const c = content.packs[pack.slug]
       if (!c) continue
       if (c.routes.length !== pack.routes.length) {
         throw new Error(`seo/route-pages.json: ${pack.slug} has ${c.routes.length} routes, catalog has ${pack.routes.length}`)
       }
-      out.push(packPage(lang, pack, c, content.updated))
+      out.push(packPage(lang, pack, c, content.updated, guides))
       pack.routes.forEach((_, i) => out.push(routePage(lang, pack, c, i, content.updated)))
     }
   }

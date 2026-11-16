@@ -1,0 +1,415 @@
+{
+  "guides": [
+    {
+      "slug": "icbc-road-test-mistakes",
+      "updated": "2026-11-16",
+      "title": {
+        "zh": "ICBC 路考常见扣分点和考前清单（考官怎么判 + 本拿比、列治文考场重点）| roadtestgo",
+        "en": "ICBC Road Test: Common Mistakes & Pre-Test Checklist (How Examiners Mark, Burnaby & Richmond Tips) | roadtestgo"
+      },
+      "description": {
+        "zh": "ICBC 路考考官怎么记错、哪些情况直接不及格、最常见的 8 个扣分点，以及本拿比 4399、列治文 Lansdowne 考场容易出错的路口。根据 ICBC 官方 Road Test Skills Explainer 和驾校教练经验整理。",
+        "en": "How ICBC road test examiners record errors, what makes you fail on the spot, the 8 most common mistakes, and the intersections to watch at the Burnaby 4399 and Richmond Lansdowne test centres. Based on ICBC's Road Test Skills Explainer and driving instructors' tips."
+      },
+      "h1": {
+        "zh": "ICBC 路考常见扣分点和考前清单",
+        "en": "ICBC road test: common mistakes and a pre-test checklist"
+      },
+      "intro": {
+        "zh": "这页整理了 BC 省 ICBC 路考（Class 7 / Class 5）考官记错的方式、会直接不及格的情况和最常见的扣分点，并列出本拿比、列治文考场容易出错的具体位置。评分规则来自 ICBC 考试后发给考生的官方表格《Road Test — Skills Explainer》（MV2959，2023 年 7 月版）；具体位置的提醒来自本站路线视频里驾校教练的讲解，属于经验，不是官方规则。ICBC 没有公开每一项扣几分，所以这里只说会被记错和会直接不及格，不写分值。",
+        "en": "This page explains how ICBC road test examiners in BC (Class 7 / Class 5) record errors, what makes you fail on the spot and the most common mistakes, then lists specific spots at the Burnaby and Richmond test centres. The marking rules come from ICBC's own form \"Road Test — Skills Explainer\" (MV2959, July 2023), which examiners give you after the test. The location tips come from driving instructors in our route videos — experience, not official rules. ICBC does not publish point values, so this page only says what gets recorded and what fails you outright."
+      },
+      "sections": [
+        {
+          "h2": {
+            "zh": "会直接不及格的四种情况",
+            "en": "Four things that fail you on the spot"
+          },
+          "items": [
+            [
+              {
+                "zh": "危险动作（Dangerous Action）",
+                "en": "Dangerous action"
+              },
+              {
+                "zh": "可能导致碰撞或失控的动作或不作为，考官或别的车必须采取行动才能避免碰撞，比如考官踩副刹、别的车急刹让你。",
+                "en": "Anything you do or fail to do that could cause a collision or loss of control, where the examiner or another driver has to act to avoid it — for example the examiner using the dual brake, or another car braking hard for you."
+              }
+            ],
+            [
+              {
+                "zh": "违规（Violation）",
+                "en": "Violation"
+              },
+              {
+                "zh": "通常是可以开罚单的行为，比如闯红灯、不在 Stop 牌前停车、在不准红灯右转的路口右转。",
+                "en": "Usually something you could be ticketed for, such as running a red light, not stopping at a stop sign, or turning right on red where it's not allowed."
+              }
+            ],
+            [
+              {
+                "zh": "技能不达标（Skills）",
+                "en": "Skills"
+              },
+              {
+                "zh": "观察、车距与位置、速度、转向、沟通这五类里达不到最低标准，通常是同类错误反复出现。",
+                "en": "Falling below the minimum standard in observation, space margins, speed, steering or communication — usually the same kind of error again and again."
+              }
+            ],
+            [
+              {
+                "zh": "其他（Other）",
+                "en": "Other"
+              },
+              {
+                "zh": "考试开始后不会操作车辆设备；不愿意或做不了考官指定的动作；撞到东西、开上路缘或人行道。",
+                "en": "Not knowing how to use the vehicle's controls once the test starts; being unwilling or unable to do a requested manoeuvre; hitting something or driving onto the curb or sidewalk."
+              }
+            ]
+          ]
+        },
+        {
+          "h2": {
+            "zh": "考官记错的五大类",
+            "en": "The five categories examiners mark"
+          },
+          "items": [
+            [
+              {
+                "zh": "观察（A）",
+                "en": "Observation (A)"
+              },
+              {
+                "zh": "Shoulder check（转向、变道、路边起步前回头看盲区）、持续扫视路口和人行横道、变道转弯停车前看后视镜、倒车前环顾四周（360°）、倒车时看倒车方向。",
+                "en": "Shoulder checks before changing direction, changing lane position or pulling away from the curb; scanning, especially near intersections and crosswalks; mirror checks before lane changes, turns and stops; a 360° check before backing up; looking where you are backing."
+              }
+            ],
+            [
+              {
+                "zh": "车距与位置（B）",
+                "en": "Space margins (B)"
+              },
+              {
+                "zh": "车道位置、跟车距离、停车时和前车的距离、选空档（不能让别人调整速度，有安全空档时要走）、不挡人行横道、转弯进正确车道、停在正确的停止位置、停车靠路缘不压线。",
+                "en": "Lane position; following distance; stopping distance behind other cars; choosing gaps (others shouldn't have to adjust, and you should go when it's safe and legal); not blocking crosswalks; turning into the correct lane; stopping at the right place; parking close to the curb within the lines."
+              }
+            ],
+            [
+              {
+                "zh": "速度（C）",
+                "en": "Speed (C)"
+              },
+              {
+                "zh": "保持合适车速、不超速；Stop 牌和红灯完全停住；黄灯能安全停就要停；加减速平顺，不无故减速；坡上不溜车；看到危险脚放在刹车上；停车拉手刹、起步前松开。",
+                "en": "Keeping a suitable speed within the limit; coming to a full stop at stop signs and red lights; stopping for an amber light unless you can't stop safely; smooth acceleration and braking without needless slowing; no rolling back on hills; covering the brake near hazards; setting the parking brake when parked and releasing it fully before moving."
+              }
+            ],
+            [
+              {
+                "zh": "转向（D）",
+                "en": "Steering (D)"
+              },
+              {
+                "zh": "控制好方向盘；等左转时车轮保持朝前，不要提前往左打；坡上停车车轮朝正确方向。",
+                "en": "Steering control; keeping the wheels straight while waiting to turn left; turning the wheels the correct way when parking on a hill."
+              }
+            ],
+            [
+              {
+                "zh": "沟通（E）",
+                "en": "Communication (E)"
+              },
+              {
+                "zh": "转弯、变道、起步、靠边前打灯；打灯要提前，但不要早到让人误会；完成动作后关掉转向灯。",
+                "en": "Signalling before turns, lane changes, pulling out and pulling over; signalling early enough but not so early it misleads others; cancelling the signal afterwards."
+              }
+            ]
+          ]
+        },
+        {
+          "h2": {
+            "zh": "最常见的 8 个扣分点",
+            "en": "The 8 most common mistakes"
+          },
+          "ordered": true,
+          "items": [
+            [
+              {
+                "zh": "漏做 shoulder check",
+                "en": "Missing a shoulder check"
+              },
+              {
+                "zh": "每次转弯、变道、路边起步都要回头看，动作要大到考官看得见。快回到考场时也不能省。",
+                "en": "Every turn, lane change and pull-out needs one, and it should be big enough for the examiner to see — including near the end of the test."
+              }
+            ],
+            [
+              {
+                "zh": "Stop 牌没停稳",
+                "en": "Rolling through a stop sign"
+              },
+              {
+                "zh": "车轮完全停住，教练建议再等约两秒，左右看清再走；红灯右转也要先在停止线前停住。",
+                "en": "Stop completely — instructors suggest counting about two seconds — and look both ways before going. Stop at the line before turning right on a red light, too."
+              }
+            ],
+            [
+              {
+                "zh": "30 区超速",
+                "en": "Speeding in 30 km/h zones"
+              },
+              {
+                "zh": "学校区和公园、儿童活动区（playground zone）限速 30，很多时候一转弯就已经进了 30 区。学校区一般在上学日早 8 点到下午 5 点生效，儿童活动区一般每天从天亮到天黑生效，以路边标志为准。",
+                "en": "School zones and playground zones are 30 km/h, and you are often in one as soon as you turn. School zones usually apply 8 a.m.–5 p.m. on school days and playground zones from dawn to dusk every day — always follow the posted sign."
+              }
+            ],
+            [
+              {
+                "zh": "下坡超速",
+                "en": "Speeding downhill"
+              },
+              {
+                "zh": "下坡最容易不知不觉超过 50，要盯住车速表，比如本拿比 Willingdon Avenue 回程那段下坡。",
+                "en": "It's easy to drift over 50 km/h going downhill — watch the speedometer, for example on the Willingdon Avenue hill back to the Burnaby centre."
+              }
+            ],
+            [
+              {
+                "zh": "该走不走、太慢",
+                "en": "Hesitating or driving too slowly"
+              },
+              {
+                "zh": "4-way Stop 有路权就要走，不要看到车就急刹；出了 30 区要提速到正常车速。",
+                "en": "Go when it's your turn at a 4-way stop instead of braking for every car, and speed back up once a 30 km/h zone ends."
+              }
+            ],
+            [
+              {
+                "zh": "4-way Stop 顺序搞错",
+                "en": "Getting the 4-way stop order wrong"
+              },
+              {
+                "zh": "先停下的先走；同时停下时让右边的车先走。",
+                "en": "The first car to stop goes first; if two arrive at the same time, the car on the right goes first."
+              }
+            ],
+            [
+              {
+                "zh": "黄灯判断",
+                "en": "Amber light decisions"
+              },
+              {
+                "zh": "能安全停住就要停；车头已经过了停止线才变黄灯，就要走完，不能停在人行横道上。",
+                "en": "Stop if you can do so safely; if the front of your car is already past the stop line when it turns amber, keep going rather than stopping in the crosswalk."
+              }
+            ],
+            [
+              {
+                "zh": "停车位置不对",
+                "en": "Stopping in the wrong place"
+              },
+              {
+                "zh": "停在停止线或人行横道后面，不挡行人，也不要离停止线太远；靠边停车不要停在车道口前，也不要停在消防栓前后 5 米内。",
+                "en": "Stop behind the stop line or crosswalk without blocking pedestrians, but not too far back. When pulling over, don't stop in front of a driveway or within 5 m of a fire hydrant."
+              }
+            ]
+          ]
+        },
+        {
+          "h2": {
+            "zh": "本拿比 4399 考场容易出错的位置",
+            "en": "Spots to watch at the Burnaby 4399 test centre"
+          },
+          "pack": "burnaby-4399",
+          "items": [
+            [
+              {
+                "zh": "出考场的 Stop 牌",
+                "en": "The stop sign leaving the centre"
+              },
+              {
+                "zh": "教练说正式计分从这里开始：完全停住，左右看清再走。考场内速度压低，过减速带要慢。",
+                "en": "Instructors say marking starts here: stop fully and look both ways. Keep it slow inside the centre and over the speed bumps."
+              }
+            ],
+            [
+              {
+                "zh": "倒车出车位",
+                "en": "Backing out of the parking stall"
+              },
+              {
+                "zh": "倒车前做 360°：左后、左镜、后视镜、右镜、右后；倒车时回头看，别只盯倒车影像。",
+                "en": "Do a 360° check first — left shoulder, left mirror, rear-view mirror, right mirror, right shoulder — and look back while reversing rather than only at the camera."
+              }
+            ],
+            [
+              {
+                "zh": "Wayburne Drive 红灯右转进 Deer Lake Parkway",
+                "en": "Right on red from Wayburne Drive onto Deer Lake Parkway"
+              },
+              {
+                "zh": "当成 Stop 牌：先在停止线前停住，再往前探看两边。",
+                "en": "Treat it like a stop sign: stop at the line first, then creep forward to look both ways."
+              }
+            ],
+            [
+              {
+                "zh": "Willingdon Avenue 回程下坡",
+                "en": "Downhill on Willingdon Avenue on the way back"
+              },
+              {
+                "zh": "最容易超过 50；车道合并时考官不会提醒你变道，要自己提前并过去。",
+                "en": "The easiest place to go over 50 km/h. Where the lane ends, the examiner won't tell you to change lanes — merge early on your own."
+              }
+            ],
+            [
+              {
+                "zh": "Gilpin、Barker、Price 的 4-way 和 Gilmore 的 all-way stop",
+                "en": "The 4-way stops on Gilpin, Barker and Price, and the all-way stop on Gilmore"
+              },
+              {
+                "zh": "先到先走，有路权就走，不要犹豫。",
+                "en": "First to stop goes first — when it's your turn, go without hesitating."
+              }
+            ],
+            [
+              {
+                "zh": "Gilmore 一带的红灯不准右转路口",
+                "en": "The no-right-on-red corner near Gilmore"
+              },
+              {
+                "zh": "路线 3 唯一不能红灯右转的路口，要等绿灯。",
+                "en": "The only corner on route 3 where right on red is not allowed — wait for green."
+              }
+            ],
+            [
+              {
+                "zh": "右转进 Willingdon Avenue",
+                "en": "Right turn onto Willingdon Avenue"
+              },
+              {
+                "zh": "最右边是公交车道，不能直接转进去，要转进第二条车道。",
+                "en": "The curb lane is a bus lane — turn into the second lane, not straight into the bus lane."
+              }
+            ],
+            [
+              {
+                "zh": "并入 1 号高速（路线 4）",
+                "en": "Merging onto Highway 1 (route 4)"
+              },
+              {
+                "zh": "在匝道上就加速，打左灯、看后视镜、回头看左后方，加速到车流速度再并入；限速 90。",
+                "en": "Speed up on the ramp, signal left, check the mirror and your left shoulder, and merge at traffic speed. The limit is 90 km/h."
+              }
+            ]
+          ]
+        },
+        {
+          "h2": {
+            "zh": "列治文 Lansdowne 考场容易出错的位置",
+            "en": "Spots to watch at the Richmond Lansdowne test centre"
+          },
+          "pack": "richmond-5300",
+          "items": [
+            [
+              {
+                "zh": "北区小区的 4-way Stop",
+                "en": "4-way stops in the north-side neighbourhoods"
+              },
+              {
+                "zh": "May Dr 和 Odlin Rd 等路口：先到先走，同时到让右边。",
+                "en": "At May Dr / Odlin Rd and similar corners: first to stop goes first; at the same time, yield to the right."
+              }
+            ],
+            [
+              {
+                "zh": "Fisher Dr、Bryson Dr、Hall Ave 连续的 Stop 牌",
+                "en": "Back-to-back stop signs on Fisher Dr, Bryson Dr and Hall Ave"
+              },
+              {
+                "zh": "每个都要完全停住；这一带也会考靠边停车和平行停车。",
+                "en": "Stop fully at every one. This area is also where pull-overs and parallel parking come up."
+              }
+            ],
+            [
+              {
+                "zh": "Cook Rd 学校区和 Citation Dr 窄路",
+                "en": "The Cook Rd school zone and narrow Citation Dr"
+              },
+              {
+                "zh": "学校区限速 30；Citation Dr 路窄，慢行并注意路边停的车。",
+                "en": "30 km/h in the school zone; Citation Dr is narrow, so slow down and watch for parked cars."
+              }
+            ],
+            [
+              {
+                "zh": "无标志路口",
+                "en": "Uncontrolled intersections"
+              },
+              {
+                "zh": "Grandy Rd、Chatterton Rd 一带没有 Stop 牌的路口：减速观察，先到先走，同时到让右边。",
+                "en": "Around Grandy Rd and Chatterton Rd there are intersections with no signs: slow down, look, and yield to the right if you arrive together."
+              }
+            ],
+            [
+              {
+                "zh": "没有红绿灯的左转",
+                "en": "Left turns without a light"
+              },
+              {
+                "zh": "左转回 Gilbert Rd、左转上 Tuttle Ave 都没有灯，要等足够的空档，不要逼对向车减速。",
+                "en": "The left turns back onto Gilbert Rd and onto Tuttle Ave have no light — wait for a gap big enough that oncoming cars don't have to slow down."
+              }
+            ],
+            [
+              {
+                "zh": "Capstan Way 附近连续两个环岛",
+                "en": "Two roundabouts in a row near Capstan Way"
+              },
+              {
+                "zh": "进环岛前让环岛里的车，出环岛打右灯。",
+                "en": "Yield to traffic already in the roundabout and signal right as you exit."
+              }
+            ],
+            [
+              {
+                "zh": "回到考场倒车入位（路线 5）",
+                "en": "Reverse parking back at the centre (route 5)"
+              },
+              {
+                "zh": "倒车前做 360°，倒车时回头看，停在车位线内。",
+                "en": "Do a 360° check first, look back while reversing and finish inside the lines."
+              }
+            ]
+          ]
+        }
+      ],
+      "faq": [
+        [
+          "ICBC 会公布路考每一项扣几分吗？",
+          "不会。ICBC 只在考试后给考生一张《Road Test — Skills Explainer》（MV2959），说明考官按观察、车距与位置、速度、转向、沟通五大类记录错误，以及哪些情况直接不及格，没有公开分值。",
+          "Does ICBC publish how many points each road test error costs?",
+          "No. After the test ICBC gives you the \"Road Test — Skills Explainer\" (MV2959), which explains that examiners record errors in five categories — observation, space margins, speed, steering and communication — and what fails you outright. Point values are not published."
+        ],
+        [
+          "什么情况会让 ICBC 路考直接不及格？",
+          "危险动作（考官或别的车必须采取行动才能避免碰撞）、违规（比如闯红灯、不停 Stop 牌）、同一类技能反复达不到最低标准，以及撞到东西、开上路缘或人行道、不会操作车辆或做不了指定动作。",
+          "What makes you fail the ICBC road test immediately?",
+          "A dangerous action (the examiner or another driver has to act to avoid a collision), a violation such as running a red light or a stop sign, repeatedly falling below the minimum standard in one skill area, or hitting something, driving onto the curb or sidewalk, or being unable to operate the vehicle or do a requested manoeuvre."
+        ],
+        [
+          "4-way Stop 谁先走？",
+          "先在停止线前完全停下的车先走；两辆车同时停下时，让右边的车先走。轮到你时要果断走。",
+          "Who goes first at a 4-way stop?",
+          "The first car to come to a complete stop goes first; if two cars stop at the same time, the car on the right goes first. When it's your turn, go."
+        ],
+        [
+          "BC 学校区限速 30 什么时候生效？",
+          "一般是上学日早 8 点到下午 5 点；儿童活动区（playground zone）一般每天从天亮到天黑都是 30。具体以路边标志为准，路考里一转弯就进 30 区的情况很常见。",
+          "When do 30 km/h school zones apply in BC?",
+          "Usually 8 a.m. to 5 p.m. on school days; playground zones are usually 30 km/h from dawn to dusk every day. Always follow the posted sign — on the road test you often enter a 30 zone right after a turn."
+        ]
+      ]
+    }
+  ]
+}
