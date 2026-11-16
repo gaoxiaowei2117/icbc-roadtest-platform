@@ -81,6 +81,8 @@ def _pack_out(pack: RoutePackDef, purchased: bool | None) -> RoutePackOut:
                 ],
                 preview=route.preview,
                 preview_en=route.preview_en,
+                youtube_zh=route.youtube_zh,
+                youtube_en=route.youtube_en,
                 note=route.note,
                 note_zh=route.note_zh,
                 free=route.free,

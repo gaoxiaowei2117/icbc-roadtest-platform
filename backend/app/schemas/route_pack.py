@@ -38,6 +38,10 @@ class RouteDef(BaseModel):
     preview: str | None = None
     # Same image with English labels, shown when the UI is not Chinese (falls back to `preview`).
     preview_en: str | None = None
+    # Public YouTube video of this route (11-char video id), Chinese / English narration.
+    # Shown to everyone (the videos are public); the UI picks by language and falls back.
+    youtube_zh: str | None = None
+    youtube_en: str | None = None
     # Optional public note shown under the route (English / Chinese).
     note: str | None = Field(default=None, max_length=500)
     note_zh: str | None = Field(default=None, max_length=500)
@@ -51,6 +55,13 @@ class RouteDef(BaseModel):
     def _check_preview(cls, v: str | None) -> str | None:
         if v is not None and (v.startswith("/") or ":" in v or ".." in v):
             raise ValueError("preview 必须是前端 public 目录下的相对路径")
+        return v
+
+    @field_validator("youtube_zh", "youtube_en")
+    @classmethod
+    def _check_youtube(cls, v: str | None) -> str | None:
+        if v is not None and not re.fullmatch(r"[A-Za-z0-9_-]{11}", v):
+            raise ValueError("youtube_zh / youtube_en 必须是 11 位 YouTube 视频 ID")
         return v
 
 
@@ -116,6 +127,8 @@ class RouteSummaryOut(BaseModel):
     segments: list[RouteSegmentSummaryOut]
     preview: str | None = None
     preview_en: str | None = None
+    youtube_zh: str | None = None
+    youtube_en: str | None = None
     note: str | None = None
     note_zh: str | None = None
     # Free trial route: opens for any logged-in user, purchase or not.

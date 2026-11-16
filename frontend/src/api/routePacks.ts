@@ -30,6 +30,9 @@ export interface RouteSummary {
   /** Overview image path relative to the site's base URL. */
   preview: string | null
   preview_en?: string | null
+  /** Public YouTube video ids of this route: Chinese / English narration. */
+  youtube_zh?: string | null
+  youtube_en?: string | null
   note: string | null
   note_zh: string | null
   /** Free trial route: any logged-in user can open it without buying the pack. */

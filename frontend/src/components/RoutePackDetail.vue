@@ -29,6 +29,8 @@ const message = ref('')
 const buying = ref<string | null>(null)
 const opening = ref<string | null>(null)
 const enlarged = ref<{ src: string; alt: string } | null>(null)
+/** YouTube video playing in the overlay (id + route title). */
+const playing = ref<{ id: string; title: string } | null>(null)
 let pollTimer: number | undefined
 
 async function load() {
@@ -161,6 +163,11 @@ function previewSrc(r: RouteSummary) {
   return p ? `${import.meta.env.BASE_URL}${p}` : ''
 }
 
+/** The route's YouTube video for the UI language: Chinese narration for zh / zh-Hant, English otherwise. */
+function videoId(r: RouteSummary) {
+  return (locale.value.startsWith('zh') ? r.youtube_zh || r.youtube_en : r.youtube_en || r.youtube_zh) || ''
+}
+
 /** Purchased packs open every route; a free trial route opens for anyone logged in. */
 function canOpen(pack: RoutePack, r: RouteSummary) {
   return !!pack.purchased || (!!r.free && !!auth.token)
@@ -180,7 +187,10 @@ function goLogin() {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') enlarged.value = null
+  if (e.key === 'Escape') {
+    enlarged.value = null
+    playing.value = null
+  }
 }
 
 async function onBuy(pack: RoutePack) {
@@ -333,6 +343,34 @@ function contactMailto(pack: RoutePack) {
                 <li v-for="(seg, si) in r.segments" :key="si">{{ segmentText(seg) }}</li>
               </ul>
               <p v-if="routeNote(r)" class="text-xs rounded-md bg-amber-50 text-amber-900 px-3 py-2">{{ routeNote(r) }}</p>
+              <!-- Public YouTube video of the route: thumbnail first, the player loads only on tap. -->
+              <button
+                v-if="videoId(r)"
+                type="button"
+                class="w-full flex items-center gap-3 rounded-md border border-slate-200 p-2 text-left hover:bg-slate-50"
+                @click="playing = { id: videoId(r), title: routeTitle(r.title) }"
+              >
+                <span class="relative shrink-0 w-28 overflow-hidden rounded bg-slate-200 aspect-video">
+                  <img
+                    :src="`https://i.ytimg.com/vi/${videoId(r)}/mqdefault.jpg`"
+                    alt=""
+                    width="320"
+                    height="180"
+                    loading="lazy"
+                    decoding="async"
+                    class="w-full h-full object-cover"
+                  />
+                  <span aria-hidden="true" class="absolute inset-0 flex items-center justify-center">
+                    <span class="rounded-full bg-black/70 text-white text-xs w-7 h-7 flex items-center justify-center">▶</span>
+                  </span>
+                </span>
+                <span class="min-w-0 text-sm">
+                  <span class="block font-medium text-slate-800">{{ tr('观看路线视频', 'Watch the route video', 'Voir la vidéo de l’itinéraire', 'Ver el video de la ruta', '觀看路線影片') }}</span>
+                  <span class="block text-xs text-slate-500">{{ canOpen(pack, r) || r.free
+                    ? tr('航拍 + 地图，全程讲解', 'Aerial view + map, every turn explained', 'Vue aérienne + carte, chaque virage expliqué', 'Vista aérea + mapa, cada giro explicado', '航拍 + 地圖，全程講解')
+                    : tr('看完视频，购买后一键打开导航跟着练', 'Watch it, then unlock turn-by-turn navigation', 'Regardez-la, puis débloquez la navigation', 'Mírala y luego desbloquea la navegación', '看完影片，購買後一鍵開啟導航跟著練') }}</span>
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -369,6 +407,37 @@ function contactMailto(pack: RoutePack) {
         class="absolute top-3 right-3 btn-secondary px-3"
         :aria-label="tr('关闭', 'Close')"
         @click.stop="enlarged = null"
+      >✕</button>
+    </div>
+
+    <div
+      v-if="playing"
+      class="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center gap-3 p-4"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="playing.title"
+      @click="playing = null"
+    >
+      <div class="w-full max-w-4xl aspect-video" @click.stop>
+        <iframe
+          :src="`https://www.youtube-nocookie.com/embed/${playing.id}?autoplay=1&rel=0&playsinline=1`"
+          :title="playing.title"
+          class="w-full h-full rounded-md bg-black"
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <a
+        :href="`https://www.youtube.com/watch?v=${playing.id}`"
+        target="_blank"
+        rel="noopener"
+        class="text-sm text-white underline"
+        @click.stop
+      >{{ tr('在 YouTube 上观看（可订阅频道）', 'Watch on YouTube (and subscribe)', 'Regarder sur YouTube (et s’abonner)', 'Ver en YouTube (y suscribirse)', '在 YouTube 上觀看（可訂閱頻道）') }} ↗</a>
+      <button
+        class="absolute top-3 right-3 btn-secondary px-3"
+        :aria-label="tr('关闭', 'Close')"
+        @click.stop="playing = null"
       >✕</button>
     </div>
 

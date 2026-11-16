@@ -23,7 +23,9 @@
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.244979,-122.999504"
             }
           ],
-          "preview_en": "route-previews/burnaby-4399/en/route1.jpg"
+          "preview_en": "route-previews/burnaby-4399/en/route1.jpg",
+          "youtube_zh": "7mWj-2wCw5A",
+          "youtube_en": "CGjY-QllPk0"
         },
         {
           "title": "路线 2",
@@ -34,7 +36,9 @@
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.244979,-122.999504"
             }
           ],
-          "preview_en": "route-previews/burnaby-4399/en/route2.jpg"
+          "preview_en": "route-previews/burnaby-4399/en/route2.jpg",
+          "youtube_zh": "wTystoTu37E",
+          "youtube_en": "hfvzCSx_Nic"
         },
         {
           "title": "路线 3",
@@ -45,7 +49,9 @@
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.244979,-122.999504"
             }
           ],
-          "preview_en": "route-previews/burnaby-4399/en/route3.jpg"
+          "preview_en": "route-previews/burnaby-4399/en/route3.jpg",
+          "youtube_zh": "XWz8CpM8zBI",
+          "youtube_en": "61aeLKUZ-pw"
         },
         {
           "title": "路线 4 · 上高速线",
@@ -56,7 +62,9 @@
               "url": "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=49.244979,-122.999504&destination=49.244979,-122.999504"
             }
           ],
-          "preview_en": "route-previews/burnaby-4399/en/route4.jpg"
+          "preview_en": "route-previews/burnaby-4399/en/route4.jpg",
+          "youtube_zh": "bdcpUtzHC_g",
+          "youtube_en": "UR0woIBGLiU"
         }
       ]
     },
@@ -78,6 +86,8 @@
           "free": true,
           "preview": "route-previews/richmond-5300/route1-v2.jpg",
           "preview_en": "route-previews/richmond-5300/en/route1-v2.jpg",
+          "youtube_zh": "aB0cEr2vDvs",
+          "youtube_en": "_WH3DJcsow0",
           "segments": [
             {
               "label": "全程",
@@ -89,6 +99,8 @@
           "title": "路线 2",
           "preview": "route-previews/richmond-5300/route2-v2.jpg",
           "preview_en": "route-previews/richmond-5300/en/route2-v3.jpg",
+          "youtube_zh": "da3pVqpuVQA",
+          "youtube_en": "GBjTeeFXiaw",
           "segments": [
             {
               "label": "全程",

@@ -115,6 +115,27 @@ def test_catalog_rejects_more_than_three_segments(tmp_path, monkeypatch):
         catalog.all_packs()
 
 
+def test_catalog_rejects_bad_youtube_ids(tmp_path, monkeypatch):
+    for bad in ("https://youtu.be/7mWj-2wCw5A", "short", "7mWj-2wCw5A?t=1"):
+        path = tmp_path / "packs.json"
+        path.write_text(json.dumps({"packs": [{
+            "slug": "x-pack", "name": "X", "centre": "Somewhere",
+            "country": "CA", "region": "BC", "city": "Burnaby",
+            "routes": [{"title": "R", "youtube_en": bad,
+                        "segments": [{"label": "1", "url": "https://www.google.com/maps/dir/?api=1"}]}],
+        }]}), encoding="utf-8")
+        monkeypatch.setattr(catalog, "_catalog_path", lambda: path)
+        with pytest.raises(ValueError):
+            catalog.all_packs()
+
+
+def test_richmond_videos_only_for_published_routes(client):
+    pack = client.get("/api/route-packs/richmond-5300").json()
+    videos = [(r.get("youtube_zh"), r.get("youtube_en")) for r in pack["routes"]]
+    assert videos[:2] == [("aB0cEr2vDvs", "_WH3DJcsow0"), ("da3pVqpuVQA", "GBjTeeFXiaw")]
+    assert videos[2:] == [(None, None)] * 3
+
+
 # ---- listing ---------------------------------------------------------------------
 
 def test_anonymous_listing_has_no_links_and_no_purchase_flag(client):
@@ -132,6 +153,8 @@ def test_anonymous_listing_has_no_links_and_no_purchase_flag(client):
         "segments": [{"label": "全程", "from": None, "to": None}],
         "preview": "route-previews/burnaby-4399/route1-v2.jpg",
         "preview_en": "route-previews/burnaby-4399/en/route1.jpg",
+        "youtube_zh": "7mWj-2wCw5A",
+        "youtube_en": "CGjY-QllPk0",
         "note": None,
         "note_zh": None,
         "free": True,
