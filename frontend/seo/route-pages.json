@@ -1,0 +1,1306 @@
+{
+  "updated": "2026-11-15",
+  "packs": {
+    "burnaby-4399": {
+      "centre_zh": "本拿比 4399 考场（Burnaby Claim Centre，4399 Wayburne Dr）",
+      "centre_en": "ICBC Burnaby test centre (Burnaby Claim Centre, 4399 Wayburne Dr)",
+      "short_zh": "本拿比 4399 考场",
+      "short_en": "Burnaby (4399 Wayburne Dr)",
+      "intro_zh": "本拿比 ICBC 4399 考场（Burnaby Claim Centre，4399 Wayburne Dr）的 4 条路考练习路线。路线一带有 Deer Lake Parkway、Willingdon Avenue 上下坡、Moscrop 中学学校区、公园旁 30 限速路段和多个 4-way 路口，其中一条会上 1 号高速。前三条是驾校教练全程实拍讲解，第四条是航拍 + 地图动画。",
+      "intro_en": "Four practice routes for the ICBC road test at the Burnaby Claim Centre (4399 Wayburne Dr). Expect Deer Lake Parkway, the Willingdon Avenue hills, the Moscrop Secondary school zone, 30 km/h park zones and several 4-way stops; one route goes onto Highway 1. Routes 1–3 were filmed with a driving instructor explaining each turn; route 4 is an aerial-view map animation.",
+      "faq": [
+        [
+          "4399 考场在哪里？",
+          "考场在 Burnaby Claim Centre，地址 4399 Wayburne Dr, Burnaby, BC，靠近 Deer Lake Parkway。所有练习路线都从考场出发、回到考场。",
+          "Where is the Burnaby 4399 test centre?",
+          "It is at the Burnaby Claim Centre, 4399 Wayburne Dr, Burnaby, BC, next to Deer Lake Parkway. Every practice route starts and ends at the centre."
+        ],
+        [
+          "4399 考场的路考常经过哪些路段？",
+          "常见路段有 Wayburne Drive、Deer Lake Parkway、Willingdon Avenue（上下坡、限速 50）、Moscrop Street 学校区（限速 30）、Gilpin Crescent 和 Bond Street 公园旁 30 限速路段，以及 Gilmore Avenue 的 all-way stop。",
+          "Which roads do Burnaby 4399 road tests usually use?",
+          "Common roads are Wayburne Drive, Deer Lake Parkway, Willingdon Avenue (hills, 50 km/h), the Moscrop Street school zone (30 km/h), the 30 km/h park zones on Gilpin Crescent and Bond Street, and the all-way stop on Gilmore Avenue."
+        ],
+        [
+          "4399 考场的路考会上高速吗？",
+          "有一条路线会上 1 号高速：从 Willingdon Avenue 匝道并入 Highway 1 东向（限速 90），从 Exit 32 出来，再经 Canada Way 回考场。其余三条都在市区。",
+          "Does the Burnaby 4399 road test go on the highway?",
+          "One route does: it takes the Willingdon Avenue ramp onto Highway 1 east (90 km/h), leaves at Exit 32 and returns along Canada Way. The other three routes stay on city streets."
+        ],
+        [
+          "会考靠边停车和平行停车吗？",
+          "路线 1 会考靠边停车（Sardis Street）和平行停车（Shepherd Street）；路线 3 在 Fir Street 可能考靠边停车。",
+          "Are pull-over and parallel parking tested?",
+          "Route 1 includes a pull-over on Sardis Street and parallel parking on Shepherd Street; route 3 may include a pull-over on Fir Street."
+        ],
+        [
+          "这些是 ICBC 官方路线吗？",
+          "不是。路线根据驾校教练分享的路线图和公开视频整理，ICBC 没有公布官方路线，考官也可能随时调整。建议用来考前熟悉路况。",
+          "Are these official ICBC routes?",
+          "No. They are compiled from route maps shared by driving instructors and from public videos. ICBC does not publish official routes and examiners may change them at any time, so use them to get to know the roads before your test."
+        ],
+        [
+          "路线包里有什么？多少钱？",
+          "每条路线都有一个 Google 地图导航链接，手机上一键打开就能跟着开，还有路线概览图和讲解视频。路线 1 登录后免费试用；整个考场的路线包 CA$14.99，一次付款，永久查看。",
+          "What is in the route pack, and how much is it?",
+          "Every route comes with a Google Maps navigation link that opens on your phone in one tap, plus an overview map and a video. Route 1 is free once you log in; the full pack for a centre is CA$14.99, a one-time payment with no subscription."
+        ]
+      ],
+      "routes": [
+        {
+          "km": 6.9,
+          "minutes": 20,
+          "filmed": true,
+          "summary_zh": "从考场经 Deer Lake Parkway、Willingdon Avenue 上坡到 Bond Street 公园路段和 Nelson Avenue，这条路线会考靠边停车和平行停车。教练说 Class 5 和 Class 7 考的是同一条路线。",
+          "summary_en": "From the centre along Deer Lake Parkway and up Willingdon Avenue to the Bond Street park zone and Nelson Avenue. This route includes both a pull-over and parallel parking; the instructor notes it is the same route for Class 5 and Class 7.",
+          "highlights_zh": [
+            "Willingdon Avenue 上坡，限速 50",
+            "Bond Street 公园路段限速 30",
+            "Sardis Street 靠边停车",
+            "Shepherd Street 平行停车",
+            "Deer Lake Parkway 回程车道合并"
+          ],
+          "highlights_en": [
+            "Uphill on Willingdon Avenue, 50 km/h",
+            "30 km/h park zone on Bond Street",
+            "Pull-over on Sardis Street",
+            "Parallel parking on Shepherd Street",
+            "Lane ends on Deer Lake Parkway on the way back"
+          ],
+          "video": {
+            "zh": {
+              "title": "4399 Wayburne Dr 考场路考路线实拍（Burnaby Claim Centre）· 温哥华本拿比 ICBC · 中文教练讲解 + 地图（路线 1）",
+              "upload_date": "2026-10-30",
+              "duration": "PT20M51S",
+              "chapters": [
+                [
+                  "0:00",
+                  "前往 ICBC 4399 考场"
+                ],
+                [
+                  "1:06",
+                  "进入考场"
+                ],
+                [
+                  "2:19",
+                  "正式开始考试"
+                ],
+                [
+                  "3:20",
+                  "Wayburne Drive"
+                ],
+                [
+                  "3:52",
+                  "Deer Lake Parkway"
+                ],
+                [
+                  "4:46",
+                  "Willingdon Avenue · 上坡，限速 50"
+                ],
+                [
+                  "6:27",
+                  "Bond Street · 公园路段限速 30"
+                ],
+                [
+                  "7:46",
+                  "Nelson Avenue · 上坡"
+                ],
+                [
+                  "8:12",
+                  "Sardis Street · 靠边停车"
+                ],
+                [
+                  "9:54",
+                  "Sussex Avenue"
+                ],
+                [
+                  "10:11",
+                  "Shepherd Street · 平行停车"
+                ],
+                [
+                  "12:53",
+                  "Nelson Avenue · 下坡"
+                ],
+                [
+                  "13:29",
+                  "Bond Street · 30 限速结束"
+                ],
+                [
+                  "15:02",
+                  "Willingdon Avenue · 回程下坡"
+                ],
+                [
+                  "16:43",
+                  "Deer Lake Parkway · 车道合并"
+                ],
+                [
+                  "17:41",
+                  "Wayburne Drive · 回考场"
+                ],
+                [
+                  "18:18",
+                  "回到考场停车"
+                ],
+                [
+                  "20:01",
+                  "路线总结"
+                ]
+              ]
+            },
+            "en": {
+              "title": "4399 Wayburne Dr Road Test Route 1 (ICBC Burnaby Claim Centre) – Full Drive + Coach Tips & Map",
+              "upload_date": "2026-10-29",
+              "duration": "PT20M52S",
+              "chapters": [
+                [
+                  "0:00",
+                  "Drive to the ICBC 4399 test centre"
+                ],
+                [
+                  "1:06",
+                  "Inside the test centre"
+                ],
+                [
+                  "2:19",
+                  "The test officially starts"
+                ],
+                [
+                  "3:20",
+                  "Wayburne Drive"
+                ],
+                [
+                  "3:52",
+                  "Deer Lake Parkway"
+                ],
+                [
+                  "4:46",
+                  "Willingdon Avenue · uphill, 50 km/h"
+                ],
+                [
+                  "6:27",
+                  "Bond Street · 30 km/h park zone"
+                ],
+                [
+                  "7:46",
+                  "Nelson Avenue · uphill"
+                ],
+                [
+                  "8:12",
+                  "Sardis Street · pull over"
+                ],
+                [
+                  "9:54",
+                  "Sussex Avenue"
+                ],
+                [
+                  "10:11",
+                  "Shepherd Street · parallel parking"
+                ],
+                [
+                  "12:53",
+                  "Nelson Avenue · downhill"
+                ],
+                [
+                  "13:29",
+                  "Bond Street · end of the 30 zone"
+                ],
+                [
+                  "15:02",
+                  "Willingdon Avenue · downhill on the way back"
+                ],
+                [
+                  "16:43",
+                  "Deer Lake Parkway · lane ends"
+                ],
+                [
+                  "17:41",
+                  "Wayburne Drive · back to the centre"
+                ],
+                [
+                  "18:18",
+                  "Back in the test centre & parking"
+                ],
+                [
+                  "20:01",
+                  "Route summary"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "km": 5.1,
+          "minutes": 15,
+          "filmed": true,
+          "summary_zh": "经过 Moscrop Street 学校区和 Gilpin Crescent 公园旁两个 30 限速路段，Price / Barker / Burke 一带有好几个 4-way 路口，回程沿 Willingdon Avenue 下坡。",
+          "summary_en": "Passes two 30 km/h zones (the Moscrop Street school zone and the Gilpin Crescent park zone) and several 4-way stops around Price, Barker and Burke, then heads back down Willingdon Avenue.",
+          "highlights_zh": [
+            "Moscrop Street 学校区限速 30",
+            "Gilpin Crescent 公园旁限速 30",
+            "连续 4-way 路口（先到先走）",
+            "Willingdon Avenue 回程下坡",
+            "Deer Lake Parkway 变道"
+          ],
+          "highlights_en": [
+            "Moscrop Street school zone, 30 km/h",
+            "Gilpin Crescent park zone, 30 km/h",
+            "Several 4-way stops (first come, first go)",
+            "Downhill on Willingdon Avenue on the way back",
+            "Lane changes on Deer Lake Parkway"
+          ],
+          "video": {
+            "zh": {
+              "title": "4399 Wayburne Dr 考场路考路线实拍（Burnaby Claim Centre）· 温哥华本拿比 ICBC · 中文教练讲解 + 地图（路线 2）",
+              "upload_date": "2026-11-05",
+              "duration": "PT15M45S",
+              "chapters": [
+                [
+                  "0:00",
+                  "从 ICBC 4399 考场出发"
+                ],
+                [
+                  "1:57",
+                  "Wayburne Drive"
+                ],
+                [
+                  "2:37",
+                  "Deer Lake Parkway"
+                ],
+                [
+                  "4:43",
+                  "Moscrop Street · 学校区限速 30"
+                ],
+                [
+                  "6:10",
+                  "Patterson Avenue"
+                ],
+                [
+                  "6:41",
+                  "Gilpin Crescent · 公园旁限速 30"
+                ],
+                [
+                  "7:42",
+                  "4-way 路口"
+                ],
+                [
+                  "8:29",
+                  "Price Crescent"
+                ],
+                [
+                  "9:15",
+                  "Barker Crescent"
+                ],
+                [
+                  "9:53",
+                  "Burke Street"
+                ],
+                [
+                  "11:28",
+                  "Willingdon Avenue · 回程下坡"
+                ],
+                [
+                  "12:56",
+                  "Deer Lake Parkway · 变道"
+                ],
+                [
+                  "13:51",
+                  "Wayburne Drive · 回考场"
+                ],
+                [
+                  "14:30",
+                  "回到考场停车"
+                ],
+                [
+                  "15:23",
+                  "路线总结"
+                ]
+              ]
+            },
+            "en": {
+              "title": "4399 Wayburne Dr Road Test Route 2 (ICBC Burnaby Claim Centre) – Full Drive + Coach Tips & Map",
+              "upload_date": "2026-11-05",
+              "duration": "PT15M46S",
+              "chapters": [
+                [
+                  "0:00",
+                  "Leaving the ICBC 4399 test centre"
+                ],
+                [
+                  "1:57",
+                  "Wayburne Drive"
+                ],
+                [
+                  "2:37",
+                  "Deer Lake Parkway"
+                ],
+                [
+                  "4:43",
+                  "Moscrop Street · school zone, 30 km/h"
+                ],
+                [
+                  "6:10",
+                  "Patterson Avenue"
+                ],
+                [
+                  "6:41",
+                  "Gilpin Crescent · 30 km/h park zone"
+                ],
+                [
+                  "7:42",
+                  "4-way stops"
+                ],
+                [
+                  "8:29",
+                  "Price Crescent"
+                ],
+                [
+                  "9:15",
+                  "Barker Crescent"
+                ],
+                [
+                  "9:53",
+                  "Burke Street"
+                ],
+                [
+                  "11:28",
+                  "Willingdon Avenue · downhill on the way back"
+                ],
+                [
+                  "12:56",
+                  "Deer Lake Parkway · lane changes"
+                ],
+                [
+                  "13:51",
+                  "Wayburne Drive · back to the centre"
+                ],
+                [
+                  "14:30",
+                  "Back in the test centre & parking"
+                ],
+                [
+                  "15:23",
+                  "Route summary"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "km": 7.2,
+          "minutes": 22,
+          "filmed": true,
+          "summary_zh": "经过两个学校和一个公园（30 限速），Carleton Avenue 有减速带，Gilmore Avenue 有 all-way stop，Manor Street 路口红灯不准右转，最后右转进 Willingdon Avenue 时不能直接转进公交车道。",
+          "summary_en": "Passes two schools and a park (30 km/h), speed bumps on Carleton Avenue, an all-way stop on Gilmore Avenue and a no-right-on-red corner at Manor Street, and ends with a right turn onto Willingdon Avenue where you must not turn into the bus lane.",
+          "highlights_zh": [
+            "Moscrop Street、Smith Avenue 学校区限速 30",
+            "Carleton Avenue 减速带",
+            "Fir Street 可能考靠边停车",
+            "Gilmore Avenue all-way stop",
+            "Manor Street 红灯不准右转",
+            "右转 Willingdon Avenue 不能进公交车道"
+          ],
+          "highlights_en": [
+            "School zones on Moscrop Street and Smith Avenue, 30 km/h",
+            "Speed bumps on Carleton Avenue",
+            "Possible pull-over on Fir Street",
+            "All-way stop on Gilmore Avenue",
+            "No right on red at Manor Street",
+            "Don't turn into the bus lane on Willingdon Avenue"
+          ],
+          "video": {
+            "zh": {
+              "title": "4399 Wayburne Dr 考场路考路线实拍（Burnaby Claim Centre）· 温哥华本拿比 ICBC · 中文教练讲解 + 地图（路线 3）",
+              "upload_date": "2026-11-10",
+              "duration": "PT22M38S",
+              "chapters": [
+                [
+                  "0:00",
+                  "从 ICBC 4399 考场出发"
+                ],
+                [
+                  "2:27",
+                  "Wayburne Drive"
+                ],
+                [
+                  "3:08",
+                  "Deer Lake Parkway"
+                ],
+                [
+                  "4:31",
+                  "Moscrop Street · 学校区限速 30"
+                ],
+                [
+                  "5:51",
+                  "Carleton Avenue · 减速带"
+                ],
+                [
+                  "6:30",
+                  "Fir Street · 可能考靠边停车"
+                ],
+                [
+                  "8:25",
+                  "Smith Avenue · 学校和公园旁限速 30"
+                ],
+                [
+                  "11:05",
+                  "Canada Way"
+                ],
+                [
+                  "11:43",
+                  "Gilmore Avenue · all-way stop"
+                ],
+                [
+                  "12:33",
+                  "Manor Street · 红灯不准右转"
+                ],
+                [
+                  "13:11",
+                  "Gilmore Diversion"
+                ],
+                [
+                  "14:32",
+                  "Canada Way · 变道"
+                ],
+                [
+                  "15:49",
+                  "Willingdon Avenue · 不能右转进公交车道"
+                ],
+                [
+                  "19:36",
+                  "Deer Lake Parkway"
+                ],
+                [
+                  "20:20",
+                  "Wayburne Drive · 回考场"
+                ],
+                [
+                  "21:02",
+                  "回到考场停车"
+                ],
+                [
+                  "22:09",
+                  "路线总结"
+                ]
+              ]
+            },
+            "en": {
+              "title": "4399 Wayburne Dr Road Test Route 3 (ICBC Burnaby Claim Centre) – Full Drive + Coach Tips & Map",
+              "upload_date": "2026-11-10",
+              "duration": "PT22M39S",
+              "chapters": [
+                [
+                  "0:00",
+                  "Leaving the ICBC 4399 test centre"
+                ],
+                [
+                  "2:27",
+                  "Wayburne Drive"
+                ],
+                [
+                  "3:08",
+                  "Deer Lake Parkway"
+                ],
+                [
+                  "4:31",
+                  "Moscrop Street · school zone, 30 km/h"
+                ],
+                [
+                  "5:51",
+                  "Carleton Avenue · speed bumps"
+                ],
+                [
+                  "6:30",
+                  "Fir Street · pull-over may be tested"
+                ],
+                [
+                  "8:25",
+                  "Smith Avenue · school and park zones, 30 km/h"
+                ],
+                [
+                  "11:05",
+                  "Canada Way"
+                ],
+                [
+                  "11:43",
+                  "Gilmore Avenue · all-way stop"
+                ],
+                [
+                  "12:33",
+                  "Manor Street · no right on red"
+                ],
+                [
+                  "13:11",
+                  "Gilmore Diversion"
+                ],
+                [
+                  "14:32",
+                  "Canada Way · lane changes"
+                ],
+                [
+                  "15:49",
+                  "Willingdon Avenue · no right turn into the bus lane"
+                ],
+                [
+                  "19:36",
+                  "Deer Lake Parkway"
+                ],
+                [
+                  "20:20",
+                  "Wayburne Drive · back to the centre"
+                ],
+                [
+                  "21:02",
+                  "Back in the test centre & parking"
+                ],
+                [
+                  "22:09",
+                  "Route summary"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "km": 12.5,
+          "minutes": 15,
+          "filmed": false,
+          "summary_zh": "上 1 号高速的路线：先过 Gilpin 的 4-way Stop、Patterson 限速 30 和 Moscrop 中学学校区，再从 Willingdon Avenue 匝道并入 Highway 1 东向（限速 90），Exit 32 出高速，经 Canada Way、Royal Oak 回考场。",
+          "summary_en": "The highway route: through the 4-way stop on Gilpin, 30 km/h on Patterson and the Moscrop Secondary school zone, then the Willingdon Avenue ramp onto Highway 1 east (90 km/h), off at Exit 32, and back via Canada Way and Royal Oak.",
+          "highlights_zh": [
+            "Gilpin Crescent 4-way Stop（先到先走）",
+            "Patterson Avenue 限速 30",
+            "Moscrop 中学学校区",
+            "并入 1 号高速，限速 90",
+            "Exit 32 出高速",
+            "Schou Street 让行并入 Canada Way"
+          ],
+          "highlights_en": [
+            "4-way stop on Gilpin Crescent (first come, first go)",
+            "30 km/h on Patterson Avenue",
+            "Moscrop Secondary school zone",
+            "Merging onto Highway 1 at 90 km/h",
+            "Leaving at Exit 32",
+            "Yield-sign merge from Schou Street onto Canada Way"
+          ],
+          "video": {
+            "zh": {
+              "title": "4399 Wayburne Dr 考场路考路线 · 上高速线（Burnaby Claim Centre）· 温哥华本拿比 ICBC · 航拍 + 地图 + 中文讲解（路线 4）",
+              "upload_date": "2026-11-11",
+              "duration": "PT15M3S",
+              "chapters": [
+                [
+                  "0:00",
+                  "从 ICBC 4399 考场出发"
+                ],
+                [
+                  "0:29",
+                  "右转 Wayburne Drive"
+                ],
+                [
+                  "0:47",
+                  "右转 Deer Lake Parkway"
+                ],
+                [
+                  "1:17",
+                  "左转 Willingdon Avenue（往南）"
+                ],
+                [
+                  "1:53",
+                  "Price Crescent"
+                ],
+                [
+                  "2:11",
+                  "Gilpin Crescent · 4-way Stop"
+                ],
+                [
+                  "2:23",
+                  "Burke Street"
+                ],
+                [
+                  "3:42",
+                  "Smith Avenue · Hertford Street"
+                ],
+                [
+                  "4:14",
+                  "Inman Avenue · Brandon Street"
+                ],
+                [
+                  "4:32",
+                  "Patterson Avenue · 限速 30"
+                ],
+                [
+                  "5:09",
+                  "Moscrop Street · 学校区"
+                ],
+                [
+                  "6:02",
+                  "左转 Willingdon Avenue（往北）"
+                ],
+                [
+                  "7:45",
+                  "上匝道 · 1 号高速东行"
+                ],
+                [
+                  "8:18",
+                  "并入 1 号高速 · 限速 90"
+                ],
+                [
+                  "9:26",
+                  "Exit 32 出高速"
+                ],
+                [
+                  "10:24",
+                  "Canada Way"
+                ],
+                [
+                  "11:07",
+                  "Douglas Road"
+                ],
+                [
+                  "11:44",
+                  "Laurel Street"
+                ],
+                [
+                  "12:23",
+                  "Royal Oak Avenue · 4-way Stop"
+                ],
+                [
+                  "12:32",
+                  "Schou Street · 让行并入 Canada Way"
+                ],
+                [
+                  "12:55",
+                  "左转 Wayburne Drive"
+                ],
+                [
+                  "14:19",
+                  "回到考场"
+                ],
+                [
+                  "14:41",
+                  "路线总结"
+                ]
+              ]
+            },
+            "en": {
+              "title": "4399 Wayburne Dr Road Test Route 4 (ICBC Burnaby Claim Centre) – Highway Route · Aerial View + Map",
+              "upload_date": "2026-11-12",
+              "duration": "PT15M3S",
+              "chapters": [
+                [
+                  "0:00",
+                  "Leaving the ICBC 4399 test centre"
+                ],
+                [
+                  "0:29",
+                  "Right onto Wayburne Drive"
+                ],
+                [
+                  "0:47",
+                  "Right onto Deer Lake Parkway"
+                ],
+                [
+                  "1:17",
+                  "Left onto Willingdon Avenue (south)"
+                ],
+                [
+                  "1:53",
+                  "Price Crescent"
+                ],
+                [
+                  "2:11",
+                  "Gilpin Crescent · 4-way stop"
+                ],
+                [
+                  "2:23",
+                  "Burke Street"
+                ],
+                [
+                  "3:42",
+                  "Smith Avenue · Hertford Street"
+                ],
+                [
+                  "4:14",
+                  "Inman Avenue · Brandon Street"
+                ],
+                [
+                  "4:32",
+                  "Patterson Avenue · 30 km/h"
+                ],
+                [
+                  "5:09",
+                  "Moscrop Street · school zone"
+                ],
+                [
+                  "6:02",
+                  "Left onto Willingdon Avenue (north)"
+                ],
+                [
+                  "7:45",
+                  "Ramp onto Highway 1 east"
+                ],
+                [
+                  "8:18",
+                  "Merging onto Highway 1 · 90 km/h"
+                ],
+                [
+                  "9:26",
+                  "Exit 32"
+                ],
+                [
+                  "10:24",
+                  "Canada Way"
+                ],
+                [
+                  "11:07",
+                  "Douglas Road"
+                ],
+                [
+                  "11:44",
+                  "Laurel Street"
+                ],
+                [
+                  "12:23",
+                  "Royal Oak Avenue · 4-way stop"
+                ],
+                [
+                  "12:32",
+                  "Schou Street · yield-sign merge onto Canada Way"
+                ],
+                [
+                  "12:55",
+                  "Left onto Wayburne Drive"
+                ],
+                [
+                  "14:19",
+                  "Back at the test centre"
+                ],
+                [
+                  "14:41",
+                  "Route summary"
+                ]
+              ]
+            }
+          }
+        }
+      ],
+      "place_en": "4399 Wayburne Dr"
+    },
+    "richmond-5300": {
+      "centre_zh": "列治文 Lansdowne 考场（Lansdowne Centre，5300 No. 3 Rd）",
+      "centre_en": "ICBC Richmond test centre (Lansdowne Centre, 5300 No. 3 Rd)",
+      "short_zh": "列治文 Lansdowne 考场",
+      "short_en": "Richmond (Lansdowne Centre)",
+      "intro_zh": "列治文 ICBC 考场（Lansdowne Centre，5300 No. 3 Rd）的 5 条路考练习路线，覆盖 Alderbridge Way 以北的小区（May Dr、Odlin Rd、Fisher Dr、Hall Ave）、考场南边的 Cook Rd 学校区和 Granville Ave / Gilbert Rd 一带、Capstan Way 附近的连续环岛、Shell Rd / Westminster Hwy 大圈，以及过 Dinsmore 桥去 Sea Island 的 Burkeville 小区。",
+      "intro_en": "Five practice routes for the ICBC road test at Lansdowne Centre (5300 No. 3 Rd), Richmond. They cover the neighbourhoods north of Alderbridge Way (May Dr, Odlin Rd, Fisher Dr, Hall Ave), the Cook Rd school zone and the Granville Ave / Gilbert Rd area south of the centre, the back-to-back roundabouts near Capstan Way, the Shell Rd / Westminster Hwy loop, and Burkeville on Sea Island over the Dinsmore Bridge.",
+      "faq": [
+        [
+          "列治文 ICBC 考场在哪里？",
+          "考场在 Lansdowne Centre 商场（5300 No. 3 Rd, Richmond, BC），出入口在商场东北角 Kwantlen St 一侧。练习路线都从 Kwantlen St 出发、回到 Kwantlen St。",
+          "Where is the ICBC Richmond test centre?",
+          "It is at Lansdowne Centre (5300 No. 3 Rd, Richmond, BC), with its entrance at the north-east corner of the mall on Kwantlen St. Every practice route leaves from and returns to Kwantlen St."
+        ],
+        [
+          "列治文考场的路考常经过哪些路段？",
+          "常见路段有 Alderbridge Way、Garden City Rd、No. 4 Rd，北区小区里的 May Dr / Odlin Rd 4-way Stop、Fisher Dr、Hall Ave，南边的 Cook Rd 学校区（限速 30）、Citation Dr 窄路、Granville Ave 和 Gilbert Rd。",
+          "Which roads do Richmond Lansdowne road tests usually use?",
+          "Common roads are Alderbridge Way, Garden City Rd and No. 4 Rd; in the north-side neighbourhoods the 4-way stop at May Dr / Odlin Rd, Fisher Dr and Hall Ave; south of the centre the Cook Rd school zone (30 km/h), narrow Citation Dr, Granville Ave and Gilbert Rd."
+        ],
+        [
+          "列治文考场的路考会上高速吗？",
+          "当地驾校教练 2026 年反馈目前不考高速。路线 5 会走 Russ Baker Way 去 Sea Island，但那是普通干道，不是高速公路。",
+          "Does the Richmond road test go on the highway?",
+          "Local driving instructors said in 2026 that the highway is not currently tested. Route 5 uses Russ Baker Way to Sea Island, which is an arterial road, not a freeway."
+        ],
+        [
+          "会考哪些停车项目？",
+          "路线 2 在 Odlin Rd 考靠边停车、在 Fisher Dr 公园旁考平行停车；路线 5 回到考场时考倒车入位。",
+          "Which parking tasks come up?",
+          "Route 2 has a pull-over on Odlin Rd and parallel parking beside the park on Fisher Dr; route 5 ends with reverse parking back at the centre."
+        ],
+        [
+          "这些是 ICBC 官方路线吗？",
+          "不是。路线根据驾校教练分享的路线图和公开视频整理，ICBC 没有公布官方路线，考官也可能随时调整。建议用来考前熟悉路况。",
+          "Are these official ICBC routes?",
+          "No. They are compiled from route maps shared by driving instructors and from public videos. ICBC does not publish official routes and examiners may change them at any time, so use them to get to know the roads before your test."
+        ],
+        [
+          "路线包里有什么？多少钱？",
+          "每条路线都有一个 Google 地图导航链接，手机上一键打开就能跟着开，还有路线概览图和讲解视频。路线 1 登录后免费试用；整个考场的路线包 CA$14.99，一次付款，永久查看。",
+          "What is in the route pack, and how much is it?",
+          "Every route comes with a Google Maps navigation link that opens on your phone in one tap, plus an overview map and a video. Route 1 is free once you log in; the full pack for a centre is CA$14.99, a one-time payment with no subscription."
+        ]
+      ],
+      "routes": [
+        {
+          "km": 9.2,
+          "minutes": 13,
+          "filmed": false,
+          "summary_zh": "考场南边 Cook Rd、Granville Ave、Blundell Rd、Gilbert Rd 一带的小区路线，是当地教练 2026 年分享的新路线，车流较大。",
+          "summary_en": "A south-side route through the neighbourhoods around Cook Rd, Granville Ave, Blundell Rd and Gilbert Rd — the newest route shared by local instructors in 2026, with busier traffic.",
+          "highlights_zh": [
+            "Citation Dr 路窄慢行",
+            "Cook Rd 学校区限速 30",
+            "Cooney Rd 走右转专用道进 Granville Ave（让行）",
+            "Donald Rd 前先进双向左转道",
+            "Grandy Rd、Chatterton Rd 无标志路口（先到先走）",
+            "没有红绿灯左转回 Gilbert Rd"
+          ],
+          "highlights_en": [
+            "Narrow streets on Citation Dr",
+            "Cook Rd school zone, 30 km/h",
+            "Yield-sign right-turn lane from Cooney Rd onto Granville Ave",
+            "Two-way left-turn lane before Donald Rd",
+            "Uncontrolled intersections on Grandy Rd and Chatterton Rd (first come, first go)",
+            "Left turn back onto Gilbert Rd without a light"
+          ],
+          "video": {
+            "zh": {
+              "title": "列治文 Lansdowne 考场路考路线（5300 No. 3 Rd）· 温哥华列治文 ICBC · 航拍 + 地图 + 中文讲解（路线 1）",
+              "upload_date": "2026-11-14",
+              "duration": "PT12M37S",
+              "chapters": [
+                [
+                  "0:00",
+                  "从 Lansdowne 考场出发"
+                ],
+                [
+                  "0:14",
+                  "右转 Kwantlen St"
+                ],
+                [
+                  "0:39",
+                  "左转 Lansdowne Rd"
+                ],
+                [
+                  "1:01",
+                  "右转 Garden City Rd"
+                ],
+                [
+                  "2:05",
+                  "右转 Citation Dr"
+                ],
+                [
+                  "2:22",
+                  "右转 Pimlico Way"
+                ],
+                [
+                  "2:47",
+                  "左转 Cook Rd · 学校区"
+                ],
+                [
+                  "3:34",
+                  "左转 Cooney Rd（往南）"
+                ],
+                [
+                  "4:04",
+                  "右转专用道进 Granville Ave（让行）"
+                ],
+                [
+                  "4:52",
+                  "左转 Minoru Blvd"
+                ],
+                [
+                  "5:50",
+                  "右转 Blundell Rd"
+                ],
+                [
+                  "6:29",
+                  "右转 Gilbert Rd"
+                ],
+                [
+                  "6:47",
+                  "左转 Donald Rd"
+                ],
+                [
+                  "7:11",
+                  "Grandy Rd · Chatterton Rd（无标志路口）"
+                ],
+                [
+                  "7:46",
+                  "左转 Gilbert Rd（往北）"
+                ],
+                [
+                  "8:17",
+                  "右转 Granville Ave（往东）"
+                ],
+                [
+                  "9:15",
+                  "左转 No. 3 Rd"
+                ],
+                [
+                  "9:46",
+                  "右转 Cook Rd（往东）"
+                ],
+                [
+                  "10:12",
+                  "左转 Cooney Rd（往北）"
+                ],
+                [
+                  "11:11",
+                  "右转 Lansdowne Rd"
+                ],
+                [
+                  "11:25",
+                  "左转 Kwantlen St · 回到考场"
+                ],
+                [
+                  "12:15",
+                  "路线总结"
+                ]
+              ]
+            },
+            "en": {
+              "title": "Richmond ICBC Road Test Route 1 (Lansdowne Centre, 5300 No. 3 Rd) – Aerial View + Map",
+              "upload_date": "2026-11-13",
+              "duration": "PT12M37S",
+              "chapters": [
+                [
+                  "0:00",
+                  "Leaving the Lansdowne test centre"
+                ],
+                [
+                  "0:14",
+                  "Right onto Kwantlen St"
+                ],
+                [
+                  "0:39",
+                  "Left onto Lansdowne Rd"
+                ],
+                [
+                  "1:01",
+                  "Right onto Garden City Rd"
+                ],
+                [
+                  "2:05",
+                  "Right onto Citation Dr"
+                ],
+                [
+                  "2:22",
+                  "Right onto Pimlico Way"
+                ],
+                [
+                  "2:47",
+                  "Left onto Cook Rd · school zone"
+                ],
+                [
+                  "3:34",
+                  "Left onto Cooney Rd (south)"
+                ],
+                [
+                  "4:04",
+                  "Right-turn lane onto Granville Ave (yield)"
+                ],
+                [
+                  "4:52",
+                  "Left onto Minoru Blvd"
+                ],
+                [
+                  "5:50",
+                  "Right onto Blundell Rd"
+                ],
+                [
+                  "6:29",
+                  "Right onto Gilbert Rd"
+                ],
+                [
+                  "6:47",
+                  "Left onto Donald Rd"
+                ],
+                [
+                  "7:11",
+                  "Grandy Rd · Chatterton Rd (uncontrolled intersections)"
+                ],
+                [
+                  "7:46",
+                  "Left onto Gilbert Rd (north)"
+                ],
+                [
+                  "8:17",
+                  "Right onto Granville Ave (east)"
+                ],
+                [
+                  "9:15",
+                  "Left onto No. 3 Rd"
+                ],
+                [
+                  "9:46",
+                  "Right onto Cook Rd (east)"
+                ],
+                [
+                  "10:12",
+                  "Left onto Cooney Rd (north)"
+                ],
+                [
+                  "11:11",
+                  "Right onto Lansdowne Rd"
+                ],
+                [
+                  "11:25",
+                  "Left onto Kwantlen St · back to the test centre"
+                ],
+                [
+                  "12:15",
+                  "Route summary"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "km": 5.2,
+          "minutes": 9,
+          "filmed": false,
+          "summary_zh": "Alderbridge Way 以北 May Dr、Odlin Rd、Fisher Dr、Hall Ave 一带的小区短线，有靠边停车和平行停车。2026 年的路考实拍视频也走这一片。",
+          "summary_en": "A short route through the neighbourhoods north of Alderbridge Way around May Dr, Odlin Rd, Fisher Dr and Hall Ave, with a pull-over and parallel parking. Road-test videos filmed in 2026 cover the same area.",
+          "highlights_zh": [
+            "May Dr 和 Odlin Rd 的 4-way Stop（先到先走）",
+            "Odlin Rd 靠边停车",
+            "Fisher Dr 公园旁平行停车",
+            "Fisher Dr / Bryson Dr / Hall Ave 连续 Stop 牌",
+            "车多的 No. 4 Rd 左转"
+          ],
+          "highlights_en": [
+            "4-way stop at May Dr and Odlin Rd (first come, first go)",
+            "Pull-over on Odlin Rd",
+            "Parallel parking beside the park on Fisher Dr",
+            "Stop signs one after another on Fisher Dr / Bryson Dr / Hall Ave",
+            "Busy left turn onto No. 4 Rd"
+          ],
+          "video": {
+            "zh": {
+              "title": "列治文 Lansdowne 考场路考路线（5300 No. 3 Rd）· 温哥华列治文 ICBC · 航拍 + 地图 + 中文讲解（路线 2）",
+              "upload_date": "2026-11-15",
+              "duration": "PT8M56S",
+              "chapters": [
+                [
+                  "0:00",
+                  "从 Lansdowne 考场出发"
+                ],
+                [
+                  "0:14",
+                  "Stop 牌，右转 Kwantlen St"
+                ],
+                [
+                  "0:36",
+                  "左转 Lansdowne Rd"
+                ],
+                [
+                  "0:59",
+                  "左转 Garden City Rd"
+                ],
+                [
+                  "1:26",
+                  "右转 Alderbridge Way"
+                ],
+                [
+                  "1:57",
+                  "左转 May Dr · 限速 30"
+                ],
+                [
+                  "3:00",
+                  "4-way Stop，右转 Odlin Rd"
+                ],
+                [
+                  "3:14",
+                  "考官：靠边停车"
+                ],
+                [
+                  "3:45",
+                  "直行过 No. 4 Rd"
+                ],
+                [
+                  "3:55",
+                  "左转 Fisher Dr · 平行停车"
+                ],
+                [
+                  "4:36",
+                  "右转 Bryson Dr"
+                ],
+                [
+                  "5:05",
+                  "右转 Hall Pl"
+                ],
+                [
+                  "5:22",
+                  "右转 Hall Ave"
+                ],
+                [
+                  "5:52",
+                  "左转 Fisher Dr（往南）"
+                ],
+                [
+                  "6:03",
+                  "右转 Odlin Rd（往西）"
+                ],
+                [
+                  "6:13",
+                  "左转 No. 4 Rd"
+                ],
+                [
+                  "6:48",
+                  "右转 Alderbridge Way（往西）"
+                ],
+                [
+                  "8:06",
+                  "左转 Kwantlen St · 回到考场"
+                ],
+                [
+                  "8:34",
+                  "路线总结"
+                ]
+              ]
+            },
+            "en": {
+              "title": "Richmond ICBC Road Test Route 2 (Lansdowne Centre, 5300 No. 3 Rd) – Aerial View + Map",
+              "upload_date": "2026-11-15",
+              "duration": "PT8M56S",
+              "chapters": [
+                [
+                  "0:00",
+                  "Leaving the Lansdowne test centre"
+                ],
+                [
+                  "0:14",
+                  "Stop sign, right onto Kwantlen St"
+                ],
+                [
+                  "0:36",
+                  "Left onto Lansdowne Rd"
+                ],
+                [
+                  "0:59",
+                  "Left onto Garden City Rd"
+                ],
+                [
+                  "1:26",
+                  "Right onto Alderbridge Way"
+                ],
+                [
+                  "1:57",
+                  "Left onto May Dr · 30 zone"
+                ],
+                [
+                  "3:00",
+                  "4-way stop, right onto Odlin Rd"
+                ],
+                [
+                  "3:14",
+                  "Examiner: pull over"
+                ],
+                [
+                  "3:45",
+                  "Straight across No. 4 Rd"
+                ],
+                [
+                  "3:55",
+                  "Left onto Fisher Dr · parallel parking"
+                ],
+                [
+                  "4:36",
+                  "Right onto Bryson Dr"
+                ],
+                [
+                  "5:05",
+                  "Right onto Hall Pl"
+                ],
+                [
+                  "5:22",
+                  "Right onto Hall Ave"
+                ],
+                [
+                  "5:52",
+                  "Left onto Fisher Dr (south)"
+                ],
+                [
+                  "6:03",
+                  "Right onto Odlin Rd (west)"
+                ],
+                [
+                  "6:13",
+                  "Left onto No. 4 Rd"
+                ],
+                [
+                  "6:48",
+                  "Right onto Alderbridge Way (west)"
+                ],
+                [
+                  "8:06",
+                  "Left onto Kwantlen St · back to the test centre"
+                ],
+                [
+                  "8:34",
+                  "Route summary"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "km": 6.1,
+          "minutes": 10,
+          "filmed": false,
+          "summary_zh": "最北边的小区路线，在 Capstan Way、Tuttle Ave、Kilby Dr 一带，有连续两个环岛和无灯左转。",
+          "summary_en": "The northernmost neighbourhood route, around Capstan Way, Tuttle Ave and Kilby Dr, with two roundabouts in a row and an uncontrolled left turn.",
+          "highlights_zh": [
+            "4-way Stop（先到先走）",
+            "无灯左转上 Tuttle Ave",
+            "连续两个环岛",
+            "小区里连续右转",
+            "左转上 Garden City Rd"
+          ],
+          "highlights_en": [
+            "4-way stop (first come, first go)",
+            "Uncontrolled left turn onto Tuttle Ave",
+            "Two roundabouts in a row",
+            "Back-to-back right turns in the neighbourhood",
+            "Left turn onto Garden City Rd"
+          ]
+        },
+        {
+          "km": 9.1,
+          "minutes": 12,
+          "filmed": false,
+          "summary_zh": "北区小区小圈加上 Cambie Rd、Shell Rd、Westminster Hwy、No. 4 Rd 的东边大圈，大路最多。",
+          "summary_en": "A small neighbourhood loop north of Alderbridge Way plus a larger loop to the east along Cambie Rd, Shell Rd, Westminster Hwy and No. 4 Rd — the route with the most arterial roads.",
+          "highlights_zh": [
+            "红绿灯左转上 No. 4 Rd",
+            "小区小圈 · Stop 牌和 T 字路口",
+            "右转专用道上 Shell Rd",
+            "Westminster Hwy 连续右转",
+            "左转上 Alderbridge Way"
+          ],
+          "highlights_en": [
+            "Left turn onto No. 4 Rd at the light",
+            "Neighbourhood loop with stop signs and T-intersections",
+            "Right-turn lane onto Shell Rd",
+            "Back-to-back right turns at Westminster Hwy",
+            "Left turn onto Alderbridge Way"
+          ]
+        },
+        {
+          "km": 8.1,
+          "minutes": 11,
+          "filmed": false,
+          "summary_zh": "过 Dinsmore 桥沿 Russ Baker Way 去 Sea Island 的 Burkeville 小区，回到考场时考倒车入位。",
+          "summary_en": "Over the Dinsmore Bridge and along Russ Baker Way to Burkeville on Sea Island, ending with reverse parking back at the centre.",
+          "highlights_zh": [
+            "下桥并入 Russ Baker Way",
+            "Burkeville 小区 · 单行道和 Stop 牌",
+            "红绿灯右转回 Russ Baker Way",
+            "左转上 Gilbert Rd 过桥",
+            "回到考场倒车入位"
+          ],
+          "highlights_en": [
+            "Merging onto Russ Baker Way off the bridge",
+            "One-way streets and stop signs in Burkeville",
+            "Right turn back onto Russ Baker Way at the light",
+            "Left onto Gilbert Rd over the bridge",
+            "Reverse parking back at the centre"
+          ]
+        }
+      ],
+      "place_en": "Lansdowne Centre, 5300 No. 3 Rd"
+    }
+  }
+}

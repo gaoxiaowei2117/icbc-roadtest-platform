@@ -3,8 +3,16 @@ import { computed, ref, watch } from 'vue'
 export type Locale = 'zh' | 'zh-Hant' | 'en' | 'fr' | 'es'
 
 const supported: Locale[] = ['zh', 'zh-Hant', 'en', 'fr', 'es']
-const saved = localStorage.getItem('icbc.locale') as Locale | null
-const initial: Locale = saved && supported.includes(saved) ? saved : 'en'
+// ?lang=zh|en (links from the static route pages) wins over the saved choice.
+const fromQuery = new URLSearchParams(window.location.search).get('lang') as Locale | null
+let saved: Locale | null = null
+try {
+  saved = localStorage.getItem('icbc.locale') as Locale | null
+} catch {
+  // storage blocked (private mode etc.)
+}
+const initial: Locale =
+  fromQuery && supported.includes(fromQuery) ? fromQuery : saved && supported.includes(saved) ? saved : 'en'
 
 const traditional: Record<string, string> = {
   'ICBC Admin': 'ICBC 管理後台', 'ICBC Road Test Booking': 'ICBC 路考預約',
@@ -197,8 +205,19 @@ const translations: Record<'zh-Hant' | 'fr' | 'es', Record<string, string>> = {
 const locale = ref<Locale>(initial)
 document.documentElement.lang = initial === 'zh' ? 'zh-CN' : initial === 'zh-Hant' ? 'zh-TW' : initial
 
+if (fromQuery && supported.includes(fromQuery)) {
+  try {
+    localStorage.setItem('icbc.locale', fromQuery)
+  } catch {
+    // ignore
+  }
+}
 watch(locale, (value) => {
-  localStorage.setItem('icbc.locale', value)
+  try {
+    localStorage.setItem('icbc.locale', value)
+  } catch {
+    // ignore
+  }
   document.documentElement.lang = value === 'zh' ? 'zh-CN' : value === 'zh-Hant' ? 'zh-TW' : value
 })
 

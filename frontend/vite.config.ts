@@ -2,18 +2,21 @@ import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 import { readFileSync } from 'node:fs'
+import { SITE_ORIGIN, buildSeoPages, sitemapXml, type SeoContent } from './seo/pages'
 
-const SITE_ORIGIN = 'https://roadtestgo.com'
 const SITE_DESC =
   'ICBC 路考考场路线导航包：考官常用路线，手机一键打开 Google 地图导航，路线 1 免费试用。' +
   ' ICBC road test practice routes for BC test centres (Burnaby, Richmond) — open each route in Google Maps; route 1 is free.'
 
-/** Pack slugs from the public (placeholder-link) catalog, for sitemap.xml. */
-function packSlugs(): string[] {
+/** The public catalog (placeholder links): names, prices, previews, YouTube ids. */
+function loadCatalog() {
   const file = fileURLToPath(new URL('../backend/app/data/route_packs.json', import.meta.url))
   const data = JSON.parse(readFileSync(file, 'utf8'))
-  const packs: { slug: string }[] = Array.isArray(data) ? data : data.packs
-  return packs.map((p) => p.slug)
+  return Array.isArray(data) ? data : data.packs
+}
+
+function loadSeoContent(): SeoContent {
+  return JSON.parse(readFileSync(fileURLToPath(new URL('./seo/route-pages.json', import.meta.url)), 'utf8'))
 }
 
 /** Route site only: search/share meta tags, favicon, robots.txt and sitemap.xml. */
@@ -42,15 +45,11 @@ function routeSiteSeo(): Plugin {
         fileName: 'robots.txt',
         source: `User-agent: *\nDisallow: /api/\nDisallow: /booking/\n\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
       })
-      const urls = [`${SITE_ORIGIN}/`, ...packSlugs().map((s) => `${SITE_ORIGIN}/?centre=${s}`)]
-      this.emitFile({
-        type: 'asset',
-        fileName: 'sitemap.xml',
-        source:
-          '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-          urls.map((u) => `  <url><loc>${u.replace(/&/g, '&amp;')}</loc></url>`).join('\n') +
-          '\n</urlset>\n',
-      })
+      // Static landing pages per centre / route (zh + en), and a sitemap listing them.
+      const content = loadSeoContent()
+      const pages = buildSeoPages(loadCatalog(), content)
+      for (const { page, html } of pages) this.emitFile({ type: 'asset', fileName: page.file, source: html })
+      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemapXml(pages.map((p) => p.page), content.updated) })
     },
   }
 }
