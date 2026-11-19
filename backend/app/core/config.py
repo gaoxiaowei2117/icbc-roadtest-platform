@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     smtp_from: str = ""
+    # Tried in order after smtp_host when it can't be reached. The server is in mainland China,
+    # where only some Gmail SMTP IPs get through and smtp.gmail.com often resolves to a blocked one.
+    # Set SMTP_FALLBACK_HOSTS="" when switching to a non-Gmail provider.
+    smtp_fallback_hosts: str = "142.250.4.108,142.251.8.108,64.233.170.108"
 
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30

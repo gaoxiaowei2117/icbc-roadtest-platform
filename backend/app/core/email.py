@@ -2,15 +2,36 @@
 
 接口里不要直接调用：用 BackgroundTasks 在响应发出后再发，见 app/api/auth.py。
 """
+import logging
 import smtplib
 from email.message import EmailMessage
 
 from app.core.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger("icbc.email")
 
 # Connect / read timeout. Without it a slow Gmail could hold a worker thread indefinitely.
-SMTP_TIMEOUT_SECONDS = 15
+SMTP_TIMEOUT_SECONDS = 10
+
+
+def smtp_hosts() -> list[str]:
+    """smtp_host first, then the fallbacks, without duplicates."""
+    hosts = [settings.smtp_host]
+    for h in settings.smtp_fallback_hosts.split(","):
+        h = h.strip()
+        if h and h not in hosts:
+            hosts.append(h)
+    return hosts
+
+
+# Errors about the account or the message: another host would give the same answer.
+_FATAL = (
+    smtplib.SMTPAuthenticationError,
+    smtplib.SMTPSenderRefused,
+    smtplib.SMTPRecipientsRefused,
+    smtplib.SMTPDataError,
+)
 
 
 def send_email(to: str, subject: str, body: str) -> None:
@@ -21,10 +42,26 @@ def send_email(to: str, subject: str, body: str) -> None:
     msg["To"] = to
     msg["Subject"] = subject
     msg.set_content(body)
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=SMTP_TIMEOUT_SECONDS) as s:
-        s.starttls()
-        s.login(settings.smtp_user, settings.smtp_password)
-        s.send_message(msg)
+
+    last_error: Exception | None = None
+    for host in smtp_hosts():
+        sent = False
+        try:
+            with smtplib.SMTP(host, settings.smtp_port, timeout=SMTP_TIMEOUT_SECONDS) as s:
+                s.starttls()
+                s.login(settings.smtp_user, settings.smtp_password)
+                s.send_message(msg)
+                sent = True
+            return
+        except _FATAL:
+            raise
+        except (OSError, smtplib.SMTPException) as e:
+            if sent:  # delivered; only the goodbye failed. Retrying would send it twice.
+                return
+            logger.warning("SMTP host %s failed (%s); trying the next one", host, type(e).__name__)
+            last_error = e
+    assert last_error is not None
+    raise last_error
 
 
 def send_verification_code(to: str, code: str, site: str = "booking") -> None:
